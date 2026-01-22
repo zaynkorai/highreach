@@ -16,10 +16,10 @@
 ### Week 1: Foundation
 
 #### Day 1-2: Project Setup
-- [ ] Initialize Next.js 15 project with App Router
-- [ ] Configure Tailwind CSS
+- [x] Initialize Next.js 15 project with App Router
+- [x] Configure Tailwind CSS
 - [ ] Set up Supabase project (dev + prod)
-- [ ] Configure environment variables
+- [x] Configure environment variables
 - [ ] Set up Vercel deployment
 
 #### Day 3-4: Auth & Multi-Tenancy
