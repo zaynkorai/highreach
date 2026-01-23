@@ -23,11 +23,11 @@
 - [ ] Set up Vercel deployment
 
 #### Day 3-4: Auth & Multi-Tenancy
-- [ ] Implement Supabase Auth (email/password)
-- [ ] Create tenant/organization table
-- [ ] Set up RLS policies for all tables
-- [ ] Build signup → tenant creation flow
-- [ ] Test tenant isolation
+- [x] Implement Supabase Auth (email/password)
+- [x] Create tenant/organization table
+- [x] Set up RLS policies for all tables
+- [x] Build signup → tenant creation flow
+- [x] Test tenant isolation
 
 #### Day 5-6: Telnyx Integration
 - [ ] Set up Telnyx account + sandbox
