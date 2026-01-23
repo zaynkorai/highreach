@@ -12,16 +12,21 @@ export const missedCallTextBack = inngest.createFunction(
 
         // Send SMS via Telnyx
         await step.run("send-sms", async () => {
-            // TODO: Implement Telnyx SMS send
+            const { telnyx } = await import("@/lib/telnyx"); // Dynamic import to avoid env checks at build time if needed, or just standard import
+
             console.log(
                 `Sending missed call text to ${from_number} for tenant ${tenant_id}`
             );
 
-            // const response = await telnyx.messages.create({
-            //   from: to_number,
-            //   to: from_number,
-            //   text: `Hey, it's ${tenant_name}! Sorry I missed your call. How can I help you?`,
-            // });
+            // Default message if tenant_name is missing
+            const name = tenant_name || "us";
+            const text = `Hey, it's ${name}! Sorry I missed your call. How can I help you?`;
+
+            await (telnyx.messages as any).create({
+                from: to_number,
+                to: from_number,
+                text,
+            });
 
             return { status: "sent" };
         });
