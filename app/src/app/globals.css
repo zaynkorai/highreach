@@ -37,3 +37,19 @@ html {
   background: rgba(16, 185, 129, 0.3);
   color: white;
 }
+
+/* Global button active states */
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Add transition to all potential interactive elements */
+button,
+a,
+input,
+select,
+textarea {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}

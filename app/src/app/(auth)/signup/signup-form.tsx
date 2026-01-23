@@ -116,8 +116,8 @@ export function SignupForm() {
                 </div>
             )}
 
-            <div>
-                <label htmlFor="businessName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+            <div className="space-y-1.5">
+                <label htmlFor="businessName" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     Business Name
                 </label>
                 <input
@@ -126,12 +126,12 @@ export function SignupForm() {
                     type="text"
                     required
                     placeholder="Mike's Plumbing"
-                    className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-3 text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition"
+                    className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
             </div>
 
-            <div>
-                <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+            <div className="space-y-1.5">
+                <label htmlFor="email" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     Email
                 </label>
                 <input
@@ -140,12 +140,12 @@ export function SignupForm() {
                     type="email"
                     required
                     placeholder="you@example.com"
-                    className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-3 text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition"
+                    className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
             </div>
 
-            <div>
-                <label htmlFor="password" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+            <div className="space-y-1.5">
+                <label htmlFor="password" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     Password
                 </label>
                 <input
@@ -155,15 +155,15 @@ export function SignupForm() {
                     required
                     minLength={8}
                     placeholder="••••••••"
-                    className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-3 text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition"
+                    className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
-                <p className="text-zinc-500 text-xs mt-1">Minimum 8 characters</p>
+                <p className="text-zinc-500 text-xs">Minimum 8 characters</p>
             </div>
 
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 rounded-lg transition-colors text-sm shadow-sm shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoading ? "Creating account..." : "Start Free Trial"}
             </button>
