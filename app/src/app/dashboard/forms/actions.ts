@@ -43,69 +43,91 @@ export async function getForm(id: string) {
 }
 
 export async function createForm(name: string, description?: string) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-        throw new Error("Unauthorized");
+        if (!user) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const { data: userData } = await supabase
+            .from("users")
+            .select("tenant_id")
+            .eq("id", user.id)
+            .single();
+
+        if (!userData) return { success: false, error: "No tenant" };
+
+        const { data, error } = await supabase
+            .from("forms")
+            .insert({
+                tenant_id: userData.tenant_id,
+                name,
+                description,
+                fields: [], // Start empty
+                status: "draft",
+            })
+            .select()
+            .single();
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        revalidatePath("/dashboard/forms");
+        return { success: true, data };
+    } catch (e: any) {
+        console.error("createForm Error:", e);
+        return { success: false, error: e.message || "Failed to create form" };
     }
-
-    const { data: userData } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
-
-    if (!userData) throw new Error("No tenant");
-
-    const { data, error } = await supabase
-        .from("forms")
-        .insert({
-            tenant_id: userData.tenant_id,
-            name,
-            description,
-            fields: [], // Start empty
-            status: "draft",
-        })
-        .select()
-        .single();
-
-    if (error) {
-        throw new Error(error.message);
-    }
-
-    revalidatePath("/dashboard/forms");
-    return data;
 }
 
 export async function updateForm(id: string, updates: Partial<Form>) {
-    const supabase = await createClient();
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-    // Clean up fields to ensure they match JSON type if passed
-    const payload = { ...updates };
+        if (!user) return { success: false, error: "Unauthorized" };
 
-    const { error } = await supabase
-        .from("forms")
-        .update(payload)
-        .eq("id", id);
+        // Clean up fields to ensure they match JSON type if passed
+        const payload = { ...updates };
 
-    if (error) {
-        throw new Error(error.message);
+        const { error } = await supabase
+            .from("forms")
+            .update(payload)
+            .eq("id", id);
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        revalidatePath("/dashboard/forms");
+        revalidatePath(`/dashboard/forms/${id}`);
+        return { success: true };
+    } catch (e: any) {
+        console.error("updateForm Error:", e);
+        return { success: false, error: e.message || "Failed to update form" };
     }
-
-    revalidatePath("/dashboard/forms");
-    revalidatePath(`/dashboard/forms/${id}`);
-    return { success: true };
 }
 
 export async function deleteForm(id: string) {
-    const supabase = await createClient();
-    const { error } = await supabase.from("forms").delete().eq("id", id);
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-    if (error) {
-        throw new Error(error.message);
+        if (!user) return { success: false, error: "Unauthorized" };
+
+        const { error } = await supabase.from("forms").delete().eq("id", id);
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        revalidatePath("/dashboard/forms");
+        return { success: true };
+    } catch (e: any) {
+        console.error("deleteForm Error:", e);
+        return { success: false, error: e.message || "Failed to delete form" };
     }
-
-    revalidatePath("/dashboard/forms");
-    return { success: true };
 }

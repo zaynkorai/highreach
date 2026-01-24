@@ -57,13 +57,13 @@
 - [x] Create conversations table
 - [x] **Unified Inbox 2.0**: 3-pane layout, Internal Notes, Omnichannel support, Contact Context Sidebar.
 ## Error Handling & Edge Cases
-- [x] Standardize Server Action Return Patterns (Contacts & Inbox)
+- [x] Standardize Server Action Return Patterns (Contacts, Inbox, Pipelines & Forms)
 - [x] Implement Row-Level CSV Upload Validation & Feedback
 - [x] Add Empty State UIs & Loading Transitions (Frontend)
 - [x] Reinforced Tenant Ownership Security in Actions
 - [ ] Robust Form Validation: Ensure all dashboard forms use Zod with clear error messaging
-- [ ] Global Toast Integration: Ensure all server actions communicate failure via toasts
-- [ ] RLS/Permission Safety: Explicitly verify tenant ownership in server actions
+- [x] Global Toast Integration: Ensure all server actions communicate failure via toasts
+- [x] RLS/Permission Safety: Explicitly verify tenant ownership in server actions
 - [x] Integrate Telnyx SMS (send/receive)
 - [ ] Integrate Resend email
 - [x] Implement real-time updates (Supabase Realtime)
@@ -86,8 +86,26 @@
 
 ## 🟡 P1: Conversion Bundle (Days 15-28)
 
-- [ ] Pipeline (Kanban board)
-- [ ] Calendar & Booking
+- [x] **Pipeline (Kanban Board)**
+    - [x] **Database Foundation**: 
+        - [x] Create `pipelines`, `pipeline_stages`, and `opportunities` tables.
+- [x] Phase 12: Pipelines UI Polish and Auth Fix
+  - [x] Debug and Fix "Unauthorized" Error with Layout-level Guard
+  - [x] Refactor Server Actions for Auth Stability
+  - [x] Implement Premium Kanban Board and Opportunity Cards
+  - [x] Support Stage Pre-selection in New Deal Modal
+  - [x] Verify production stability with `pnpm build`
+    - [x] **Kanban Workspace**:
+        - [x] Build multi-column board with horizontal scroll.
+        - [x] Implement card dragging with `@hello-pangea/dnd`.
+        - [x] Add "Stage Totals" (Calculated opportunity values in headers).
+    - [x] **Opportunity Management**:
+        - [x] "New Opportunity" modal (linked to Contacts).
+        - [x] Pipeline Switcher (Support for multiple workstreams).
+        - [x] Status management (Open, Won, Lost transitions).
+        - [x] **High-Grade UI Polish**: Refined Kanban board, Glassmorphism cards, and premium headers.
+        - [x] **Production Stability**: Verified all routes and auth flows via `pnpm build`.
+- [ ] **Calendar & Booking**
 - [ ] Workflow automations (Inngest)
 - [ ] Reputation Management (Google Reviews)
 - [ ] Webhooks
@@ -115,4 +133,4 @@
 
 ---
 
-*Last updated: January 22, 2026*
+*Last updated: January 25, 2026*

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Form, FormFieldType } from "@/types/form";
 import { updateForm } from "../actions";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
     DndContext,
     DragEndEvent,
@@ -189,12 +190,18 @@ export function FormBuilder({ form }: FormBuilderProps) {
             setSaveStatus('saving');
             try {
                 // Only save draft status updates implicitly
-                await updateForm(form.id, {
+                const result = await updateForm(form.id, {
                     fields: currentFields,
                     theme: currentTheme,
                 });
-                setSaveStatus('saved');
-                setTimeout(() => setSaveStatus('idle'), 2000);
+
+                if (result.success) {
+                    setSaveStatus('saved');
+                    setTimeout(() => setSaveStatus('idle'), 2000);
+                } else {
+                    console.error("Auto-save failed:", result.error);
+                    setSaveStatus('error');
+                }
             } catch (error) {
                 console.error("Auto-save failed", error);
                 setSaveStatus('error');
@@ -237,15 +244,21 @@ export function FormBuilder({ form }: FormBuilderProps) {
     const handlePublish = async () => {
         setIsSaving(true);
         try {
-            await updateForm(form.id, {
+            const result = await updateForm(form.id, {
                 fields,
                 theme,
                 status: "active"
             });
-            router.refresh();
-            alert("Form published successfully!");
+
+            if (result.success) {
+                toast.success("Form published successfully!");
+                router.refresh();
+            } else {
+                toast.error(result.error || "Failed to publish form");
+            }
         } catch (error) {
             console.error("Failed to publish", error);
+            toast.error("An unexpected error occurred while publishing");
         } finally {
             setIsSaving(false);
         }
@@ -554,8 +567,8 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                             <button
                                                 onClick={() => updateField(selectedField.id, { width: '100%' })}
                                                 className={`flex-1 py-1.5 text-xs font-medium rounded border transition-all ${(!selectedField.width || selectedField.width === '100%')
-                                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 ring-1 ring-emerald-500/20'
-                                                        : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/10 hover:border-zinc-300'
+                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 ring-1 ring-emerald-500/20'
+                                                    : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/10 hover:border-zinc-300'
                                                     }`}
                                             >
                                                 Full Width (100%)
@@ -563,8 +576,8 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                             <button
                                                 onClick={() => updateField(selectedField.id, { width: '50%' })}
                                                 className={`flex-1 py-1.5 text-xs font-medium rounded border transition-all ${selectedField.width === '50%'
-                                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 ring-1 ring-emerald-500/20'
-                                                        : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/10 hover:border-zinc-300'
+                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 ring-1 ring-emerald-500/20'
+                                                    : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/10 hover:border-zinc-300'
                                                     }`}
                                             >
                                                 Half Width (50%)

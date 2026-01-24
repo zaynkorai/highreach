@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createForm } from "../actions";
+import { toast } from "sonner";
 
 interface CreateFormModalProps {
     isOpen: boolean;
@@ -20,18 +21,24 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         e.preventDefault();
 
         if (selection === 'templates') {
-            alert("Templates functionality is coming soon!");
+            toast.info("Templates functionality is coming soon!");
             return;
         }
 
         setIsLoading(true);
 
         try {
-            const form = await createForm(name || "New Form", description);
-            onClose();
-            router.push(`/dashboard/forms/${form.id}`); // Redirect to builder
+            const result = await createForm(name || "New Form", description);
+            if (result.success && result.data) {
+                toast.success("Form created successfully!");
+                onClose();
+                router.push(`/dashboard/forms/${result.data.id}`); // Redirect to builder
+            } else {
+                toast.error(result.error || "Failed to create form");
+            }
         } catch (error) {
             console.error(error);
+            toast.error("An unexpected error occurred");
         } finally {
             setIsLoading(false);
         }
