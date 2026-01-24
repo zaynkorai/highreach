@@ -55,9 +55,9 @@
 
 #### Day 9-10: Unified Inbox
 - [x] Create conversations table
+- [x] **Unified Inbox 2.0**: 3-pane layout, Internal Notes, Omnichannel support, Contact Context Sidebar.
 - [x] Integrate Telnyx SMS (send/receive)
 - [ ] Integrate Resend email
-- [x] Build inbox UI (WhatsApp-style)
 - [x] Implement real-time updates (Supabase Realtime)
 
 #### Day 11-12: Forms (See [`forms.md`](./forms.md))

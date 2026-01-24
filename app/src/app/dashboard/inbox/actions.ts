@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { Conversation, Message } from "@/types/inbox";
+import { Conversation, Message, ChannelType } from "@/types/inbox";
 import { revalidatePath } from "next/cache";
 
 export async function getConversations() {
@@ -22,7 +22,7 @@ export async function getConversations() {
         .from("conversations")
         .select(`
             *,
-            contact:contacts(first_name, last_name, phone, email)
+            contact:contacts(id, first_name, last_name, phone, email, tags)
         `)
         .eq("tenant_id", userData.tenant_id) // Explicitly filter to be safe, though RLS should handle it
         .order("last_message_at", { ascending: false });
@@ -53,7 +53,7 @@ export async function getMessages(conversationId: string) {
     return data as Message[];
 }
 
-export async function sendMessage(conversationId: string, content: string) {
+export async function sendMessage(conversationId: string, content: string, channel: ChannelType = 'sms', isInternal: boolean = false) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -78,7 +78,8 @@ export async function sendMessage(conversationId: string, content: string) {
             conversation_id: conversationId,
             direction: 'outbound',
             content,
-            channel: 'sms' // Default to SMS for now
+            channel: channel,
+            is_internal: isInternal
         })
         .select()
         .single();
