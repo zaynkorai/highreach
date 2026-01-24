@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Conversation, Message, ChannelType } from "@/types/inbox";
 import { getMessages, sendMessage } from "./actions";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useInboxStore, useInboxActions } from "@/stores/inbox-store";
 import {
@@ -128,9 +129,16 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
         if (!selectedId) return;
         setIsLoadingMessages(true);
         getMessages(selectedId)
-            .then(setMessages)
+            .then(result => {
+                if (result.success && result.data) {
+                    setMessages(result.data);
+                } else if (!result.success) {
+                    toast.error(result.error || "Failed to load messages");
+                }
+            })
+            .catch(() => toast.error("An unexpected error occurred while loading messages"))
             .finally(() => setIsLoadingMessages(false));
-    }, [selectedId]);
+    }, [selectedId, setMessages, setIsLoadingMessages]);
 
     // Auto-scroll
     useEffect(() => {
@@ -141,6 +149,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
         if (!newMessage.trim() || !selectedId || !selectedConversation) return;
 
         const content = newMessage;
+        const channel = selectedConversation.channel || 'sms';
         setNewMessage("");
 
         // Optimistic
@@ -149,7 +158,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
             tenant_id: selectedConversation.tenant_id,
             conversation_id: selectedId,
             direction: 'outbound',
-            channel: selectedConversation.channel || 'sms',
+            channel: channel,
             content,
             is_internal: isInternalNote,
             metadata: {},
@@ -160,9 +169,14 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
         addMessage(optimisticMsg, selectedId);
 
         try {
-            await sendMessage(selectedId, content, selectedConversation.channel || 'sms', isInternalNote);
+            const result = await sendMessage(selectedId, content, channel, isInternalNote);
+            if (!result.success) {
+                toast.error(result.error || "Failed to send message");
+                // In a real app, we might want to remove the optimistic message or show a "retry" state
+            }
         } catch (error) {
             console.error("Failed to send", error);
+            toast.error("An unexpected error occurred");
         }
     };
 
@@ -350,39 +364,48 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                         <span className="px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Today</span>
                                     </div>
 
-                                    {messages.map((msg) => (
-                                        <div
-                                            key={msg.id}
-                                            className={cn(
-                                                "flex group max-w-[85%]",
-                                                msg.direction === "outbound" ? "ml-auto" : "mr-auto"
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "relative px-4 py-2.5 rounded-2xl text-sm shadow-sm",
-                                                msg.is_internal
-                                                    ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 text-amber-900 dark:text-amber-200 italic"
-                                                    : msg.direction === "outbound"
-                                                        ? "bg-emerald-600 dark:bg-emerald-600 text-white rounded-br-none"
-                                                        : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-bl-none"
-                                            )}>
-                                                {msg.is_internal && (
-                                                    <div className="flex items-center gap-2 mb-1 border-b border-amber-200/50 pb-1">
-                                                        <StickyNote className="h-3 w-3" />
-                                                        <span className="text-[10px] font-bold uppercase tracking-tight">Internal Note</span>
-                                                    </div>
+                                    {messages.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-20 text-zinc-400 gap-2">
+                                            <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-2">
+                                                <MessageSquare className="h-5 w-5 opacity-20" />
+                                            </div>
+                                            <p className="text-xs">No messages in this thread yet.</p>
+                                        </div>
+                                    ) : (
+                                        messages.map((msg) => (
+                                            <div
+                                                key={msg.id}
+                                                className={cn(
+                                                    "flex group max-w-[85%]",
+                                                    msg.direction === "outbound" ? "ml-auto" : "mr-auto"
                                                 )}
-                                                <p className="leading-relaxed">{msg.content}</p>
+                                            >
                                                 <div className={cn(
-                                                    "flex items-center gap-1.5 mt-1.5 flex-row-reverse",
-                                                    msg.direction === "outbound" ? "text-emerald-100" : "text-zinc-400"
+                                                    "relative px-4 py-2.5 rounded-2xl text-sm shadow-sm",
+                                                    msg.is_internal
+                                                        ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 text-amber-900 dark:text-amber-200 italic"
+                                                        : msg.direction === "outbound"
+                                                            ? "bg-emerald-600 dark:bg-emerald-600 text-white rounded-br-none"
+                                                            : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-bl-none"
                                                 )}>
-                                                    <span className="text-[9px] font-bold">{formatTime(msg.created_at)}</span>
-                                                    {msg.direction === "outbound" && !msg.is_internal && <CheckCheck className="h-3 w-3" />}
+                                                    {msg.is_internal && (
+                                                        <div className="flex items-center gap-2 mb-1 border-b border-amber-200/50 pb-1">
+                                                            <StickyNote className="h-3 w-3" />
+                                                            <span className="text-[10px] font-bold uppercase tracking-tight">Internal Note</span>
+                                                        </div>
+                                                    )}
+                                                    <p className="leading-relaxed">{msg.content}</p>
+                                                    <div className={cn(
+                                                        "flex items-center gap-1.5 mt-1.5 flex-row-reverse",
+                                                        msg.direction === "outbound" ? "text-emerald-100" : "text-zinc-400"
+                                                    )}>
+                                                        <span className="text-[9px] font-bold">{formatTime(msg.created_at)}</span>
+                                                        {msg.direction === "outbound" && !msg.is_internal && <CheckCheck className="h-3 w-3" />}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                     <div ref={messagesEndRef} />
                                 </div>
                             )}

@@ -6,271 +6,290 @@ import { CreateContactDTO, UpdateContactDTO } from "@/types/contact";
 import { contactSchema } from "@/lib/validations/contact";
 
 export async function createContact(data: CreateContactDTO) {
-    const supabase = await createClient();
+    try {
+        const supabase = await createClient();
 
-    // 1. Validation Logic
-    const validatedFields = contactSchema.safeParse({
-        firstName: data.first_name,
-        lastName: data.last_name || "",
-        email: data.email || "",
-        phone: data.phone || "",
-        tags: data.tags || [],
-        source: data.source || "manual",
-    });
+        // 1. Validation Logic
+        const validatedFields = contactSchema.safeParse({
+            firstName: data.first_name,
+            lastName: data.last_name || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            tags: data.tags || [],
+            source: data.source || "manual",
+        });
 
-    if (!validatedFields.success) {
-        throw new Error("Validation failed");
-    }
+        if (!validatedFields.success) {
+            return { success: false, error: "Validation failed", details: validatedFields.error.flatten() };
+        }
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
 
-    if (!user) {
-        throw new Error("Unauthorized");
-    }
+        if (!user) {
+            return { success: false, error: "Unauthorized" };
+        }
 
-    // Get user's tenant
-    const { data: userData } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
+        // Get user's tenant
+        const { data: userData, error: userError } = await supabase
+            .from("users")
+            .select("tenant_id")
+            .eq("id", user.id)
+            .single();
 
-    if (!userData) {
-        throw new Error("User has no tenant assigned");
-    }
+        if (userError || !userData) {
+            return { success: false, error: "User has no tenant assigned" };
+        }
 
-    const { error } = await supabase.from("contacts").insert({
-        tenant_id: userData.tenant_id,
-        first_name: validatedFields.data.firstName,
-        last_name: validatedFields.data.lastName || null,
-        email: validatedFields.data.email || null,
-        phone: validatedFields.data.phone || null,
-        source: validatedFields.data.source || "manual",
-        tags: validatedFields.data.tags || [],
-    });
-
-    if (error) {
-        throw new Error(error.message);
-    }
-
-    revalidatePath("/dashboard/contacts");
-    return { success: true };
-}
-
-export async function updateContact(id: string, data: UpdateContactDTO) {
-    const supabase = await createClient();
-
-    // 1. Validation Logic
-    const validatedFields = contactSchema.safeParse({
-        firstName: data.first_name,
-        lastName: data.last_name || "",
-        email: data.email || "",
-        phone: data.phone || "",
-        tags: data.tags || [],
-        source: data.source || "manual",
-    });
-
-    if (!validatedFields.success) {
-        throw new Error("Validation failed");
-    }
-
-    const { error } = await supabase
-        .from("contacts")
-        .update({
+        const { error, data: insertedData } = await supabase.from("contacts").insert({
+            tenant_id: userData.tenant_id,
             first_name: validatedFields.data.firstName,
             last_name: validatedFields.data.lastName || null,
             email: validatedFields.data.email || null,
             phone: validatedFields.data.phone || null,
-            tags: validatedFields.data.tags,
-            source: validatedFields.data.source,
-        })
-        .eq("id", id);
+            source: validatedFields.data.source || "manual",
+            tags: validatedFields.data.tags || [],
+        }).select().single();
 
-    if (error) {
-        throw new Error(error.message);
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        revalidatePath("/dashboard/contacts");
+        return { success: true, data: insertedData };
+    } catch (e: any) {
+        console.error("Create Contact Error:", e);
+        return { success: false, error: "An unexpected error occurred" };
     }
+}
 
-    revalidatePath("/dashboard/contacts");
-    return { success: true };
+export async function updateContact(id: string, data: UpdateContactDTO) {
+    try {
+        const supabase = await createClient();
+
+        // 1. Validation Logic
+        const validatedFields = contactSchema.safeParse({
+            firstName: data.first_name,
+            lastName: data.last_name || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            tags: data.tags || [],
+            source: data.source || "manual",
+        });
+
+        if (!validatedFields.success) {
+            return { success: false, error: "Validation failed", details: validatedFields.error.flatten() };
+        }
+
+        const { error } = await supabase
+            .from("contacts")
+            .update({
+                first_name: validatedFields.data.firstName,
+                last_name: validatedFields.data.lastName || null,
+                email: validatedFields.data.email || null,
+                phone: validatedFields.data.phone || null,
+                tags: validatedFields.data.tags,
+                source: validatedFields.data.source,
+            })
+            .eq("id", id);
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        revalidatePath("/dashboard/contacts");
+        return { success: true };
+    } catch (e: any) {
+        console.error("Update Contact Error:", e);
+        return { success: false, error: "An unexpected error occurred" };
+    }
 }
 
 export async function deleteContact(id: string) {
-    const supabase = await createClient();
+    try {
+        const supabase = await createClient();
+        const { error } = await supabase.from("contacts").delete().eq("id", id);
 
-    const { error } = await supabase.from("contacts").delete().eq("id", id);
+        if (error) {
+            return { success: false, error: error.message };
+        }
 
-    if (error) {
-        throw new Error(error.message);
+        revalidatePath("/dashboard/contacts");
+        return { success: true };
+    } catch (e: any) {
+        console.error("Delete Contact Error:", e);
+        return { success: false, error: "An unexpected error occurred" };
     }
-
-    revalidatePath("/dashboard/contacts");
-    return { success: true };
 }
 
 import { parse } from "csv-parse/sync";
 
 export async function uploadCSV(formData: FormData) {
-    const supabase = await createClient();
-
-    const file = formData.get("file") as File;
-    if (!file) {
-        return { error: "No file uploaded" };
-    }
-
-    const text = await file.text();
-
-    // Parse CSV
-    let data;
     try {
-        data = parse(text, {
-            columns: true,
-            skip_empty_lines: true,
-        });
-    } catch (e) {
-        console.error("CSV Parse Error", e);
-        return { error: "Failed to parse CSV" };
-    }
+        const supabase = await createClient();
 
-    if (!data || data.length === 0) {
-        return { error: "No records found in CSV" };
-    }
+        const file = formData.get("file") as File;
+        if (!file) {
+            return { success: false, error: "No file uploaded" };
+        }
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+        const text = await file.text();
 
-    if (!user) {
-        return { error: "Unauthorized" };
-    }
-
-    const { data: userData } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
-
-    if (!userData) {
-        return { error: "User has no tenant assigned" };
-    }
-
-    let successCount = 0;
-    let failedCount = 0;
-
-    const contactsToInsert = [];
-
-    // Iterate and Validatate
-    for (const row of data as any[]) {
-        // Map common CSV headers to our schema keys
-        // Heuristic mapping: 'First Name' -> firstName, 'Email' -> email, etc.
-        // We will accept: firstName, lastName, email, phone (case insensitive check usually good, but let's stick to simple key checks first or map commonly used ones)
-
-        const mappedData = {
-            // Check for 'firstName' or 'First Name' or 'first_name'
-            firstName: row['firstName'] || row['First Name'] || row['first_name'] || row['Name'],
-            lastName: row['lastName'] || row['Last Name'] || row['last_name'] || "",
-            email: row['email'] || row['Email'] || row['E-mail'] || "",
-            phone: row['phone'] || row['Phone'] || row['Phone Number'] || "",
-        };
-
-        const validatedFields = contactSchema.safeParse(mappedData);
-
-        if (validatedFields.success) {
-            contactsToInsert.push({
-                tenant_id: userData.tenant_id,
-                first_name: validatedFields.data.firstName,
-                last_name: validatedFields.data.lastName || null,
-                email: validatedFields.data.email || null,
-                phone: validatedFields.data.phone || null,
-                source: "import",
+        // Parse CSV
+        let rawData;
+        try {
+            rawData = parse(text, {
+                columns: true,
+                skip_empty_lines: true,
+                trim: true
             });
-            successCount++;
-        } else {
-            failedCount++;
+        } catch (e: any) {
+            return { success: false, error: "Failed to parse CSV: " + (e.message || "Invalid format") };
         }
-    }
 
-    if (contactsToInsert.length > 0) {
-        const { error } = await supabase.from("contacts").insert(contactsToInsert);
-        if (error) {
-            console.error("Bulk insert failed", error);
-            return { error: "Failed to save contacts to database" };
+        if (!rawData || rawData.length === 0) {
+            return { success: false, error: "No records found in CSV" };
         }
-    }
 
-    revalidatePath("/dashboard/contacts");
-    return { success: true, successCount, failedCount };
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: "Unauthorized" };
+
+        const { data: userData } = await supabase
+            .from("users")
+            .select("tenant_id")
+            .eq("id", user.id)
+            .single();
+
+        if (!userData?.tenant_id) return { success: false, error: "User has no tenant assigned" };
+
+        let successCount = 0;
+        let failedRows: any[] = [];
+        const contactsToInsert = [];
+
+        // Iterate and Validate
+        for (let i = 0; i < (rawData as any[]).length; i++) {
+            const row = (rawData as any[])[i];
+            const mappedData = {
+                firstName: row['firstName'] || row['First Name'] || row['first name'] || row['first_name'] || row['Name'] || row['name'],
+                lastName: row['lastName'] || row['Last Name'] || row['last name'] || row['last_metric'] || row['last_name'] || "",
+                email: row['email'] || row['Email'] || row['E-mail'] || "",
+                phone: row['phone'] || row['Phone'] || row['Phone Number'] || row['phone_number'] || "",
+            };
+
+            const validatedFields = contactSchema.safeParse(mappedData);
+
+            if (validatedFields.success) {
+                contactsToInsert.push({
+                    tenant_id: userData.tenant_id,
+                    first_name: validatedFields.data.firstName,
+                    last_name: validatedFields.data.lastName || null,
+                    email: validatedFields.data.email || null,
+                    phone: validatedFields.data.phone || null,
+                    source: "import",
+                });
+            } else {
+                failedRows.push({
+                    row: i + 1,
+                    data: mappedData,
+                    errors: validatedFields.error.flatten().fieldErrors
+                });
+            }
+        }
+
+        if (contactsToInsert.length > 0) {
+            const { error: insertError } = await supabase.from("contacts").insert(contactsToInsert);
+            if (insertError) {
+                return { success: false, error: "Database error during bulk insert: " + insertError.message };
+            }
+            successCount = contactsToInsert.length;
+        }
+
+        revalidatePath("/dashboard/contacts");
+        return {
+            success: true,
+            successCount,
+            failedCount: failedRows.length,
+            details: failedRows.length > 0 ? failedRows : undefined
+        };
+    } catch (e: any) {
+        console.error("CSV Upload Error:", e);
+        return { success: false, error: "An unexpected error occurred during upload" };
+    }
 }
 
 export async function bulkDeleteContacts(ids: string[]) {
-    const supabase = await createClient();
+    try {
+        const supabase = await createClient();
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: "Unauthorized" };
 
-    if (!user) {
-        throw new Error("Unauthorized");
+        const { error } = await supabase
+            .from("contacts")
+            .delete()
+            .in("id", ids);
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        revalidatePath("/dashboard/contacts");
+        return { success: true };
+    } catch (e: any) {
+        console.error("Bulk Delete Error:", e);
+        return { success: false, error: "An unexpected error occurred" };
     }
-
-    const { error } = await supabase
-        .from("contacts")
-        .delete()
-        .in("id", ids);
-
-    if (error) {
-        throw new Error(error.message);
-    }
-
-    revalidatePath("/dashboard/contacts");
-    return { success: true };
 }
 
 export async function bulkAddTags(ids: string[], tags: string[]) {
-    const supabase = await createClient();
+    try {
+        const supabase = await createClient();
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: "Unauthorized" };
 
-    if (!user) {
-        throw new Error("Unauthorized");
-    }
-
-    // Fetch current tags for these contacts
-    const { data: contacts, error: fetchError } = await supabase
-        .from("contacts")
-        .select("id, tags")
-        .in("id", ids);
-
-    if (fetchError) throw new Error(fetchError.message);
-
-    const updates = contacts.map(contact => {
-        const currentTags = contact.tags || [];
-        const newTags = Array.from(new Set([...currentTags, ...tags]));
-        return supabase
+        // Fetch current tags for these contacts
+        const { data: contacts, error: fetchError } = await supabase
             .from("contacts")
-            .update({ tags: newTags })
-            .eq("id", contact.id);
-    });
+            .select("id, tags")
+            .in("id", ids);
 
-    await Promise.all(updates);
+        if (fetchError) return { success: false, error: fetchError.message };
 
-    revalidatePath("/dashboard/contacts");
-    return { success: true };
+        const updates = (contacts as any[]).map(contact => {
+            const currentTags = contact.tags || [];
+            const newTags = Array.from(new Set([...currentTags, ...tags]));
+            return supabase
+                .from("contacts")
+                .update({ tags: newTags })
+                .eq("id", contact.id);
+        });
+
+        await Promise.all(updates);
+
+        revalidatePath("/dashboard/contacts");
+        return { success: true };
+    } catch (e: any) {
+        console.error("Bulk Add Tags Error:", e);
+        return { success: false, error: "An unexpected error occurred" };
+    }
 }
 
 export async function getContactActivities(contactId: string) {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from("contact_activities")
-        .select("*")
-        .eq("contact_id", contactId)
-        .order("created_at", { ascending: false });
+    try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from("contact_activities")
+            .select("*")
+            .eq("contact_id", contactId)
+            .order("created_at", { ascending: false });
 
-    if (error) throw new Error(error.message);
-    return data;
+        if (error) return { success: false, error: error.message };
+        return { success: true, data };
+    } catch (e: any) {
+        return { success: false, error: "Failed to fetch activities" };
+    }
 }
 
 export async function createActivity(
@@ -278,72 +297,88 @@ export async function createActivity(
     type: 'note' | 'call_log' | 'sms' | 'email' | 'system',
     content: string
 ) {
-    const supabase = await createClient();
+    try {
+        const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: "Unauthorized" };
 
-    // Get tenant
-    const { data: userData } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
+        // Get tenant
+        const { data: userData } = await supabase
+            .from("users")
+            .select("tenant_id")
+            .eq("id", user.id)
+            .single();
 
-    if (!userData) throw new Error("User has no tenant");
+        if (!userData) return { success: false, error: "User has no tenant" };
 
-    const { error } = await supabase.from("contact_activities").insert({
-        contact_id: contactId,
-        tenant_id: userData.tenant_id,
-        type,
-        content,
-        created_by: user.id
-    });
+        const { error } = await supabase.from("contact_activities").insert({
+            contact_id: contactId,
+            tenant_id: userData.tenant_id,
+            type,
+            content,
+            created_by: user.id
+        });
 
-    if (error) throw new Error(error.message);
-    return { success: true };
+        if (error) return { success: false, error: error.message };
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: "Failed to create activity" };
+    }
 }
 
 export async function getContactViews() {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from("contact_views")
-        .select("*")
-        .order("created_at", { ascending: true });
+    try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from("contact_views")
+            .select("*")
+            .order("created_at", { ascending: true });
 
-    if (error) throw new Error(error.message);
-    return data;
+        if (error) return { success: false, error: error.message };
+        return { success: true, data };
+    } catch (e: any) {
+        return { success: false, error: "Failed to fetch views" };
+    }
 }
 
 export async function saveContactView(name: string, filters: any) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: "Unauthorized" };
 
-    const { data: userData } = await supabase
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
+        const { data: userData } = await supabase
+            .from("users")
+            .select("tenant_id")
+            .eq("id", user.id)
+            .single();
 
-    if (!userData) throw new Error("User has no tenant");
+        if (!userData) return { success: false, error: "User has no tenant" };
 
-    const { error } = await supabase.from("contact_views").insert({
-        tenant_id: userData.tenant_id,
-        name,
-        filters,
-        created_by: user.id
-    });
+        const { error } = await supabase.from("contact_views").insert({
+            tenant_id: userData.tenant_id,
+            name,
+            filters,
+            created_by: user.id
+        });
 
-    if (error) throw new Error(error.message);
-    revalidatePath("/dashboard/contacts");
-    return { success: true };
+        if (error) return { success: false, error: error.message };
+        revalidatePath("/dashboard/contacts");
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: "Failed to save view" };
+    }
 }
 
 export async function deleteContactView(id: string) {
-    const supabase = await createClient();
-    const { error } = await supabase.from("contact_views").delete().eq("id", id);
-    if (error) throw new Error(error.message);
-    revalidatePath("/dashboard/contacts");
-    return { success: true };
+    try {
+        const supabase = await createClient();
+        const { error } = await supabase.from("contact_views").delete().eq("id", id);
+        if (error) return { success: false, error: error.message };
+        revalidatePath("/dashboard/contacts");
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: "Failed to delete view" };
+    }
 }

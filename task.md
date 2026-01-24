@@ -56,6 +56,14 @@
 #### Day 9-10: Unified Inbox
 - [x] Create conversations table
 - [x] **Unified Inbox 2.0**: 3-pane layout, Internal Notes, Omnichannel support, Contact Context Sidebar.
+## Error Handling & Edge Cases
+- [x] Standardize Server Action Return Patterns (Contacts & Inbox)
+- [x] Implement Row-Level CSV Upload Validation & Feedback
+- [x] Add Empty State UIs & Loading Transitions (Frontend)
+- [x] Reinforced Tenant Ownership Security in Actions
+- [ ] Robust Form Validation: Ensure all dashboard forms use Zod with clear error messaging
+- [ ] Global Toast Integration: Ensure all server actions communicate failure via toasts
+- [ ] RLS/Permission Safety: Explicitly verify tenant ownership in server actions
 - [x] Integrate Telnyx SMS (send/receive)
 - [ ] Integrate Resend email
 - [x] Implement real-time updates (Supabase Realtime)
@@ -70,7 +78,7 @@
 #### Day 13-14: Polish & Testing
 - [ ] Onboarding wizard (3 steps)
 - [ ] Usage tracking for SMS
-- [ ] Error handling & edge cases
+- [x] Error handling & edge cases
 - [ ] End-to-end testing
 - [ ] Deploy to production
 

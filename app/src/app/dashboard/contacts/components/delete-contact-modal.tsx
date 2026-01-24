@@ -1,6 +1,7 @@
 import { Contact } from "@/types/contact";
 import { useState } from "react";
 import { deleteContact } from "../actions";
+import { toast } from "sonner";
 
 interface DeleteContactModalProps {
     isOpen: boolean;
@@ -16,12 +17,17 @@ export function DeleteContactModal({ isOpen, onClose, contact, onSuccess }: Dele
         if (!contact) return;
         setIsLoading(true);
         try {
-            await deleteContact(contact.id);
-            if (onSuccess) onSuccess();
-            onClose();
+            const result = await deleteContact(contact.id);
+            if (result.success) {
+                if (onSuccess) onSuccess();
+                onClose();
+                toast.success("Contact deleted");
+            } else {
+                toast.error(result.error || "Failed to delete contact");
+            }
         } catch (error) {
             console.error(error);
-            alert("Failed to delete contact");
+            toast.error("An unexpected error occurred");
         } finally {
             setIsLoading(false);
         }

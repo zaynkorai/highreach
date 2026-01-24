@@ -110,16 +110,25 @@ export function ContactSheet({ isOpen, onClose, contact }: ContactSheetProps) {
             };
 
             if (contact) {
-                await updateContact(contact.id, payload);
-                toast.success("Contact updated");
+                const result = await updateContact(contact.id, payload);
+                if (result.success) {
+                    toast.success("Contact updated");
+                    onClose();
+                } else {
+                    toast.error(result.error || "Failed to update contact");
+                }
             } else {
-                await createContact(payload);
-                toast.success("Contact created");
+                const result = await createContact(payload);
+                if (result.success) {
+                    toast.success("Contact created");
+                    onClose();
+                } else {
+                    toast.error(result.error || "Failed to create contact");
+                }
             }
-            onClose();
         } catch (error) {
             console.error(error);
-            toast.error("Something went wrong");
+            toast.error("An unexpected error occurred");
         } finally {
             setIsLoading(false);
         }

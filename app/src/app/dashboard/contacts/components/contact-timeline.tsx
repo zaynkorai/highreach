@@ -22,10 +22,15 @@ export function ContactTimeline({ contactId }: ContactTimelineProps) {
 
     const fetchActivities = async () => {
         try {
-            const data = await getContactActivities(contactId);
-            setActivities(data || []);
+            const result = await getContactActivities(contactId);
+            if (result.success) {
+                setActivities(result.data || []);
+            } else {
+                toast.error(result.error || "Failed to fetch activities");
+            }
         } catch (error) {
             console.error("Failed to fetch activities", error);
+            toast.error("An unexpected error occurred");
         } finally {
             setIsLoading(false);
         }
@@ -39,12 +44,16 @@ export function ContactTimeline({ contactId }: ContactTimelineProps) {
         if (!note.trim()) return;
         setIsSubmitting(true);
         try {
-            await createActivity(contactId, "note", note);
-            setNote("");
-            fetchActivities(); // Refresh list
-            toast.success("Note added");
+            const result = await createActivity(contactId, "note", note);
+            if (result.success) {
+                setNote("");
+                fetchActivities(); // Refresh list
+                toast.success("Note added");
+            } else {
+                toast.error(result.error || "Failed to add note");
+            }
         } catch (error) {
-            toast.error("Failed to add note");
+            toast.error("An unexpected error occurred");
         } finally {
             setIsSubmitting(false);
         }

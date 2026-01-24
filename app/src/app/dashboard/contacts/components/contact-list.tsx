@@ -122,12 +122,16 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
         if (!confirm(`Are you sure you want to delete ${selectedIds.size} contacts?`)) return;
 
         try {
-            await bulkDeleteContacts(Array.from(selectedIds));
-            toast.success(`Deleted ${selectedIds.size} contacts`);
-            setSelectedIds(new Set());
-            router.refresh();
+            const result = await bulkDeleteContacts(Array.from(selectedIds));
+            if (result.success) {
+                toast.success(`Deleted ${selectedIds.size} contacts`);
+                setSelectedIds(new Set());
+                router.refresh();
+            } else {
+                toast.error(result.error || "Failed to delete contacts");
+            }
         } catch (error) {
-            toast.error("Failed to delete contacts");
+            toast.error("An unexpected error occurred");
         }
     };
 
@@ -141,12 +145,16 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
         }
 
         try {
-            await bulkAddTags(Array.from(selectedIds), [tagToAdd]);
-            toast.success(`Added tag "${tagToAdd}" to ${selectedIds.size} contacts`);
-            setSelectedIds(new Set());
-            router.refresh();
+            const result = await bulkAddTags(Array.from(selectedIds), [tagToAdd]);
+            if (result.success) {
+                toast.success(`Added tag "${tagToAdd}" to ${selectedIds.size} contacts`);
+                setSelectedIds(new Set());
+                router.refresh();
+            } else {
+                toast.error(result.error || "Failed to add tags");
+            }
         } catch (error) {
-            toast.error("Failed to add tags");
+            toast.error("An unexpected error occurred");
         }
     };
 
@@ -170,19 +178,23 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
         };
 
         try {
-            await saveContactView(name, filters);
-            toast.success("Smart list saved");
-            router.refresh();
-            // Optimistic update
-            setSavedViews([...savedViews, {
-                id: crypto.randomUUID(), // Temp ID until refresh
-                tenant_id: "",
-                name,
-                filters,
-                created_at: new Date().toISOString()
-            } as any]);
+            const result = await saveContactView(name, filters);
+            if (result.success) {
+                toast.success("Smart list saved");
+                router.refresh();
+                // Optimistic update
+                setSavedViews([...savedViews, {
+                    id: crypto.randomUUID(), // Temp ID until refresh
+                    tenant_id: "",
+                    name,
+                    filters,
+                    created_at: new Date().toISOString()
+                } as any]);
+            } else {
+                toast.error(result.error || "Failed to save view");
+            }
         } catch (error) {
-            toast.error("Failed to save view");
+            toast.error("An unexpected error occurred");
         }
     };
 
@@ -207,13 +219,17 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
         if (!confirm("Delete this smart list?")) return;
 
         try {
-            await deleteContactView(id);
-            toast.success("Smart list deleted");
-            setSavedViews(savedViews.filter(v => v.id !== id));
-            if (activeViewId === id) handleSwitchView(null);
-            router.refresh();
+            const result = await deleteContactView(id);
+            if (result.success) {
+                toast.success("Smart list deleted");
+                setSavedViews(savedViews.filter(v => v.id !== id));
+                if (activeViewId === id) handleSwitchView(null);
+                router.refresh();
+            } else {
+                toast.error(result.error || "Failed to delete view");
+            }
         } catch (error) {
-            toast.error("Failed to delete view");
+            toast.error("An unexpected error occurred");
         }
     };
 

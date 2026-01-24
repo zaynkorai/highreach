@@ -13,7 +13,11 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [result, setResult] = useState<{ success: number; failed: number } | null>(null);
+    const [result, setResult] = useState<{
+        success: number;
+        failed: number;
+        details?: any[];
+    } | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -40,19 +44,20 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
 
         try {
             const response = await uploadCSV(formData);
-            if (response.error) {
-                setError(response.error);
-            } else {
+            if (response.success) {
                 setResult({
                     success: response.successCount || 0,
                     failed: response.failedCount || 0,
+                    details: response.details
                 });
                 if (response.successCount && response.successCount > 0) {
                     onSuccess();
                 }
+            } else {
+                setError(response.error || "Failed to upload CSV");
             }
         } catch (err: any) {
-            setError(err.message || "Failed to upload CSV");
+            setError(err.message || "An unexpected error occurred");
         } finally {
             setIsUploading(false);
         }
@@ -126,15 +131,15 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
                             </div>
                         </>
                     ) : (
-                        <div className="text-center space-y-6 py-4">
-                            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <div>
+                        <div className="text-center space-y-6 flex flex-col max-h-[70vh]">
+                            <div className="shrink-0 space-y-4">
+                                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
                                 <h3 className="text-xl font-bold text-foreground">Import Complete</h3>
-                                <div className="mt-2 flex justify-center gap-6 text-sm">
+                                <div className="flex justify-center gap-6 text-sm">
                                     <div className="flex flex-col">
                                         <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{result.success}</span>
                                         <span className="text-zinc-500">Imported</span>
@@ -145,9 +150,26 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
                                     </div>
                                 </div>
                             </div>
+
+                            {result.details && result.details.length > 0 && (
+                                <div className="flex-1 overflow-y-auto text-left border border-zinc-100 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 p-3 space-y-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-2 px-1">Row-level failures</p>
+                                    {result.details.map((detail, idx) => (
+                                        <div key={idx} className="text-xs p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                                            <span className="font-bold text-zinc-900 dark:text-zinc-200">Row {detail.row}:</span>
+                                            <span className="text-zinc-500 ml-1">
+                                                {Object.entries(detail.errors).map(([field, msgs]: [string, any]) =>
+                                                    `${field}: ${msgs.join(', ')}`
+                                                ).join('; ')}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <button
                                 onClick={onClose}
-                                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 rounded-lg transition-colors text-sm shadow-sm"
+                                className="shrink-0 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 rounded-lg transition-colors text-sm shadow-sm"
                             >
                                 Done
                             </button>
