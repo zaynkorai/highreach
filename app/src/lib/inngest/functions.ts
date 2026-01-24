@@ -52,8 +52,18 @@ export const leadFollowUp = inngest.createFunction(
 
         // Send welcome email
         await step.run("send-welcome-email", async () => {
-            // TODO: Implement Resend email
-            console.log(`Sending welcome email to ${contact_email}`);
+            if (!contact_email) return { status: "skipped", reason: "no-email" };
+
+            const { Resend } = await import("resend");
+            const resend = new Resend(process.env.RESEND_API_KEY);
+
+            await resend.emails.send({
+                from: "onboarding@resend.dev", // Use default testing domain or configured domain
+                to: contact_email,
+                subject: "Thanks for contacting us!",
+                html: `<p>Hi ${contact_name || "there"},</p><p>Thanks for reaching out. We've received your inquiry and will get back to you shortly.</p>`,
+            });
+
             return { status: "sent" };
         });
 
@@ -62,7 +72,11 @@ export const leadFollowUp = inngest.createFunction(
 
         // Send follow-up SMS
         await step.run("send-follow-up-sms", async () => {
-            // TODO: Implement Telnyx SMS
+            if (!contact_id) return { status: "skipped", reason: "no-contact-id" };
+
+            // TODO: Fetch contact phone number using contact_id if not in event payload
+            // For now, skipping if we don't have it easily or using a stored prop
+
             console.log(`Sending follow-up SMS to contact ${contact_id}`);
             return { status: "sent" };
         });
