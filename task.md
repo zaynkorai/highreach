@@ -18,7 +18,7 @@
 #### Day 1-2: Project Setup
 - [x] Initialize Next.js 15 project with App Router
 - [x] Configure Tailwind CSS
-- [ ] Set up Supabase project (dev + prod)
+- [x] Set up Supabase project (dev + prod)
 - [x] Configure environment variables
 - [ ] Set up Vercel deployment
 
@@ -31,7 +31,7 @@
 
 #### Day 5-6: Telnyx Integration
 - [x] Set up Telnyx account + sandbox
-- [ ] Provision phone numbers
+- [x] Provision phone numbers
 - [x] Implement missed call webhook
 - [x] Build "Missed Call Text-Back" automation
 - [ ] Test end-to-end missed call flow
@@ -46,17 +46,17 @@
 - [x] Import contacts from CSV
 
 #### Day 9-10: Unified Inbox
-- [ ] Create conversations table
-- [x] Integrate Telnyx SMS (send/receive) - *Partially via automation*
+- [x] Create conversations table
+- [x] Integrate Telnyx SMS (send/receive)
 - [ ] Integrate Resend email
-- [x] Build inbox UI (WhatsApp-style) - *Frontend Only*
-- [ ] Implement real-time updates (Supabase Realtime)
+- [x] Build inbox UI (WhatsApp-style)
+- [x] Implement real-time updates (Supabase Realtime)
 
 #### Day 11-12: Forms
-- [ ] Create forms table
-- [ ] Build simple form builder UI
-- [ ] Generate embeddable form code
-- [ ] Form submission → Contact creation
+- [x] Create forms table
+- [x] Build simple form builder UI
+- [x] Generate embeddable form code
+- [x] Form submission → Contact creation
 - [ ] Form submission → Conversation start
 
 #### Day 13-14: Polish & Testing

@@ -33,9 +33,73 @@ export const missedCallTextBack = inngest.createFunction(
 
         // Log the conversation
         await step.run("create-conversation", async () => {
-            // TODO: Create conversation in database
-            console.log(`Creating conversation for ${from_number}`);
-            return { conversation_id: "new-conversation" };
+            const { createAdminClient } = await import("@/lib/supabase/admin");
+            const supabase = createAdminClient();
+
+            // 1. Find or Create Contact
+            let contactId;
+            const { data: existingContact } = await supabase
+                .from("contacts")
+                .select("id")
+                .eq("phone", from_number)
+                .eq("tenant_id", tenant_id)
+                .single();
+
+            if (existingContact) {
+                contactId = existingContact.id;
+            } else {
+                const { data: newContact } = await supabase
+                    .from("contacts")
+                    .insert({
+                        tenant_id,
+                        phone: from_number,
+                        first_name: "Unknown",
+                        last_name: "Caller",
+                        source: "Missed Call"
+                    })
+                    .select()
+                    .single();
+                contactId = newContact?.id;
+            }
+
+            if (!contactId) throw new Error("Failed to resolve contact");
+
+            // 2. Find or Create Conversation
+            let conversationId;
+            const { data: existingConv } = await supabase
+                .from("conversations")
+                .select("id")
+                .eq("contact_id", contactId)
+                .eq("tenant_id", tenant_id)
+                .single();
+
+            if (existingConv) {
+                conversationId = existingConv.id;
+            } else {
+                const { data: newConv } = await supabase
+                    .from("conversations")
+                    .insert({
+                        tenant_id,
+                        contact_id: contactId,
+                        status: 'open',
+                        last_message_preview: "Missed Call Auto-Reply",
+                        last_message_at: new Date().toISOString()
+                    })
+                    .select()
+                    .single();
+                conversationId = newConv?.id;
+            }
+
+            // 3. Log Message
+            await supabase.from("messages").insert({
+                tenant_id,
+                conversation_id: conversationId,
+                direction: 'outbound',
+                channel: 'sms',
+                content: `Hey, it's ${tenant_name || "us"}! Sorry I missed your call. How can I help you?`
+            });
+
+            return { conversation_id: conversationId };
         });
     }
 );
