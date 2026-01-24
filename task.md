@@ -30,26 +30,26 @@
 - [x] Test tenant isolation
 
 #### Day 5-6: Telnyx Integration
-- [ ] Set up Telnyx account + sandbox
+- [x] Set up Telnyx account + sandbox
 - [ ] Provision phone numbers
-- [ ] Implement missed call webhook
-- [ ] Build "Missed Call Text-Back" automation
+- [x] Implement missed call webhook
+- [x] Build "Missed Call Text-Back" automation
 - [ ] Test end-to-end missed call flow
 
 ### Week 2: Core Features
 
 #### Day 7-8: CRM & Contacts
-- [ ] Create contacts table with RLS
-- [ ] Build contacts list UI
-- [ ] Implement add/edit/delete contacts
+- [x] Create contacts table with RLS
+- [x] Build contacts list UI
+- [x] Implement add/edit/delete contacts
 - [ ] Add tags functionality
-- [ ] Import contacts from CSV
+- [x] Import contacts from CSV
 
 #### Day 9-10: Unified Inbox
 - [ ] Create conversations table
-- [ ] Integrate Telnyx SMS (send/receive)
+- [x] Integrate Telnyx SMS (send/receive) - *Partially via automation*
 - [ ] Integrate Resend email
-- [ ] Build inbox UI (WhatsApp-style)
+- [x] Build inbox UI (WhatsApp-style) - *Frontend Only*
 - [ ] Implement real-time updates (Supabase Realtime)
 
 #### Day 11-12: Forms
