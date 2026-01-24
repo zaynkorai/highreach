@@ -10,5 +10,11 @@ export default async function ContactsPage() {
         .select("*")
         .order("created_at", { ascending: false });
 
-    return <ContactList initialContacts={contacts || []} />;
+    // Fetch saved views
+    const { data: savedViews } = await supabase
+        .from("contact_views")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+    return <ContactList initialContacts={contacts || []} initialViews={savedViews || []} />;
 }

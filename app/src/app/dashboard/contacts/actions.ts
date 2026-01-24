@@ -14,6 +14,8 @@ export async function createContact(data: CreateContactDTO) {
         lastName: data.last_name || "",
         email: data.email || "",
         phone: data.phone || "",
+        tags: data.tags || [],
+        source: data.source || "manual",
     });
 
     if (!validatedFields.success) {
@@ -45,7 +47,8 @@ export async function createContact(data: CreateContactDTO) {
         last_name: validatedFields.data.lastName || null,
         email: validatedFields.data.email || null,
         phone: validatedFields.data.phone || null,
-        source: "manual",
+        source: validatedFields.data.source || "manual",
+        tags: validatedFields.data.tags || [],
     });
 
     if (error) {
@@ -65,6 +68,8 @@ export async function updateContact(id: string, data: UpdateContactDTO) {
         lastName: data.last_name || "",
         email: data.email || "",
         phone: data.phone || "",
+        tags: data.tags || [],
+        source: data.source || "manual",
     });
 
     if (!validatedFields.success) {
@@ -78,6 +83,8 @@ export async function updateContact(id: string, data: UpdateContactDTO) {
             last_name: validatedFields.data.lastName || null,
             email: validatedFields.data.email || null,
             phone: validatedFields.data.phone || null,
+            tags: validatedFields.data.tags,
+            source: validatedFields.data.source,
         })
         .eq("id", id);
 
@@ -194,4 +201,149 @@ export async function uploadCSV(formData: FormData) {
 
     revalidatePath("/dashboard/contacts");
     return { success: true, successCount, failedCount };
+}
+
+export async function bulkDeleteContacts(ids: string[]) {
+    const supabase = await createClient();
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
+    const { error } = await supabase
+        .from("contacts")
+        .delete()
+        .in("id", ids);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    revalidatePath("/dashboard/contacts");
+    return { success: true };
+}
+
+export async function bulkAddTags(ids: string[], tags: string[]) {
+    const supabase = await createClient();
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error("Unauthorized");
+    }
+
+    // Fetch current tags for these contacts
+    const { data: contacts, error: fetchError } = await supabase
+        .from("contacts")
+        .select("id, tags")
+        .in("id", ids);
+
+    if (fetchError) throw new Error(fetchError.message);
+
+    const updates = contacts.map(contact => {
+        const currentTags = contact.tags || [];
+        const newTags = Array.from(new Set([...currentTags, ...tags]));
+        return supabase
+            .from("contacts")
+            .update({ tags: newTags })
+            .eq("id", contact.id);
+    });
+
+    await Promise.all(updates);
+
+    revalidatePath("/dashboard/contacts");
+    return { success: true };
+}
+
+export async function getContactActivities(contactId: string) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from("contact_activities")
+        .select("*")
+        .eq("contact_id", contactId)
+        .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+export async function createActivity(
+    contactId: string,
+    type: 'note' | 'call_log' | 'sms' | 'email' | 'system',
+    content: string
+) {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Get tenant
+    const { data: userData } = await supabase
+        .from("users")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+
+    if (!userData) throw new Error("User has no tenant");
+
+    const { error } = await supabase.from("contact_activities").insert({
+        contact_id: contactId,
+        tenant_id: userData.tenant_id,
+        type,
+        content,
+        created_by: user.id
+    });
+
+    if (error) throw new Error(error.message);
+    return { success: true };
+}
+
+export async function getContactViews() {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from("contact_views")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+export async function saveContactView(name: string, filters: any) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    const { data: userData } = await supabase
+        .from("users")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+
+    if (!userData) throw new Error("User has no tenant");
+
+    const { error } = await supabase.from("contact_views").insert({
+        tenant_id: userData.tenant_id,
+        name,
+        filters,
+        created_by: user.id
+    });
+
+    if (error) throw new Error(error.message);
+    revalidatePath("/dashboard/contacts");
+    return { success: true };
+}
+
+export async function deleteContactView(id: string) {
+    const supabase = await createClient();
+    const { error } = await supabase.from("contact_views").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+    revalidatePath("/dashboard/contacts");
+    return { success: true };
 }

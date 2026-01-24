@@ -6,6 +6,8 @@ interface ContactState {
     contacts: Contact[];
     selectedContactId: string | null;
     searchQuery: string;
+    filterSource: string | "all";
+    filterTags: string[];
 
     actions: {
         setContacts: (contacts: Contact[]) => void;
@@ -14,6 +16,8 @@ interface ContactState {
         deleteContact: (id: string) => void;
         setSelectedContactId: (id: string | null) => void;
         setSearchQuery: (query: string) => void;
+        setFilterSource: (source: string | "all") => void;
+        setFilterTags: (tags: string[]) => void;
     };
 }
 
@@ -21,6 +25,8 @@ export const useContactStore = create<ContactState>((set) => ({
     contacts: [],
     selectedContactId: null,
     searchQuery: "",
+    filterSource: "all",
+    filterTags: [],
 
     actions: {
         setContacts: (contacts) => set({ contacts }),
@@ -40,20 +46,16 @@ export const useContactStore = create<ContactState>((set) => ({
         setSelectedContactId: (id) => set({ selectedContactId: id }),
 
         setSearchQuery: (query) => set({ searchQuery: query }),
+        setFilterSource: (source) => set({ filterSource: source }),
+        setFilterTags: (tags) => set({ filterTags: tags }),
     },
 }));
 
 export const useContactActions = () => useContactStore((state) => state.actions);
 export const useContacts = () => useContactStore((state) => state.contacts);
 export const useContactSearchQuery = () => useContactStore((state) => state.searchQuery);
-export const useFilteredContacts = () => useContactStore((state) => {
-    const query = state.searchQuery.toLowerCase();
-    if (!query) return state.contacts;
+export const useFilterSource = () => useContactStore((state) => state.filterSource);
+export const useFilterTags = () => useContactStore((state) => state.filterTags);
 
-    return state.contacts.filter(c =>
-        (c.first_name?.toLowerCase().includes(query)) ||
-        (c.last_name?.toLowerCase().includes(query)) ||
-        (c.email?.toLowerCase().includes(query)) ||
-        (c.phone?.toLowerCase().includes(query))
-    );
-});
+// Removed useFilteredContacts to prevent infinite loops.
+// Use useContacts + useContactFilters + useContactSearchQuery in component with useMemo.

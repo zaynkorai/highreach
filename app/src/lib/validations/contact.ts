@@ -9,6 +9,8 @@ export const contactSchema = z.object({
         .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format (E.164)")
         .optional()
         .or(z.literal("")),
+    tags: z.array(z.string()).optional(),
+    source: z.string().optional(),
 });
 
 export type ContactFormData = z.infer<typeof contactSchema>;

@@ -42,8 +42,16 @@
 - [x] Create contacts table with RLS
 - [x] Build contacts list UI
 - [x] Implement add/edit/delete contacts
-- [ ] Add tags functionality
+- [x] Add tags functionality
 - [x] Import contacts from CSV
+- [x] **Contacts 2.0 Overhaul**
+    - [x] Smart Filter Bar (Search + Source + Tags)
+    - [x] Tags Management (Create/View/Assign)
+    - [x] Slide-Over Drawer for Contact Details
+    - [x] Visual Polish (Avatars, Typography)
+    - [x] **Activity Timeline**: Notes, call logs, and interaction history in the contact drawer (fixes "hard to see history" complaint).
+    - [x] **Bulk Actions**: Select multiple -> Mass Tag, Mass Delete (fixes "tedious management" complaint).
+    - [x] **Saved Smart Lists**: Save current filters as a quick-access tab (fixes "repetitive filtering" complaint).
 
 #### Day 9-10: Unified Inbox
 - [x] Create conversations table
