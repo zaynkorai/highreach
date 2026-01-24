@@ -6,6 +6,7 @@ import { Contact } from "@/types/contact";
 import { ContactFormModal } from "./contact-form-modal";
 import { DeleteContactModal } from "./delete-contact-modal";
 import { CsvImportModal } from "./csv-import-modal";
+import { useContactStore, useContactActions, useFilteredContacts } from "@/stores/contact-store";
 
 interface ContactListProps {
     initialContacts: Contact[];
@@ -13,18 +14,28 @@ interface ContactListProps {
 
 export function ContactList({ initialContacts }: ContactListProps) {
     const router = useRouter();
-    const [contacts, setContacts] = useState<Contact[]>(initialContacts);
+
+    // Zustand Store
+    const contacts = useContactStore((state) => state.contacts);
+    const { setContacts, setSelectedContactId } = useContactActions();
+    const filteredContacts = useFilteredContacts();
+
+    // Local UI state
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
 
     // State for the contact being edited or deleted
+    // We could use store's selectedContactId, but for now keeping the full object here 
+    // or we can sync it. Let's stick to local for the modal interaction to minimize refactor risk
+    // unless we want to use the store's selected ID strictly. 
+    // Let's use local state for the modal's *target* but update store's selected ID for consistency if needed.
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
-    // Sync contacts when initialContacts prop updates (e.g. after router.refresh())
+    // Sync contacts when initialContacts prop updates
     useEffect(() => {
         setContacts(initialContacts);
-    }, [initialContacts]);
+    }, [initialContacts, setContacts]);
 
     const handleRefresh = () => {
         router.refresh();
@@ -32,16 +43,19 @@ export function ContactList({ initialContacts }: ContactListProps) {
 
     const handleOpenCreate = () => {
         setSelectedContact(null);
+        setSelectedContactId(null);
         setIsFormOpen(true);
     };
 
     const handleOpenEdit = (contact: Contact) => {
         setSelectedContact(contact);
+        setSelectedContactId(contact.id);
         setIsFormOpen(true);
     };
 
     const handleOpenDelete = (contact: Contact) => {
         setSelectedContact(contact);
+        setSelectedContactId(contact.id);
         setIsDeleteOpen(true);
     };
 
@@ -88,7 +102,7 @@ export function ContactList({ initialContacts }: ContactListProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-white/[0.08]">
-                            {contacts.length === 0 ? (
+                            {filteredContacts.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-16 text-center">
                                         <div className="flex flex-col items-center justify-center">
@@ -105,7 +119,7 @@ export function ContactList({ initialContacts }: ContactListProps) {
                                     </td>
                                 </tr>
                             ) : (
-                                contacts.map((contact) => (
+                                filteredContacts.map((contact) => (
                                     <tr key={contact.id} className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">

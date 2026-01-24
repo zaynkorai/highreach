@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Conversation, Message } from "@/types/inbox";
 import { getMessages, sendMessage } from "./actions";
 import { createClient } from "@/lib/supabase/client";
+import { useInboxStore, useInboxActions } from "@/stores/inbox-store";
 
 interface InboxClientProps {
     initialConversations: Conversation[];
@@ -13,69 +14,55 @@ interface InboxClientProps {
 export function InboxClient({ initialConversations, tenantId }: InboxClientProps) {
     const supabase = createClient();
 
-    const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
-    const [selectedId, setSelectedId] = useState<string | null>(initialConversations[0]?.id || null);
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    // Zustand Store
+    const conversations = useInboxStore((state) => state.conversations);
+    const selectedId = useInboxStore((state) => state.selectedId);
+    const messages = useInboxStore((state) => state.messages);
+    const isLoadingMessages = useInboxStore((state) => state.isLoadingMessages);
+
+    const {
+        setConversations,
+        setSelectedId,
+        setMessages,
+        addMessage,
+        updateConversation,
+        setIsLoadingMessages
+    } = useInboxActions();
+
+    // Local state for input only
     const [newMessage, setNewMessage] = useState("");
 
     // Derived state
     const selectedConversation = conversations.find(c => c.id === selectedId);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Initial load and Realtime subscriptions
+    // 1. Hydrate Store on Mount
+    useEffect(() => {
+        setConversations(initialConversations);
+        if (initialConversations.length > 0 && !selectedId) {
+            setSelectedId(initialConversations[0].id);
+        }
+    }, [initialConversations, setConversations, selectedId, setSelectedId]);
+
+    // 2. Realtime Subscriptions
     useEffect(() => {
         const channel = supabase
             .channel('inbox-updates')
-            // 1. New Messages (Update Active Chat)
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'messages', filter: `tenant_id=eq.${tenantId}` },
                 (payload) => {
                     const newMsg = payload.new as Message;
-
-                    // If it belongs to current chat, append it
-                    if (newMsg.conversation_id === selectedId) {
-                        setMessages((prev) => {
-                            // Deduplicate optimistic messages if needed, though usually IDs differ
-                            // For now just append
-                            return [...prev, newMsg];
-                        });
-                    }
+                    // Store handles deduplication and selectedId check if we want
+                    addMessage(newMsg, newMsg.conversation_id);
                 }
             )
-            // 2. Conversation Updates (Update List: preview, unread count, timestamp)
             .on(
                 'postgres_changes',
                 { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `tenant_id=eq.${tenantId}` },
                 (payload) => {
                     const updatedConv = payload.new as Conversation;
-                    setConversations((prev) => {
-                        return prev.map(c => {
-                            if (c.id === updatedConv.id) {
-                                return {
-                                    ...c,
-                                    ...updatedConv,
-                                    contact: c.contact // Preserve joined contact data
-                                };
-                            }
-                            return c;
-                        }).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
-                    });
-                }
-            )
-            // 3. New Conversation (Inbound SMS from new contact)
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'conversations', filter: `tenant_id=eq.${tenantId}` },
-                (payload) => {
-                    // We need to fetch the full conversation with contact info
-                    // For now, simpler to just trigger a re-fetch of all or silence it
-                    // Let's optimistically add it but we lack contact info. 
-                    // Best approach: Re-fetch conversations list?
-                    // Or just ignore for MVP and let refresh handle it.
-                    // The user asked to "continue", so polishing this is good.
-                    // Let's leave it for now to avoid complexity in this step.
+                    updateConversation(updatedConv);
                 }
             )
             .subscribe();
@@ -83,9 +70,9 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [tenantId, selectedId, supabase]);
+    }, [tenantId, supabase, addMessage, updateConversation]);
 
-    // Fetch messages when conversation selected
+    // 3. Fetch Messages when Conversation Selected
     useEffect(() => {
         if (!selectedId) return;
 
@@ -94,15 +81,15 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
             .then(setMessages)
             .catch(console.error)
             .finally(() => setIsLoadingMessages(false));
-    }, [selectedId]);
+    }, [selectedId, setMessages, setIsLoadingMessages]);
 
-    // Auto-scroll to bottom
+    // 4. Auto-scroll
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
     const handleSendMessage = async () => {
-        if (!newMessage.trim() || !selectedId) return;
+        if (!newMessage.trim() || !selectedId || !selectedConversation) return;
 
         const content = newMessage;
         setNewMessage(""); // Optimistic clear
@@ -110,7 +97,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
         // Optimistic append
         const optimisticMsg: Message = {
             id: "temp-" + Date.now(),
-            tenant_id: selectedConversation!.tenant_id,
+            tenant_id: selectedConversation.tenant_id,
             conversation_id: selectedId,
             direction: 'outbound',
             channel: 'sms',
@@ -119,14 +106,17 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
             sent_at: new Date().toISOString(),
             created_at: new Date().toISOString()
         };
-        setMessages(prev => [...prev, optimisticMsg]);
+
+        // Directly add to store
+        // We pass conversationId because our store action might want to check generic logic, 
+        // though here we know it matches selectedId.
+        addMessage(optimisticMsg, selectedId);
 
         try {
             await sendMessage(selectedId, content);
-            // Real one will arrive via subscription or we could replace temp here
+            // Real message will come via subscription
         } catch (error) {
             console.error("Failed to send", error);
-            // Ideally show toast and revert optimistic
         }
     };
 
