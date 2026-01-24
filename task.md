@@ -52,7 +52,7 @@
 - [x] Build inbox UI (WhatsApp-style)
 - [x] Implement real-time updates (Supabase Realtime)
 
-#### Day 11-12: Forms
+#### Day 11-12: Forms (See [`forms.md`](./forms.md))
 - [x] Create forms table
 - [x] Build simple form builder UI
 - [x] Generate embeddable form code
@@ -61,7 +61,6 @@
 
 #### Day 13-14: Polish & Testing
 - [ ] Onboarding wizard (3 steps)
-- [ ] Plumber industry template
 - [ ] Usage tracking for SMS
 - [ ] Error handling & edge cases
 - [ ] End-to-end testing
