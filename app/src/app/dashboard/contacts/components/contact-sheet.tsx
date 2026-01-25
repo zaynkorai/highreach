@@ -263,7 +263,7 @@ export function ContactSheet({ isOpen, onClose, contact }: ContactSheetProps) {
                                     <Button variant="outline" type="button" onClick={onClose}>
                                         Cancel
                                     </Button>
-                                    <Button type="submit" disabled={isLoading} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         {contact ? "Save Changes" : "Create Contact"}
                                     </Button>

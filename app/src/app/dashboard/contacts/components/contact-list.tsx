@@ -324,7 +324,7 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
                     </Button>
                     <Button
                         onClick={handleOpenCreate}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
                         <Plus className="mr-2 h-4 w-4" /> Add Contact
                     </Button>
@@ -567,7 +567,7 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-bold border border-emerald-200 dark:border-emerald-500/20">
+                                                <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-200 dark:border-indigo-500/20">
                                                     {contact.first_name[0]}
                                                     {contact.last_name?.[0]}
                                                 </div>
@@ -617,7 +617,7 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleOpenEdit(contact)}
-                                                    className="h-8 w-8 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                                                    className="h-8 w-8 text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

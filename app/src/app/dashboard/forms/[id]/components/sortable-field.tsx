@@ -102,7 +102,7 @@ export function SortableField({ field, isSelected, onSelect, onDelete }: Sortabl
                     disabled
                     className="w-full py-3 text-white font-medium text-sm transition-colors text-center"
                     style={{
-                        backgroundColor: '#22c55e', // Hardcoded green match for "Button"
+                        backgroundColor: '#6366f1', // Hardcoded indigo match for "Button"
                         borderRadius: `${theme?.borderRadius || 4}px`
                     }}
                 >

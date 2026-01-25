@@ -55,7 +55,7 @@ export function LogicEditor() {
                 <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Conditional Logic</h3>
                 <button
                     onClick={addRule}
-                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
                 >
                     + Add Rule
                 </button>
@@ -77,7 +77,7 @@ export function LogicEditor() {
                                 <select
                                     value={rule.action}
                                     onChange={(e) => updateRuleAction(rIndex, e.target.value as 'show' | 'hide')}
-                                    className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                    className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                 >
                                     <option value="show">Show</option>
                                     <option value="hide">Hide</option>
@@ -97,7 +97,7 @@ export function LogicEditor() {
                                 <select
                                     value={condition.fieldId}
                                     onChange={(e) => updateCondition(rIndex, cIndex, { fieldId: e.target.value })}
-                                    className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                    className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                 >
                                     <option value="" disabled>Select a field</option>
                                     {availableFields.map(f => (
@@ -109,7 +109,7 @@ export function LogicEditor() {
                                     <select
                                         value={condition.operator}
                                         onChange={(e) => updateCondition(rIndex, cIndex, { operator: e.target.value as LogicOperator })}
-                                        className="w-1/3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                        className="w-1/3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                     >
                                         <option value="equals">is equal to</option>
                                         <option value="not_equals">is not equal to</option>
@@ -122,7 +122,7 @@ export function LogicEditor() {
                                         value={condition.value}
                                         onChange={(e) => updateCondition(rIndex, cIndex, { value: e.target.value })}
                                         placeholder="Value..."
-                                        className="flex-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                        className="flex-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                     />
                                 </div>
                             </div>

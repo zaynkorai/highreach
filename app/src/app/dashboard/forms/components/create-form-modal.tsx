@@ -69,16 +69,16 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
                         <div
                             onClick={() => setSelection('scratch')}
                             className={`relative cursor-pointer group border-2 rounded-xl p-6 transition-all ${selection === 'scratch'
-                                ? 'border-emerald-500 bg-emerald-50/10'
-                                : 'border-zinc-200 dark:border-white/10 hover:border-emerald-500/50 hover:bg-zinc-50 dark:hover:bg-white/5'
+                                ? 'border-indigo-500 bg-indigo-50/10'
+                                : 'border-zinc-200 dark:border-white/10 hover:border-indigo-500/50 hover:bg-zinc-50 dark:hover:bg-white/5'
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                                <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                 </div>
-                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selection === 'scratch' ? 'border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
-                                    {selection === 'scratch' && <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />}
+                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selection === 'scratch' ? 'border-indigo-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                                    {selection === 'scratch' && <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />}
                                 </div>
                             </div>
                             <h3 className="font-bold text-foreground mb-1">Start from Scratch</h3>
@@ -89,13 +89,13 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
                         <div
                             onClick={() => setSelection('templates')}
                             className={`relative cursor-pointer group border-2 rounded-xl p-0 overflow-hidden transition-all ${selection === 'templates'
-                                ? 'border-emerald-500'
-                                : 'border-zinc-200 dark:border-white/10 hover:border-emerald-500/50'
+                                ? 'border-indigo-500'
+                                : 'border-zinc-200 dark:border-white/10 hover:border-indigo-500/50'
                                 }`}
                         >
                             <div className="absolute top-4 right-4 z-10">
-                                <div className={`w-5 h-5 rounded-full border bg-white dark:bg-zinc-800 flex items-center justify-center ${selection === 'templates' ? 'border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
-                                    {selection === 'templates' && <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />}
+                                <div className={`w-5 h-5 rounded-full border bg-white dark:bg-zinc-800 flex items-center justify-center ${selection === 'templates' ? 'border-indigo-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                                    {selection === 'templates' && <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />}
                                 </div>
                             </div>
                             <div className="h-32 bg-zinc-100 dark:bg-zinc-800 relative">
@@ -133,7 +133,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         placeholder="e.g. Website Contact Form"
-                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                                     />
                                 </div>
                                 <div>
@@ -145,7 +145,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         placeholder="Internal notes..."
-                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                                     />
                                 </div>
                             </div>
@@ -163,7 +163,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50"
+                            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50"
                         >
                             {isLoading ? "Creating..." : "Create"}
                         </button>

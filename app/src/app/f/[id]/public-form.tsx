@@ -78,7 +78,7 @@ export function PublicForm({ form }: PublicFormProps) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-zinc-50 p-4">
                 <div className="bg-white p-8 rounded-2xl shadow-sm text-center max-w-md w-full border border-zinc-200">
-                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     </div>
                     <h2 className="text-2xl font-bold text-zinc-900 mb-2">Thank You!</h2>
@@ -89,7 +89,7 @@ export function PublicForm({ form }: PublicFormProps) {
     }
 
     const theme = form.theme || {
-        primaryColor: "#10b981",
+        primaryColor: "#6366f1",
         backgroundColor: "#ffffff",
         textColor: "#000000",
         borderRadius: 8,

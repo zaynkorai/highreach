@@ -207,7 +207,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                     <div className="flex items-center justify-between">
                         <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Inbox</h1>
                         <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
-                            <Sparkles className="h-4 w-4 text-emerald-500" />
+                            <Sparkles className="h-4 w-4 text-indigo-500" />
                         </Button>
                     </div>
 
@@ -217,7 +217,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                             placeholder="Filter by name..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-9 bg-zinc-50 dark:bg-zinc-900 border-none focus-visible:ring-emerald-500/20"
+                            className="pl-9 h-9 bg-zinc-50 dark:bg-zinc-900 border-none focus-visible:ring-indigo-500/20"
                         />
                     </div>
 
@@ -241,7 +241,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                 onClick={() => setSelectedId(conv.id)}
                                 className={cn(
                                     "p-4 cursor-pointer transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 flex gap-3 relative",
-                                    selectedId === conv.id && "bg-emerald-50/50 dark:bg-emerald-500/5 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-emerald-500"
+                                    selectedId === conv.id && "bg-indigo-50/50 dark:bg-indigo-500/5 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-indigo-500"
                                 )}
                             >
                                 <div className="relative shrink-0">
@@ -273,7 +273,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                 </div>
                                 {conv.unread_count > 0 && (
                                     <div className="self-center ml-2">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
+                                        <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/50" />
                                     </div>
                                 )}
                             </div>
@@ -291,7 +291,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                 <Button variant="ghost" size="icon" className="sm:hidden -ml-2">
                                     <ArrowLeft className="h-5 w-5" />
                                 </Button>
-                                <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-bold border border-emerald-200 dark:border-emerald-500/20">
+                                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-200 dark:border-indigo-500/20">
                                     {getInitials(selectedConversation.contact)}
                                 </div>
                                 <div className="min-w-0">
@@ -299,7 +299,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                         {selectedConversation.contact?.first_name} {selectedConversation.contact?.last_name}
                                     </h2>
                                     <div className="flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                                         <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">Online</span>
                                     </div>
                                 </div>
@@ -334,7 +334,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button variant="ghost" size="icon" className="rounded-full">
-                                                <Phone className="h-4 w-4 text-zinc-400 hover:text-emerald-500" />
+                                                <Phone className="h-4 w-4 text-zinc-400 hover:text-indigo-500" />
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>Start Voice Call</TooltipContent>
@@ -343,7 +343,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className={cn("rounded-full", sidebarOpen && "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10")}
+                                    className={cn("rounded-full", sidebarOpen && "text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10")}
                                     onClick={() => setSidebarOpen(!sidebarOpen)}
                                 >
                                     <Info className="h-4 w-4 shrink-0" />
@@ -385,7 +385,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                                     msg.is_internal
                                                         ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 text-amber-900 dark:text-amber-200 italic"
                                                         : msg.direction === "outbound"
-                                                            ? "bg-emerald-600 dark:bg-emerald-600 text-white rounded-br-none"
+                                                            ? "bg-indigo-600 dark:bg-indigo-600 text-white rounded-br-none"
                                                             : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-bl-none"
                                                 )}>
                                                     {msg.is_internal && (
@@ -397,7 +397,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                                     <p className="leading-relaxed">{msg.content}</p>
                                                     <div className={cn(
                                                         "flex items-center gap-1.5 mt-1.5 flex-row-reverse",
-                                                        msg.direction === "outbound" ? "text-emerald-100" : "text-zinc-400"
+                                                        msg.direction === "outbound" ? "text-indigo-100" : "text-zinc-400"
                                                     )}>
                                                         <span className="text-[9px] font-bold">{formatTime(msg.created_at)}</span>
                                                         {msg.direction === "outbound" && !msg.is_internal && <CheckCheck className="h-3 w-3" />}
@@ -416,7 +416,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                             <div className="flex items-center gap-2 mb-2 px-1">
                                 <Tabs value={isInternalNote ? "internal" : "message"} onValueChange={(val) => setIsInternalNote(val === "internal")} className="w-auto">
                                     <TabsList className="bg-transparent border border-zinc-200 dark:border-zinc-800 h-7 p-0 gap-0">
-                                        <TabsTrigger value="message" className="h-7 text-[10px] uppercase font-bold rounded-none data-[state=active]:bg-emerald-500 data-[state=active]:text-white px-3">Message</TabsTrigger>
+                                        <TabsTrigger value="message" className="h-7 text-[10px] uppercase font-bold rounded-none data-[state=active]:bg-indigo-500 data-[state=active]:text-white px-3">Message</TabsTrigger>
                                         <TabsTrigger value="internal" className="h-7 text-[10px] uppercase font-bold rounded-none data-[state=active]:bg-amber-500 data-[state=active]:text-white px-3">Internal Note</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
@@ -434,7 +434,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                     onChange={(e) => setNewMessage(e.target.value)}
                                     placeholder={isInternalNote ? "Type an internal note (only team sees this)..." : "Type a message..."}
                                     className={cn(
-                                        "w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl pl-4 pr-16 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none shadow-sm",
+                                        "w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl pl-4 pr-16 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none shadow-sm",
                                         isInternalNote && "focus:ring-amber-500/20 focus:border-amber-500 bg-amber-50/30 dark:bg-amber-900/5"
                                     )}
                                     onKeyDown={(e) => {
@@ -445,7 +445,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                     }}
                                 />
                                 <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10">
                                         <Paperclip className="h-4 w-4" />
                                     </Button>
                                     <Button
@@ -455,7 +455,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                             "h-8 w-8 rounded-xl transition-all shadow-md active:scale-90 p-0",
                                             isInternalNote
                                                 ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20"
-                                                : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20"
+                                                : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20"
                                         )}
                                     >
                                         <Send className="h-4 w-4" />
@@ -465,15 +465,15 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
 
                             {/* Smart Tools Footer */}
                             <div className="flex items-center gap-4 mt-3 px-1 text-zinc-500">
-                                <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider hover:text-emerald-500 transition-colors">
+                                <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider hover:text-indigo-500 transition-colors">
                                     <Smile className="h-3.5 w-3.5" />
                                     Emoji
                                 </button>
-                                <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider hover:text-emerald-500 transition-colors">
+                                <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider hover:text-indigo-500 transition-colors">
                                     <Sparkles className="h-3.5 w-3.5" />
                                     AI Draft
                                 </button>
-                                <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider hover:text-emerald-500 transition-colors ml-auto">
+                                <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider hover:text-indigo-500 transition-colors ml-auto">
                                     <Clock className="h-3.5 w-3.5" />
                                     Schedule Send
                                 </button>
@@ -496,7 +496,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
                         {/* Profile Header */}
                         <div className="p-8 flex flex-col items-center text-center border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/30 dark:bg-zinc-900/20">
-                            <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-emerald-500/10 mb-4 border-4 border-white dark:border-zinc-950">
+                            <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-indigo-500/10 mb-4 border-4 border-white dark:border-zinc-950">
                                 {getInitials(selectedConversation.contact)}
                             </div>
                             <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
@@ -539,11 +539,11 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                                     <h4 className="text-[10px] font-bold uppercase tracking-[0.1em] text-zinc-400 flex items-center gap-2">
                                         <Tag className="h-3 w-3" /> Recent Tags
                                     </h4>
-                                    <Plus className="h-3 w-3 text-zinc-400 cursor-pointer hover:text-emerald-500" />
+                                    <Plus className="h-3 w-3 text-zinc-400 cursor-pointer hover:text-indigo-500" />
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     {(selectedConversation.contact?.tags || ['Warm Lead', 'Enterprise', 'Follow-up']).map(tag => (
-                                        <Badge key={tag} variant="secondary" className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase tracking-tight">
+                                        <Badge key={tag} variant="secondary" className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-none px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase tracking-tight">
                                             {tag}
                                         </Badge>
                                     ))}

@@ -57,11 +57,11 @@ export function DashboardSidebar() {
             {/* Logo */}
             <div className="p-4 border-b border-zinc-100 dark:border-white/[0.08]">
                 <Link href="/dashboard" className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shadow-sm shadow-emerald-500/20">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center shadow-sm shadow-indigo-500/20">
                         <span className="text-white font-bold text-sm">G</span>
                     </div>
                     <span className="text-lg font-semibold text-foreground">
-                        GHL<span className="text-emerald-500">Lite</span>
+                        GHL<span className="text-indigo-500">Lite</span>
                     </span>
                 </Link>
             </div>
@@ -77,11 +77,11 @@ export function DashboardSidebar() {
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive
-                                ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
                                 : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
                                 }`}
                         >
-                            <span className={isActive ? "text-emerald-500 dark:text-emerald-400" : ""}>
+                            <span className={isActive ? "text-indigo-500 dark:text-indigo-400" : ""}>
                                 {icons[item.icon]}
                             </span>
                             <span>{item.label}</span>

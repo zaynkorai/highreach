@@ -57,7 +57,7 @@ export function ShareModal({ isOpen, onClose, formId }: ShareModalProps) {
                             />
                             <button
                                 onClick={() => copyToClipboard(publicUrl, false)}
-                                className="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap"
+                                className="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap"
                             >
                                 {copiedLink ? "Copied!" : "Copy Link"}
                             </button>

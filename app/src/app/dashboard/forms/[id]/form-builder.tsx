@@ -102,7 +102,7 @@ const ELEMENT_CATEGORIES: { title: string; items: SidebarItem[] }[] = [
 ];
 
 const PRESET_THEMES = [
-    { id: 'emerald', label: 'Emerald (Default)', primary: '#10b981', bg: '#ffffff', text: '#000000', font: 'modern' },
+    { id: 'indigo', label: 'Galaxy Blue (Default)', primary: '#1e1b4b', bg: '#ffffff', text: '#000000', font: 'modern' },
     { id: 'midnight', label: 'Midnight Ocean', primary: '#3b82f6', bg: '#0f172a', text: '#ffffff', font: 'sans' },
     { id: 'elegant', label: 'Classic Elegant', primary: '#c084fc', bg: '#faf5ff', text: '#1e1b4b', font: 'serif' },
     { id: 'professional', label: 'Graphite Pro', primary: '#0f172a', bg: '#f8fafc', text: '#0f172a', font: 'mono' },
@@ -173,7 +173,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                 setTheme(form.theme);
             } else {
                 setTheme({
-                    primaryColor: "#10b981",
+                    primaryColor: "#6366f1",
                     backgroundColor: "#ffffff",
                     textColor: "#000000",
                     borderRadius: 8,
@@ -272,7 +272,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                     <div>
                         <div className="flex items-center gap-3 text-sm mb-1">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${form.status === 'active'
-                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400'
                                 : 'bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-400'
                                 }`}>
                                 {form.status}
@@ -286,8 +286,8 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                 )}
                                 {saveStatus === 'saved' && (
                                     <>
-                                        <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        <span className="text-emerald-600 dark:text-emerald-400">Saved</span>
+                                        <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                        <span className="text-indigo-600 dark:text-indigo-400">Saved</span>
                                     </>
                                 )}
                                 {saveStatus === 'error' && (
@@ -361,7 +361,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                     <button
                         onClick={handlePublish}
                         disabled={isSaving}
-                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                        className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
                     >
                         Publish
                     </button>
@@ -385,7 +385,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                                     key={i}
                                                     disabled={item.disabled}
                                                     onClick={() => !item.disabled && addField(item.type as FormFieldType)}
-                                                    className="flex flex-col items-center justify-center gap-2 p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-lg hover:border-emerald-500 hover:shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group h-24"
+                                                    className="flex flex-col items-center justify-center gap-2 p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-lg hover:border-indigo-500 hover:shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group h-24"
                                                 >
                                                     <span className="text-2xl opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all">{item.icon}</span>
                                                     <span className="text-[10px] font-medium text-zinc-600 dark:text-zinc-300 text-center leading-tight">{item.label}</span>
@@ -416,7 +416,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                                     textColor: p.text,
                                                     fontFamily: p.font as any
                                                 })}
-                                                className="group w-full flex items-center gap-3 p-2 rounded-lg border border-zinc-100 dark:border-white/5 hover:border-emerald-500/50 transition-all text-left"
+                                                className="group w-full flex items-center gap-3 p-2 rounded-lg border border-zinc-100 dark:border-white/5 hover:border-indigo-500/50 transition-all text-left"
                                             >
                                                 <div className="flex -space-x-1.5">
                                                     <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: p.primary }}></div>
@@ -467,7 +467,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                         step="1"
                                         value={theme?.borderRadius || 8}
                                         onChange={(e) => updateTheme({ borderRadius: parseInt(e.target.value) })}
-                                        className="w-full accent-emerald-500"
+                                        className="w-full accent-indigo-500"
                                     />
                                 </div>
 
@@ -484,7 +484,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                                 key={font.id}
                                                 onClick={() => updateTheme({ fontFamily: font.id as any })}
                                                 className={`px-3 py-2 text-xs rounded-lg border transition-all text-left ${theme?.fontFamily === font.id
-                                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400'
                                                     : 'border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
                                                     }`}
                                             >
@@ -567,7 +567,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                             <button
                                                 onClick={() => updateField(selectedField.id, { width: '100%' })}
                                                 className={`flex-1 py-1.5 text-xs font-medium rounded border transition-all ${(!selectedField.width || selectedField.width === '100%')
-                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 ring-1 ring-emerald-500/20'
+                                                    ? 'bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30 ring-1 ring-indigo-500/20'
                                                     : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/10 hover:border-zinc-300'
                                                     }`}
                                             >
@@ -576,7 +576,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                             <button
                                                 onClick={() => updateField(selectedField.id, { width: '50%' })}
                                                 className={`flex-1 py-1.5 text-xs font-medium rounded border transition-all ${selectedField.width === '50%'
-                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 ring-1 ring-emerald-500/20'
+                                                    ? 'bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30 ring-1 ring-indigo-500/20'
                                                     : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/10 hover:border-zinc-300'
                                                     }`}
                                             >
@@ -591,7 +591,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                             type="text"
                                             value={selectedField.label}
                                             onChange={(e) => updateField(selectedField.id, { label: e.target.value })}
-                                            className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+                                            className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
                                         />
                                     </div>
 
@@ -602,7 +602,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                                 type="text"
                                                 value={selectedField.placeholder || ''}
                                                 onChange={(e) => updateField(selectedField.id, { placeholder: e.target.value })}
-                                                className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+                                                className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
                                             />
                                         </div>
                                     )}
@@ -613,7 +613,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                             type="text"
                                             value={selectedField.helperText || ''}
                                             onChange={(e) => updateField(selectedField.id, { helperText: e.target.value })}
-                                            className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+                                            className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
                                             placeholder="Small hint text below field"
                                         />
                                     </div>
@@ -629,7 +629,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                                 </div>
                                                 <button
                                                     onClick={() => addOption(selectedField.id)}
-                                                    className="text-xs text-emerald-500 hover:text-emerald-600 font-medium"
+                                                    className="text-xs text-indigo-500 hover:text-indigo-600 font-medium"
                                                 >
                                                     + Add Option
                                                 </button>
@@ -642,7 +642,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                                             value={option.label}
                                                             onChange={(e) => updateOption(selectedField.id, index, { label: e.target.value, value: e.target.value })}
                                                             placeholder="Option Label"
-                                                            className="flex-1 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-emerald-500"
+                                                            className="flex-1 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-indigo-500"
                                                         />
                                                         <button
                                                             onClick={() => deleteOption(selectedField.id, index)}
@@ -666,7 +666,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                                 type="checkbox"
                                                 checked={selectedField.required}
                                                 onChange={(e) => updateField(selectedField.id, { required: e.target.checked })}
-                                                className="w-4 h-4 text-emerald-500 rounded border-zinc-300 focus:ring-emerald-500"
+                                                className="w-4 h-4 text-indigo-500 rounded border-zinc-300 focus:ring-indigo-500"
                                             />
                                         </div>
                                     </div>

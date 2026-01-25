@@ -85,7 +85,7 @@ export function ContactTimeline({ contactId }: ContactTimelineProps) {
                         placeholder="Add a note..."
                         value={note}
                         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNote(e.target.value)}
-                        className="min-h-[80px] pr-12 resize-none bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus-visible:ring-emerald-500"
+                        className="min-h-[80px] pr-12 resize-none bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus-visible:ring-indigo-500"
                         onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();
@@ -96,7 +96,7 @@ export function ContactTimeline({ contactId }: ContactTimelineProps) {
                     <Button
                         size="icon"
                         variant="ghost"
-                        className="absolute bottom-2 right-2 h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400"
+                        className="absolute bottom-2 right-2 h-8 w-8 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"
                         onClick={handleSubmitNote}
                         disabled={isSubmitting || !note.trim()}
                     >

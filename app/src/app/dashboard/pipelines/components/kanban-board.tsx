@@ -90,8 +90,8 @@ export function KanbanBoard({ contacts }: KanbanBoardProps) {
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Pipelines</h1>
-                        <div className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20 flex items-center gap-1.5">
-                            <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                        <div className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-wider border border-indigo-500/20 flex items-center gap-1.5">
+                            <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
                             Live
                         </div>
                     </div>
@@ -151,7 +151,7 @@ export function KanbanBoard({ contacts }: KanbanBoardProps) {
                                             {stage.opportunities.length}
                                         </div>
                                     </div>
-                                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">
                                         ${stage.totalValue.toLocaleString()} Total
                                     </span>
                                 </div>

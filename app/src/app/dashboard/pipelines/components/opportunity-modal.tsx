@@ -92,7 +92,7 @@ export function OpportunityModal({ isOpen, onClose, contacts, stages, onSuccess,
                         <p className="text-sm text-zinc-400 font-medium">Capture a new deal and assign it to a stage.</p>
                     </DialogHeader>
                     {/* Decorative element */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[60px] rounded-full -mr-16 -mt-16" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-[60px] rounded-full -mr-16 -mt-16" />
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6 bg-white dark:bg-zinc-950">
@@ -154,7 +154,7 @@ export function OpportunityModal({ isOpen, onClose, contacts, stages, onSuccess,
                                 <Input
                                     id="value"
                                     type="number"
-                                    className="h-12 bg-zinc-50 dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.08] rounded-xl font-bold text-emerald-600 dark:text-emerald-400"
+                                    className="h-12 bg-zinc-50 dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.08] rounded-xl font-bold text-indigo-600 dark:text-indigo-400"
                                     {...register("value", { valueAsNumber: true })}
                                 />
                             </div>

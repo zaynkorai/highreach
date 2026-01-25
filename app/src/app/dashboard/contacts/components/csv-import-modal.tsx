@@ -95,7 +95,7 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
                                     onChange={handleFileChange}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
-                                <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-3">
+                                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-3">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                     </svg>
@@ -124,7 +124,7 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
                                 <button
                                     onClick={handleUpload}
                                     disabled={!file || isUploading}
-                                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 rounded-lg transition-colors text-sm shadow-sm opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2.5 rounded-lg transition-colors text-sm shadow-sm opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isUploading ? "Uploading..." : "Import Contacts"}
                                 </button>
@@ -133,7 +133,7 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
                     ) : (
                         <div className="text-center space-y-6 flex flex-col max-h-[70vh]">
                             <div className="shrink-0 space-y-4">
-                                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+                                <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto">
                                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
@@ -141,7 +141,7 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
                                 <h3 className="text-xl font-bold text-foreground">Import Complete</h3>
                                 <div className="flex justify-center gap-6 text-sm">
                                     <div className="flex flex-col">
-                                        <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{result.success}</span>
+                                        <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{result.success}</span>
                                         <span className="text-zinc-500">Imported</span>
                                     </div>
                                     <div className="flex flex-col">
@@ -169,7 +169,7 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
 
                             <button
                                 onClick={onClose}
-                                className="shrink-0 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 rounded-lg transition-colors text-sm shadow-sm"
+                                className="shrink-0 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2.5 rounded-lg transition-colors text-sm shadow-sm"
                             >
                                 Done
                             </button>
