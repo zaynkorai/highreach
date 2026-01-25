@@ -92,15 +92,13 @@ export async function submitForm(formId: string, formData: FormData) {
     }
 
     // 6. Trigger Automation
+    // 6. Trigger Automation
     await inngest.send({
-        name: "form/submitted",
+        name: "form.submitted",
         data: {
             tenant_id: form.tenant_id,
             form_id: form.id,
-            contact_id: contactId,
-            contact_email: email,
-            contact_name: fullName,
-            submission_data: submissionData
+            submission_id: "pending", // TODO: Fetch from actual insert
         }
     });
 

@@ -1,151 +1,332 @@
 import { inngest } from "./client";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { telnyx } from "@/lib/telnyx";
 
-// Missed Call Text-Back Workflow
-export const missedCallTextBack = inngest.createFunction(
-    { id: "missed-call-text-back", retries: 3 },
-    { event: "call/missed" },
+// ============ GENERIC WORKFLOW ENGINE ============
+
+// 1. Event Fan-out: Listens to core events and dispatches workflow executions
+export const processEvent = inngest.createFunction(
+    { id: "process-event-fanout" },
+    [
+        { event: "contact.created" },
+        { event: "form.submitted" },
+        { event: "appointment.booked" },
+        { event: "call.missed" }
+    ],
     async ({ event, step }) => {
-        const { tenant_id, from_number, to_number, tenant_name } = event.data;
+        const supabase = createAdminClient();
 
-        // Wait 30 seconds before sending (in case they call back)
-        await step.sleep("wait-before-text", "30s");
+        // Find all published workflows that match this trigger
+        const workflows = await step.run("find-matching-workflows", async () => {
+            const { data } = await supabase
+                .from("workflows")
+                .select("id, tenant_id")
+                .eq("status", "published")
+                .eq("trigger_type", event.name);
 
-        // Send SMS via Telnyx
-        await step.run("send-sms", async () => {
-            const { telnyx } = await import("@/lib/telnyx"); // Dynamic import to avoid env checks at build time if needed, or just standard import
+            if (!data) return [];
 
-            console.log(
-                `Sending missed call text to ${from_number} for tenant ${tenant_id}`
-            );
+            // FETCH DEFINITIONS TO CHECK FILTERS (Smart Triggers)
+            // Real production app would index filters, for now we filter in-memory for the matched set
+            const workflowsWithFilters = await Promise.all(data.map(async (wf) => {
+                const { data: version } = await supabase
+                    .from("workflow_versions")
+                    .select("definition")
+                    .eq("workflow_id", wf.id)
+                    .eq("is_published", true)
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .single();
 
-            // Default message if tenant_name is missing
-            const name = tenant_name || "us";
-            const text = `Hey, it's ${name}! Sorry I missed your call. How can I help you?`;
+                return { ...wf, definition: version?.definition };
+            }));
 
+            return workflowsWithFilters.filter(wf => {
+                if (!wf.definition) return false;
+                const triggerNode = wf.definition.nodes?.find((n: any) => n.type === "trigger");
+                const filter = triggerNode?.data?.filter || triggerNode?.filter; // Support both structures
+
+                if (!filter) return true; // No filter = all pass
+
+                // Evaluate filter (Simple key-value match for now)
+                return Object.entries(filter).every(([key, val]) => {
+                    const actualVal = getByDotNotation(event.data, key);
+                    return String(actualVal) === String(val);
+                });
+            });
+        });
+
+        if (!workflows || workflows.length === 0) return { matched: 0 };
+
+        // Trigger execution for each workflow
+        const events = workflows.map(wf => ({
+            name: "workflow.execute" as const,
+            data: {
+                workflow_id: wf.id,
+                tenant_id: wf.tenant_id,
+                original_event: event,
+                trigger_data: event.data
+            }
+        }));
+
+        await step.sendEvent("dispatch-executions", events);
+
+        return { matched: workflows.length, workflow_ids: workflows.map(w => w.id) };
+    }
+);
+
+// 2. Workflow Executor: The core interpreter
+export const executeWorkflow = inngest.createFunction(
+    { id: "workflow-executor", retries: 0 }, // Retries handled per step
+    { event: "workflow.execute" },
+    async ({ event, step }) => {
+        const { workflow_id, tenant_id, trigger_data } = event.data;
+        const supabase = createAdminClient();
+
+        // Load the workflow definition (latest published version)
+        const workflowData = await step.run("load-workflow-definition", async () => {
+            // Get latest published version
+            const { data: version } = await supabase
+                .from("workflow_versions")
+                .select("id, definition")
+                .eq("workflow_id", workflow_id)
+                .eq("is_published", true)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .single();
+
+            if (!version) throw new Error("No published version found");
+            return { definition: version.definition, version_id: version.id };
+        });
+
+        if (!workflowData?.definition) return { error: "Definition not found" };
+
+        const { definition, version_id } = workflowData;
+        const { nodes, edges } = definition;
+
+        // 3. Create Execution Record
+        const execution_id = await step.run("create-execution-log", async () => {
+            const { data } = await supabase
+                .from("workflow_executions")
+                .insert({
+                    workflow_id,
+                    version_id,
+                    tenant_id,
+                    trigger_data,
+                    status: 'running'
+                })
+                .select('id')
+                .single();
+            return data?.id;
+        });
+
+        // Find Start Node (Trigger)
+        const startNode = nodes.find((n: any) => n.type === "trigger");
+        if (!startNode) {
+            if (execution_id) await supabase.from("workflow_executions").update({ status: 'failed', error_message: 'No trigger node' }).eq('id', execution_id);
+            return { error: "No trigger node" };
+        }
+
+        let currentNode = startNode;
+
+        // Traversal Loop (Simplified for linear paths, handle branching conceptually)
+        // In Inngest, deep loops are risky, but for <50 steps it's fine.
+        // For distinct steps, we wrap logic in step.run()
+        const maxSteps = 50;
+        let stepCount = 0;
+
+        while (currentNode && stepCount < maxSteps) {
+            stepCount++;
+
+            // Find next node(s)
+            const outboundEdges = edges.filter((e: any) => e.source === currentNode.id);
+            if (outboundEdges.length === 0) break; // End of path
+
+            // Default: Take the first edge (unless branching)
+            let nextEdge = outboundEdges[0];
+
+            // EXECUTE CURRENT NODE LOGIC
+            // (We skip trigger execution as it already happened)
+
+            // Move to Next Node
+            const nextNodeId = nextEdge.target;
+            const nextNode = nodes.find((n: any) => n.id === nextNodeId);
+
+            if (!nextNode) break;
+
+            // HANDLE NODE TYPES
+            if (nextNode.type === "action") {
+                await step.run(`action-${nextNode.id}`, async () => {
+                    await executeAction(nextNode, trigger_data, tenant_id);
+                });
+            } else if (nextNode.type === "wait") {
+                // Wait step logic
+                const { duration, unit } = nextNode.data;
+                const ms = convertToMs(duration, unit);
+                await step.sleep(`wait-${nextNode.id}`, ms); // e.g. "30s"
+            } else if (nextNode.type === "if_else") {
+                // Evaluate condition
+                const result = await step.run(`logic-${nextNode.id}`, async () => {
+                    return evaluateCondition(nextNode.data, trigger_data);
+                });
+
+                // Choose edge based on result
+                const yesEdge = outboundEdges.find((e: any) => e.sourceHandle === "yes");
+                const noEdge = outboundEdges.find((e: any) => e.sourceHandle === "no");
+                nextEdge = result ? yesEdge : noEdge;
+
+                // Stop if branch leads nowhere
+                if (!nextEdge) break;
+
+                const branchTargetNode = nodes.find((n: any) => n.id === nextEdge.target);
+                if (branchTargetNode) {
+                    currentNode = branchTargetNode;
+                    continue;
+                } else {
+                    break;
+                }
+            }
+
+            currentNode = nextNode;
+        }
+
+        // Finalize Execution Record
+        if (execution_id) {
+            await step.run("finalize-execution", async () => {
+                await supabase
+                    .from("workflow_executions")
+                    .update({
+                        status: 'completed',
+                        completed_at: new Date().toISOString()
+                    })
+                    .eq('id', execution_id);
+            });
+        }
+
+        return { status: "completed", steps_executed: stepCount, execution_id };
+    }
+);
+
+// Helpers
+async function executeAction(node: any, triggerData: any, tenantId: string) {
+    const supabase = createAdminClient();
+    const actionId = node.data.actionId;
+    const config = node.data;
+
+    console.log(`Executing Action: ${actionId}`, config);
+
+    switch (actionId) {
+        case "send_sms": {
+            const to = triggerData.contact?.phone || triggerData.phone;
+            if (!to) throw new Error("No phone number found for SMS");
+
+            // 1. Get Tenant SMS Config (The source number)
+            const { data: tenant } = await supabase.from("tenants").select("sms_number").eq("id", tenantId).single();
+            if (!tenant?.sms_number) throw new Error("Tenant has no SMS number configured");
+
+            // 2. Format Template
+            const message = formatTemplate(config.template, triggerData);
+
+            // 3. Send via Telnyx
             await (telnyx.messages as any).create({
-                from: to_number,
-                to: from_number,
-                text,
+                from: tenant.sms_number,
+                to,
+                text: message
             });
 
-            return { status: "sent" };
-        });
-
-        // Log the conversation
-        await step.run("create-conversation", async () => {
-            const { createAdminClient } = await import("@/lib/supabase/admin");
-            const supabase = createAdminClient();
-
-            // 1. Find or Create Contact
-            let contactId;
-            const { data: existingContact } = await supabase
-                .from("contacts")
-                .select("id")
-                .eq("phone", from_number)
-                .eq("tenant_id", tenant_id)
-                .single();
-
-            if (existingContact) {
-                contactId = existingContact.id;
-            } else {
-                const { data: newContact } = await supabase
-                    .from("contacts")
-                    .insert({
-                        tenant_id,
-                        phone: from_number,
-                        first_name: "Unknown",
-                        last_name: "Caller",
-                        source: "Missed Call"
-                    })
-                    .select()
-                    .single();
-                contactId = newContact?.id;
+            // 4. Log Communication
+            if (triggerData.contact?.id) {
+                await supabase.from("contact_activities").insert({
+                    contact_id: triggerData.contact.id,
+                    tenant_id: tenantId,
+                    type: "sms_sent",
+                    content: message,
+                    metadata: { provider: "telnyx", workflow_node_id: node.id }
+                });
             }
+            break;
+        }
 
-            if (!contactId) throw new Error("Failed to resolve contact");
+        case "add_tag": {
+            const contactId = triggerData.contact?.id || triggerData.id;
+            const newTag = config.tag;
+            if (!contactId || !newTag) return;
 
-            // 2. Find or Create Conversation
-            let conversationId;
-            const { data: existingConv } = await supabase
-                .from("conversations")
-                .select("id")
-                .eq("contact_id", contactId)
-                .eq("tenant_id", tenant_id)
-                .single();
+            const { data: contact } = await supabase.from("contacts").select("tags").eq("id", contactId).single();
+            const currentTags = Array.isArray(contact?.tags) ? contact.tags : [];
 
-            if (existingConv) {
-                conversationId = existingConv.id;
-            } else {
-                const { data: newConv } = await supabase
-                    .from("conversations")
-                    .insert({
-                        tenant_id,
-                        contact_id: contactId,
-                        status: 'open',
-                        last_message_preview: "Missed Call Auto-Reply",
-                        last_message_at: new Date().toISOString()
-                    })
-                    .select()
-                    .single();
-                conversationId = newConv?.id;
+            if (!currentTags.includes(newTag)) {
+                await supabase.from("contacts")
+                    .update({ tags: [...currentTags, newTag] })
+                    .eq("id", contactId);
             }
+            break;
+        }
 
-            // 3. Log Message
-            await supabase.from("messages").insert({
-                tenant_id,
-                conversation_id: conversationId,
-                direction: 'outbound',
-                channel: 'sms',
-                content: `Hey, it's ${tenant_name || "us"}! Sorry I missed your call. How can I help you?`
-            });
+        case "update_opportunity": {
+            const opportunityId = triggerData.opportunity?.id || triggerData.id;
+            if (!opportunityId) return;
 
-            return { conversation_id: conversationId };
-        });
+            const updates: any = {};
+            if (config.status) updates.status = config.status;
+            if (config.pipeline_stage_id) updates.pipeline_stage_id = config.pipeline_stage_id;
+
+            await supabase.from("opportunities")
+                .update(updates)
+                .eq("id", opportunityId);
+            break;
+        }
+
+        default:
+            console.warn(`Action type ${actionId} not implemented yet`);
     }
-);
+}
 
-// Lead Follow-Up Workflow
-export const leadFollowUp = inngest.createFunction(
-    { id: "lead-follow-up", retries: 3 },
-    { event: "form/submitted" },
-    async ({ event, step }) => {
-        const { tenant_id, contact_id, contact_email, contact_name } = event.data;
+function getByDotNotation(obj: any, path: string) {
+    return path.split('.').reduce((prev, curr) => prev?.[curr], obj);
+}
 
-        // Wait 2 minutes
-        await step.sleep("wait-2-min", "2m");
+function formatTemplate(template: string, data: any) {
+    if (!template) return "";
+    return template.replace(/\{\{(.*?)\}\}/g, (match, path) => {
+        const value = getByDotNotation(data, path.trim());
+        return value !== undefined ? String(value) : match;
+    });
+}
 
-        // Send welcome email
-        await step.run("send-welcome-email", async () => {
-            if (!contact_email) return { status: "skipped", reason: "no-email" };
+function evaluateCondition(config: any, data: any): boolean {
+    const { field, operator, value } = config;
+    if (!field || !operator) return false;
 
-            const { Resend } = await import("resend");
-            const resend = new Resend(process.env.RESEND_API_KEY);
-
-            await resend.emails.send({
-                from: "onboarding@resend.dev", // Use default testing domain or configured domain
-                to: contact_email,
-                subject: "Thanks for contacting us!",
-                html: `<p>Hi ${contact_name || "there"},</p><p>Thanks for reaching out. We've received your inquiry and will get back to you shortly.</p>`,
-            });
-
-            return { status: "sent" };
-        });
-
-        // Wait 1 day
-        await step.sleep("wait-1-day", "1d");
-
-        // Send follow-up SMS
-        await step.run("send-follow-up-sms", async () => {
-            if (!contact_id) return { status: "skipped", reason: "no-contact-id" };
-
-            // TODO: Fetch contact phone number using contact_id if not in event payload
-            // For now, skipping if we don't have it easily or using a stored prop
-
-            console.log(`Sending follow-up SMS to contact ${contact_id}`);
-            return { status: "sent" };
-        });
+    // 1. Get raw value from data using dot-notation (e.g. contact.email)
+    // The data usually comes in as { contact: { ... }, event: { ... } } or just flat
+    const parts = field.split('.');
+    let actualValue: any = data;
+    for (const part of parts) {
+        actualValue = actualValue?.[part];
     }
-);
 
-// Export all functions
-export const functions = [missedCallTextBack, leadFollowUp];
+    const strValue = String(actualValue || "").toLowerCase();
+    const compareValue = String(value || "").toLowerCase();
+
+    // 2. Evaluate based on operator
+    switch (operator) {
+        case "equals": return strValue === compareValue;
+        case "not_equals": return strValue !== compareValue;
+        case "contains": return strValue.includes(compareValue);
+        case "does_not_contain": return !strValue.includes(compareValue);
+        case "starts_with": return strValue.startsWith(compareValue);
+        case "is_empty": return !actualValue || strValue.trim() === "";
+        case "is_not_empty": return !!actualValue && strValue.trim() !== "";
+        default: return false;
+    }
+}
+
+function convertToMs(duration: number, unit: string) {
+    // Inngest sleep accepts strings like "1h", "30s"
+    // We'll return that string format
+    const u = unit === "minutes" ? "m" : unit === "seconds" ? "s" : unit === "hours" ? "h" : "d";
+    return `${duration}${u}`;
+}
+
+export const functions = [processEvent, executeWorkflow];

@@ -147,13 +147,13 @@ export async function POST(req: Request) {
 
             // Trigger Inngest event
             await inngest.send({
-                name: "call/missed",
+                name: "call.missed",
                 data: {
-                    tenant_id: tenant.id,
-                    tenant_name: tenant.name,
+                    call_control_id: payload.call_control_id, // Ensure this exists or pass something
                     from_number: from,
                     to_number: to,
-                    hangup_cause,
+                    tenant_id: tenant.id,
+                    direction: direction,
                 },
             });
 

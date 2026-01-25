@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { opportunitySchema, OpportunityFormData } from "@/lib/validations/opportunity";
+import { inngest } from "@/lib/inngest/client";
 
 export async function getPipelines() {
     try {
@@ -222,12 +223,30 @@ export async function updateOpportunityStatus(id: string, status: 'won' | 'lost'
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { success: false, error: "Unauthorized" };
 
+        const { data: oppData, error: fetchError } = await supabase
+            .from("opportunities")
+            .select("tenant_id, pipeline_stage_id")
+            .eq("id", id)
+            .single();
+
+        if (fetchError || !oppData) return { success: false, error: "Opportunity not found" };
+
         const { error } = await supabase
             .from("opportunities")
             .update({ status })
             .eq("id", id);
 
         if (error) return { success: false, error: error.message };
+
+        await inngest.send({
+            name: "opportunity.stage_changed",
+            data: {
+                opportunity_id: id,
+                tenant_id: oppData.tenant_id,
+                stage_id: oppData.pipeline_stage_id,
+                status,
+            },
+        });
 
         revalidatePath("/dashboard/pipelines");
         return { success: true };

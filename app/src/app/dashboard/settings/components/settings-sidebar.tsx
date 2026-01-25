@@ -22,8 +22,8 @@ export function SettingsSidebar() {
                         key={tab.id}
                         href={tab.href}
                         className={`block w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
-                                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-foreground"
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                            : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-foreground"
                             }`}
                     >
                         {tab.label}

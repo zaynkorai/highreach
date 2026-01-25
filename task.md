@@ -106,7 +106,25 @@
         - [x] **High-Grade UI Polish**: Refined Kanban board, Glassmorphism cards, and premium headers.
         - [x] **Production Stability**: Verified all routes and auth flows via `pnpm build`.
 - [ ] **Calendar & Booking**
-- [ ] Workflow automations (Inngest)
+- [x] **Workflow Automations (Inngest)** (Workflow Builder Pro)
+    - [x] **Step 1: Inngest Setup**
+        - [x] Install Inngest SDK and Next.js integration.
+        - [x] Configure Inngest client and signing key.
+        - [x] Create API route `/api/inngest`.
+        - [x] Set up local dev server (`npx inngest-cli`).
+    - [x] **Step 2: Core Triggers**
+        - [x] Define event schema (e.g., `contact.created`, `form.submitted`, `pipeline.stage_changed`).
+        - [x] Implement event dispatching in existing Server Actions.
+    - [x] **Step 3: Automation Flow Engine**
+        - [x] **Graph Interpreter**: Built a recursive execution engine that handles `Action`, `Wait`, and `If/Else` logic paths.
+        - [x] **Database Integration**: Persisted workflow graphs and immutable versions for safe execution.
+        - [x] **Event Fan-out**: Implemented global listener that triggers multiple workflows based on specific events.
+    - [x] **Step 4: Premium UI/UX (Pro Builder)**
+        - [x] **3-Column Layout**: Element Library | Infinite Canvas | Slide-over Inspector.
+        - [x] **Drag & Drop**: Direct canvas integration from the elements library.
+        - [x] **Variable Picker**: Seamless injection of contact/entity data into automation templates.
+        - [x] **Canvas Polish**: Added MiniMap, Controls, and Animated Edges for flow visualization.
+        - [x] **Command Center**: Polished dashboard with KPI cards, Search, and Status filtering.
 - [ ] Reputation Management (Google Reviews)
 - [ ] Webhooks
 - [ ] Referral program

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { CreateContactDTO, UpdateContactDTO } from "@/types/contact";
 import { contactSchema } from "@/lib/validations/contact";
+import { inngest } from "@/lib/inngest/client";
 
 export async function createContact(data: CreateContactDTO) {
     try {
@@ -54,6 +55,17 @@ export async function createContact(data: CreateContactDTO) {
 
         if (error) {
             return { success: false, error: error.message };
+        }
+
+        if (insertedData) {
+            await inngest.send({
+                name: "contact.created",
+                data: {
+                    contact_id: insertedData.id,
+                    tenant_id: userData.tenant_id,
+                    source: insertedData.source || "manual",
+                },
+            });
         }
 
         revalidatePath("/dashboard/contacts");
