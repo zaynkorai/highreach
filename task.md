@@ -123,8 +123,11 @@
         - [x] **3-Column Layout**: Element Library | Infinite Canvas | Slide-over Inspector.
         - [x] **Drag & Drop**: Direct canvas integration from the elements library.
         - [x] **Variable Picker**: Seamless injection of contact/entity data into automation templates.
-        - [x] **Canvas Polish**: Added MiniMap, Controls, and Animated Edges for flow visualization.
-        - [x] **Command Center**: Polished dashboard with KPI cards, Search, and Status filtering.
+        - [x] **Human Friendly UI**: Bezier curves, smart snapping, and compact node design.
+        - [x] **Execution Control Room**: Side-over history logs with per-lead audit trails and status tracking.
+        - [x] **Smart Branching**: Logic engine with Yes/No dual-path support and rule builder.
+        - [x] **Lifecycle Management**: Draft vs. Live versioning with an immutable snapshot "Publish" system.
+        - [x] **Functional Actions**: Connected the engine to real SMS (Telnyx), Tagging, and Pipeline updates.
 - [ ] Reputation Management (Google Reviews)
 - [ ] Webhooks
 - [ ] Referral program

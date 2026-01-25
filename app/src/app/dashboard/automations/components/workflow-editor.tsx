@@ -30,7 +30,7 @@ import "@xyflow/react/dist/style.css";
 import {
     Zap, Clock, MessageSquare, ArrowRight, Plus, Flag, Phone, Mail,
     ChevronLeft, Save, MousePointer2, X, Trash2, Copy, AlertCircle,
-    GitBranch, CheckSquare, FileText, PhoneMissed, Calendar, Tag, UserPlus, Target, Bell
+    GitBranch, CheckSquare, FileText, PhoneMissed, Calendar, Tag, UserPlus, Target, Bell, History as HistoryIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,8 @@ import { TRIGGERS, ACTIONS } from "../lib/workflow-types";
 import { TriggerPanel, ActionPanel, WaitConfigPanel, IfElseConfigPanel } from "./selection-panels";
 import { saveWorkflow, publishWorkflow } from "../actions";
 import { EditorSidebar } from "./editor-sidebar";
+import { WorkflowHistory } from "./workflow-history";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // ... (Icon mapping and Helper functions remain same)
 const iconMap: Record<string, any> = { Zap, Clock, MessageSquare, ArrowRight, Plus, Flag, Phone, Mail };
@@ -291,6 +293,7 @@ export function WorkflowEditor({ workflowId, workflowName, initialDefinition }: 
     const [name, setName] = useState(workflowName);
     const [isSaving, setIsSaving] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
+    const [activeTab, setActiveTab] = useState<"builder" | "history">("builder");
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [inspectorView, setInspectorView] = useState<"none" | "trigger" | "action" | "wait" | "condition">("none");
     const [insertEdgeId, setInsertEdgeId] = useState<string | null>(null);
@@ -433,6 +436,18 @@ export function WorkflowEditor({ workflowId, workflowName, initialDefinition }: 
                             <span className="text-[10px] text-muted-foreground">{isSaving ? "Saving..." : "All changes saved"}</span>
                         </div>
                     </div>
+
+                    <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="absolute left-1/2 -translate-x-1/2">
+                        <TabsList className="h-9 bg-zinc-100 dark:bg-zinc-800">
+                            <TabsTrigger value="builder" className="px-6 text-xs gap-2">
+                                <Zap className="w-3 h-3" /> Builder
+                            </TabsTrigger>
+                            <TabsTrigger value="history" className="px-6 text-xs gap-2">
+                                <HistoryIcon className="w-3 h-3" /> History
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={handleSave} disabled={isSaving || isPublishing}>
                             <Save className="w-3.5 h-3.5 mr-2" /> {isSaving ? "Saving..." : "Save"}
@@ -443,50 +458,58 @@ export function WorkflowEditor({ workflowId, workflowName, initialDefinition }: 
                     </div>
                 </header>
 
-                <div className="flex-1 flex overflow-hidden">
-                    {/* LEFT: Library */}
-                    <EditorSidebar />
+                <div className="flex-1 flex overflow-hidden relative">
+                    {activeTab === "builder" ? (
+                        <>
+                            {/* LEFT: Library */}
+                            <EditorSidebar />
 
-                    {/* CENTER: Canvas */}
-                    <div className="flex-1 relative">
-                        <EditorCanvas
-                            nodes={nodes} edges={edgesWithHandler}
-                            onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
-                            onConnect={(p: Connection) => setEdges(eds => addEdge({ ...p, type: 'smart', animated: true }, eds))}
-                            onNodeClick={handleNodeClick}
-                            onPaneClick={handlePaneClick}
-                            setNodes={setNodes}
-                        />
-                    </div>
+                            {/* CENTER: Canvas */}
+                            <div className="flex-1 relative">
+                                <EditorCanvas
+                                    nodes={nodes} edges={edgesWithHandler}
+                                    onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+                                    onConnect={(p: Connection) => setEdges(eds => addEdge({ ...p, type: 'smart', animated: true }, eds))}
+                                    onNodeClick={handleNodeClick}
+                                    onPaneClick={handlePaneClick}
+                                    setNodes={setNodes}
+                                />
+                            </div>
 
-                    {/* RIGHT: Inspector (Slide-over) */}
-                    {(inspectorView !== "none" || insertEdgeId) && (
-                        <div className="w-[400px] border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col shadow-2xl z-20 animate-in slide-in-from-right duration-300">
-                            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50">
-                                <h3 className="font-semibold text-sm">
-                                    {inspectorView === "trigger" && "Configure Trigger"}
-                                    {inspectorView === "action" && (insertEdgeId ? "Select Action" : "Edit Action")}
-                                    {inspectorView === "wait" && "Wait Settings"}
-                                    {inspectorView === "condition" && "Condition"}
-                                </h3>
-                                <div className="flex items-center gap-1">
-                                    {selectedNode && (
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={handleDeleteNode}>
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </Button>
-                                    )}
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePaneClick}>
-                                        <X className="w-4 h-4" />
-                                    </Button>
+                            {/* RIGHT: Inspector (Slide-over) */}
+                            {(inspectorView !== "none" || insertEdgeId) && (
+                                <div className="w-[400px] border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col shadow-2xl z-20 animate-in slide-in-from-right duration-300">
+                                    <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50">
+                                        <h3 className="font-semibold text-sm">
+                                            {inspectorView === "trigger" && "Configure Trigger"}
+                                            {inspectorView === "action" && (insertEdgeId ? "Select Action" : "Edit Action")}
+                                            {inspectorView === "wait" && "Wait Settings"}
+                                            {inspectorView === "condition" && "Condition"}
+                                        </h3>
+                                        <div className="flex items-center gap-1">
+                                            {selectedNode && (
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={handleDeleteNode}>
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </Button>
+                                            )}
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePaneClick}>
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto">
+                                        {inspectorView === "trigger" && <TriggerPanel onSelect={(id) => { /* Update trigger logic */ handlePaneClick(); }} onClose={handlePaneClick} />}
+                                        {inspectorView === "action" && <ActionPanel onSave={handleActionPanelSave} onClose={handlePaneClick} />}
+                                        {inspectorView === "wait" && <WaitConfigPanel onSave={(config: any) => { /* Update wait */ handlePaneClick(); }} onClose={handlePaneClick} />}
+                                        {inspectorView === "condition" && <IfElseConfigPanel onSave={(config: any) => { /* Update logic */ handlePaneClick(); }} onClose={handlePaneClick} />}
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto">
-                                {inspectorView === "trigger" && <TriggerPanel onSelect={(id) => { /* Update trigger logic */ handlePaneClick(); }} onClose={handlePaneClick} />}
-                                {inspectorView === "action" && <ActionPanel onSave={handleActionPanelSave} onClose={handlePaneClick} />}
-                                {inspectorView === "wait" && <WaitConfigPanel onSave={(config: any) => { /* Update wait */ handlePaneClick(); }} onClose={handlePaneClick} />}
-                                {inspectorView === "condition" && <IfElseConfigPanel onSave={(config: any) => { /* Update logic */ handlePaneClick(); }} onClose={handlePaneClick} />}
-                            </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="flex-1 overflow-hidden animate-in fade-in duration-300">
+                            <WorkflowHistory workflowId={workflowId} />
                         </div>
                     )}
                 </div>

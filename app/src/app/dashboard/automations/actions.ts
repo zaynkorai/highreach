@@ -157,3 +157,24 @@ export async function deleteWorkflow(id: string) {
     revalidatePath("/dashboard/automations");
     return { success: true };
 }
+
+export async function getWorkflowExecutions(workflowId: string) {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("workflow_executions")
+        .select(`
+            *,
+            version:workflow_versions(version_number)
+        `)
+        .eq("workflow_id", workflowId)
+        .order("started_at", { ascending: false })
+        .limit(50);
+
+    if (error) {
+        console.error("Executions fetch error", error);
+        return [];
+    }
+
+    return data;
+}
