@@ -112,18 +112,35 @@ export function ActionPanel({ onSave, onClose }: ActionPanelProps) {
                 </div>
 
                 <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+                    {selectedAction.id === "send_email" && (
+                        <div className="space-y-2">
+                            <Label>Subject Line</Label>
+                            <div className="relative">
+                                <Input
+                                    placeholder="Enter email subject..."
+                                    value={config.subject || ""}
+                                    onChange={e => setConfig({ ...config, subject: e.target.value })}
+                                    className="pr-10"
+                                />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                    <VariablePicker onSelect={(val) => setConfig((prev: any) => ({ ...prev, subject: (prev.subject || "") + " " + val }))} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {(selectedAction as any).hasTemplate && (
                         <div className="space-y-2">
-                            <Label>Message Template</Label>
+                            <Label>{selectedAction.id === "send_email" ? "Email Body" : "Message Template"}</Label>
                             <div className="relative">
                                 <Textarea
-                                    placeholder="Type your message..."
+                                    placeholder={selectedAction.id === "send_email" ? "Write your email content..." : "Type your message..."}
                                     value={config.template || ""}
                                     onChange={e => setConfig({ ...config, template: e.target.value })}
-                                    className="min-h-[100px] resize-none"
+                                    className="min-h-[150px] resize-none"
                                 />
                                 <div className="absolute bottom-2 right-2">
-                                    <VariablePicker onSelect={(val) => setConfig({ ...config, template: (config.template || "") + " " + val })} />
+                                    <VariablePicker onSelect={(val) => setConfig((prev: any) => ({ ...prev, template: (prev.template || "") + " " + val }))} />
                                 </div>
                             </div>
                         </div>

@@ -65,7 +65,7 @@
 - [x] Global Toast Integration: Ensure all server actions communicate failure via toasts
 - [x] RLS/Permission Safety: Explicitly verify tenant ownership in server actions
 - [x] Integrate Telnyx SMS (send/receive)
-- [ ] Integrate Resend email
+- [x] Integrate Resend email (Connected to Workflows)
 - [x] Implement real-time updates (Supabase Realtime)
 
 #### Day 11-12: Forms (See [`forms.md`](./forms.md))
@@ -127,7 +127,7 @@
         - [x] **Execution Control Room**: Side-over history logs with per-lead audit trails and status tracking.
         - [x] **Smart Branching**: Logic engine with Yes/No dual-path support and rule builder.
         - [x] **Lifecycle Management**: Draft vs. Live versioning with an immutable snapshot "Publish" system.
-        - [x] **Functional Actions**: Connected the engine to real SMS (Telnyx), Tagging, and Pipeline updates.
+        - [x] **Functional Actions**: Multi-channel reach (Telnyx SMS + Resend Email), Tagging, and Pipeline updates.
 - [ ] Reputation Management (Google Reviews)
 - [ ] Webhooks
 - [ ] Referral program

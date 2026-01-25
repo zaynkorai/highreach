@@ -1,6 +1,7 @@
 import { inngest } from "./client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { telnyx } from "@/lib/telnyx";
+import { resend } from "@/lib/resend";
 
 // ============ GENERIC WORKFLOW ENGINE ============
 
@@ -242,6 +243,37 @@ async function executeAction(node: any, triggerData: any, tenantId: string) {
                     type: "sms_sent",
                     content: message,
                     metadata: { provider: "telnyx", workflow_node_id: node.id }
+                });
+            }
+            break;
+        }
+
+        case "send_email": {
+            const to = triggerData.contact?.email || triggerData.email;
+            if (!to) throw new Error("No email address found for communication");
+
+            // 1. Format Template & Subject
+            const subject = formatTemplate(config.subject || "New Message", triggerData);
+            const content = formatTemplate(config.template, triggerData);
+
+            // 2. Send via Resend
+            const { error } = await resend.emails.send({
+                from: 'Galaxy CRM <onboarding@resend.dev>', // In production use tenant verified domain
+                to: [to],
+                subject: subject,
+                text: content,
+            });
+
+            if (error) throw new Error(`Resend Error: ${error.message}`);
+
+            // 3. Log Communication
+            if (triggerData.contact?.id) {
+                await supabase.from("contact_activities").insert({
+                    contact_id: triggerData.contact.id,
+                    tenant_id: tenantId,
+                    type: "email_sent",
+                    content: content,
+                    metadata: { provider: "resend", subject, workflow_node_id: node.id }
                 });
             }
             break;
