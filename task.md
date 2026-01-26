@@ -106,6 +106,9 @@
         - [x] **High-Grade UI Polish**: Refined Kanban board, Glassmorphism cards, and premium headers.
         - [x] **Production Stability**: Verified all routes and auth flows via `pnpm build`.
 - [ ] **Calendar & Booking**
+    - [x] **Phase 1: Database Foundation**: Tables for calendars, availability, and appointments with multi-tenant RLS.
+    - [x] **Phase 2: Admin Control Center**: UI for managing schedules, time zones, and booking links.
+    - [ ] **Phase 3: Public Booking Widget**: Interactive scheduler for leads to book meetings directly. (On Hold per User Request)
 - [x] **Workflow Automations (Inngest)** (Workflow Builder Pro)
     - [x] **Step 1: Inngest Setup**
         - [x] Install Inngest SDK and Next.js integration.

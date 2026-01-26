@@ -6,12 +6,13 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/logout-button";
 
 const navItems = [
-    { href: "/dashboard", icon: "home", label: "Dashboard" },
+    { href: "/dashboard", icon: "home", label: "Overview" },
     { href: "/dashboard/inbox", icon: "inbox", label: "Inbox" },
     { href: "/dashboard/contacts", icon: "contacts", label: "Contacts" },
     { href: "/dashboard/pipelines", icon: "pipelines", label: "Pipelines" },
     { href: "/dashboard/forms", icon: "forms", label: "Forms" },
     { href: "/dashboard/automations", icon: "automations", label: "Automations" },
+    { href: "/dashboard/calendars", icon: "calendars", label: "Calendars" },
     { href: "/dashboard/settings", icon: "settings", label: "Settings" },
 ];
 
@@ -51,6 +52,11 @@ const icons: Record<string, React.ReactNode> = {
     automations: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+    ),
+    calendars: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
     ),
 };

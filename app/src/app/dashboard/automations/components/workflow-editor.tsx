@@ -58,11 +58,11 @@ const TriggerNode = memo(({ data, selected }: NodeProps) => {
     const Icon = trigger ? getIconComponent(trigger.icon) : Zap;
     return (
         <div className={cn("relative group transition-all duration-300", selected && "ring-2 ring-indigo-500 ring-offset-4 rounded-xl scale-102")}>
-            <div className="p-2.5 bg-gradient-to-br from-indigo-600 via-indigo-500 to-indigo-600 text-white rounded-xl shadow-xl min-w-[150px] border border-white/10 text-center">
+            <div className="p-2 bg-gradient-to-br from-indigo-600 via-indigo-500 to-indigo-600 text-white rounded-xl shadow-xl min-w-[150px] border border-white/10 text-center">
                 <div className="flex flex-col items-center gap-1.5">
-                    <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10"><Icon className="w-4 h-4" /></div>
+                    <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10"><Icon className="w-3.5 h-3.5" /></div>
                     <div>
-                        <span className="text-[9px] uppercase tracking-widest font-black opacity-70 block leading-tight">Start</span>
+                        <span className="text-[8px] uppercase tracking-widest font-black opacity-70 block leading-tight">Start</span>
                         <p className="font-bold text-xs leading-tight mt-0.5">{trigger?.label || String(data.label) || "Select Trigger"}</p>
                     </div>
                 </div>
@@ -79,19 +79,17 @@ const ActionNode = memo(({ data, selected }: NodeProps) => {
     return (
         <div className={cn("relative group transition-all duration-300", selected && "ring-2 ring-blue-500 ring-offset-4 rounded-xl scale-102")}>
             <Handle type="target" position={Position.Top} className={HandleStyle} />
-            <div className="p-2.5 bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 rounded-xl shadow-lg min-w-[150px] hover:border-blue-400/50 transition-colors">
-                <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform"><Icon className="w-4 h-4" /></div>
-                    <div className="flex-1">
-                        <span className="text-[9px] uppercase tracking-widest font-black text-slate-400 block leading-tight">Step</span>
-                        <p className="font-bold text-xs text-slate-700 dark:text-zinc-100 leading-tight mt-0.5">{action?.label || String(data.label)}</p>
+            <div className="p-2 bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 rounded-xl shadow-lg min-w-[150px] hover:border-blue-400/50 transition-colors">
+                <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform"><Icon className="w-3.5 h-3.5" /></div>
+                    <div className="flex-1 min-w-0">
+                        <span className="text-[8px] uppercase tracking-widest font-black text-slate-400 block leading-tight">Step</span>
+                        <p className="font-bold text-xs text-slate-700 dark:text-zinc-100 leading-tight mt-0.5 truncate">
+                            {action?.label || String(data.label)}
+                            {(data.template as string) && <span className="font-normal text-slate-400 ml-1 opacity-75">"{String(data.template)}"</span>}
+                        </p>
                     </div>
                 </div>
-                {(data.template as string) && (
-                    <div className="mt-1.5 text-[10px] text-slate-400 bg-slate-50 dark:bg-zinc-800/50 p-1 rounded-lg italic line-clamp-1 border border-slate-100/50">
-                        "{data.template as string}"
-                    </div>
-                )}
             </div>
             <Handle type="source" position={Position.Bottom} className={HandleStyle} />
         </div>
@@ -103,11 +101,11 @@ const WaitNode = memo(({ data, selected }: NodeProps) => {
     return (
         <div className={cn("relative group transition-all duration-300", selected && "ring-2 ring-amber-500 ring-offset-4 rounded-xl scale-102")}>
             <Handle type="target" position={Position.Top} className={HandleStyle} />
-            <div className="p-2.5 bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-900/30 rounded-xl min-w-[150px] shadow-lg">
-                <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-white dark:bg-amber-900/20 rounded-lg text-amber-600 shadow-sm"><Clock className="w-4 h-4" /></div>
+            <div className="p-2 bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-900/30 rounded-xl min-w-[150px] shadow-lg">
+                <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-white dark:bg-amber-900/20 rounded-lg text-amber-600 shadow-sm"><Clock className="w-3.5 h-3.5" /></div>
                     <div>
-                        <span className="text-[9px] uppercase tracking-widest font-black text-amber-600/60 block leading-tight">Pause</span>
+                        <span className="text-[8px] uppercase tracking-widest font-black text-amber-600/60 block leading-tight">Pause</span>
                         <p className="font-bold text-xs text-amber-900 dark:text-amber-200 leading-tight mt-0.5">{String(data.label)}</p>
                     </div>
                 </div>
@@ -122,11 +120,11 @@ const IfElseNode = memo(({ data, selected }: NodeProps) => {
     return (
         <div className={cn("relative group transition-all duration-300", selected && "ring-2 ring-purple-500 ring-offset-4 rounded-xl scale-102")}>
             <Handle type="target" position={Position.Top} className={HandleStyle} />
-            <div className="p-2.5 bg-purple-50 dark:bg-purple-900/5 border border-purple-200 dark:border-purple-900/30 rounded-xl min-w-[150px] shadow-lg">
-                <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-white dark:bg-purple-900/20 rounded-lg text-purple-600 shadow-sm"><GitBranch className="w-4 h-4" /></div>
+            <div className="p-2 bg-purple-50 dark:bg-purple-900/5 border border-purple-200 dark:border-purple-900/30 rounded-xl min-w-[150px] shadow-lg">
+                <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-white dark:bg-purple-900/20 rounded-lg text-purple-600 shadow-sm"><GitBranch className="w-3.5 h-3.5" /></div>
                     <div>
-                        <span className="text-[9px] uppercase tracking-widest font-black text-purple-600/60 block leading-tight">Logic</span>
+                        <span className="text-[8px] uppercase tracking-widest font-black text-purple-600/60 block leading-tight">Logic</span>
                         <p className="font-bold text-xs text-purple-900 dark:text-purple-200 leading-tight mt-0.5">{String(data.name || "Condition")}</p>
                     </div>
                 </div>
@@ -164,8 +162,8 @@ const EndNode = memo(({ selected }: NodeProps) => {
     return (
         <div className={cn("relative group transition-all duration-300", selected && "ring-2 ring-slate-400 ring-offset-4 rounded-full scale-105")}>
             <Handle type="target" position={Position.Top} className={HandleStyle} />
-            <div className="p-2.5 bg-slate-100 dark:bg-zinc-800 rounded-full border border-slate-200 dark:border-zinc-700 shadow-lg text-slate-500">
-                <Flag className="w-4 h-4" />
+            <div className="p-1.5 bg-slate-100 dark:bg-zinc-800 rounded-full border border-slate-200 dark:border-zinc-700 shadow-lg text-slate-500">
+                <Flag className="w-3.5 h-3.5" />
             </div>
         </div>
     );
