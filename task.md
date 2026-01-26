@@ -56,6 +56,10 @@
 #### Day 9-10: Unified Inbox
 - [x] Create conversations table
 - [x] **Unified Inbox 2.0**: 3-pane layout, Internal Notes, Omnichannel support, Contact Context Sidebar.
+    - [x] **Pro Features**:
+        - [x] **Inbox Zero Workflow**: Resolve/Reopen & Status Filtering (Open/Done/All).
+        - [x] **Quick Replies**: Command palette for canned responses.
+        - [x] **Rich Composer**: Attachment UI & File simulation.
 ## Error Handling & Edge Cases
 - [x] Standardize Server Action Return Patterns (Contacts, Inbox, Pipelines & Forms)
 - [x] Implement Row-Level CSV Upload Validation & Feedback

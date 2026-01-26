@@ -117,3 +117,23 @@ export async function createConversation(contactId: string) {
         return { success: false, error: "Failed to create conversation" };
     }
 }
+
+export async function updateConversationStatus(conversationId: string, status: 'open' | 'closed') {
+    try {
+        const { tenantId, supabase } = await getSessionDetail();
+        if (!tenantId) return { success: false, error: "Unauthorized" };
+
+        const { error } = await supabase
+            .from("conversations")
+            .update({ status })
+            .eq("id", conversationId)
+            .eq("tenant_id", tenantId);
+
+        if (error) return { success: false, error: error.message };
+
+        revalidatePath("/dashboard/inbox");
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: "Failed to update status" };
+    }
+}
