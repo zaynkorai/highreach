@@ -131,7 +131,20 @@
         - [x] **Smart Branching**: Logic engine with Yes/No dual-path support and rule builder.
         - [x] **Lifecycle Management**: Draft vs. Live versioning with an immutable snapshot "Publish" system.
         - [x] **Functional Actions**: Multi-channel reach (Telnyx SMS + Resend Email), Tagging, and Pipeline updates.
-- [ ] Reputation Management (Google Reviews)
+- [x] **Reputation Management (Google & Facebook)**
+    - [x] **Database Foundation**: Core schema for reviews, platforms, and official responses with tenant isolation.
+    - [x] **Reputation Center UI**: 
+        - [x] **Trust Score Dashboard**: Real-time aggregation of average ratings, distribution, and response rates.
+        - [x] **Sentiment Analysis**: Automatic sentiment tagging and visualization (Positive/Neutral/Negative).
+        - [x] **Market Insights**: AI-driven strength/opportunity extraction from review corpus.
+    - [x] **Smart Review Gate**: 
+        - [x] Multi-step request flow with rating-based conditional logic.
+        - [x] Public redirect for high ratings (Google/Facebook).
+        - [x] Private internal feedback loops for low ratings.
+    - [x] **Response Command Center**:
+        - [x] **AI Reply Butler**: Suggested responses based on review content and sentiment.
+        - [x] **Reply Templates**: Library for standardized brand responses.
+        - [x] **Unified Feed**: Omnichannel review monitoring (Google + Facebook) with advanced filtering.
 - [ ] Webhooks
 - [ ] Referral program
 
@@ -141,7 +154,7 @@
 
 - [ ] FAQ Chatbot
 - [ ] Appointment booking via chat
-- [ ] Review response AI
+- [x] Review response AI
 - [ ] Lead scoring
 - [ ] White-label option
 
@@ -157,4 +170,4 @@
 
 ---
 
-*Last updated: January 25, 2026*
+*Last updated: January 26, 2026*
