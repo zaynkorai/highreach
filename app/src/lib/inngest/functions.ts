@@ -235,7 +235,7 @@ async function executeAction(node: any, triggerData: any, tenantId: string) {
                 text: message
             });
 
-            // 4. Log Communication
+            // 4. Log Communication & Usage
             if (triggerData.contact?.id) {
                 await supabase.from("contact_activities").insert({
                     contact_id: triggerData.contact.id,
@@ -245,6 +245,14 @@ async function executeAction(node: any, triggerData: any, tenantId: string) {
                     metadata: { provider: "telnyx", workflow_node_id: node.id }
                 });
             }
+
+            // Log Usage
+            await supabase.from("usage_logs").insert({
+                tenant_id: tenantId,
+                resource_type: "sms",
+                quantity: 1,
+                metadata: { to, node_id: node.id }
+            });
             break;
         }
 
@@ -266,7 +274,7 @@ async function executeAction(node: any, triggerData: any, tenantId: string) {
 
             if (error) throw new Error(`Resend Error: ${error.message}`);
 
-            // 3. Log Communication
+            // 3. Log Communication & Usage
             if (triggerData.contact?.id) {
                 await supabase.from("contact_activities").insert({
                     contact_id: triggerData.contact.id,
@@ -276,6 +284,14 @@ async function executeAction(node: any, triggerData: any, tenantId: string) {
                     metadata: { provider: "resend", subject, workflow_node_id: node.id }
                 });
             }
+
+            // Log Usage
+            await supabase.from("usage_logs").insert({
+                tenant_id: tenantId,
+                resource_type: "email",
+                quantity: 1,
+                metadata: { to, subject, node_id: node.id }
+            });
             break;
         }
 
@@ -284,13 +300,23 @@ async function executeAction(node: any, triggerData: any, tenantId: string) {
             const newTag = config.tag;
             if (!contactId || !newTag) return;
 
-            const { data: contact } = await supabase.from("contacts").select("tags").eq("id", contactId).single();
+            // SECURITY: Explicit tenant check even with admin client
+            const { data: contact } = await supabase
+                .from("contacts")
+                .select("tags")
+                .eq("id", contactId)
+                .eq("tenant_id", tenantId)
+                .single();
+
+            if (!contact) return; // Exit if contact not found in this tenant
+
             const currentTags = Array.isArray(contact?.tags) ? contact.tags : [];
 
             if (!currentTags.includes(newTag)) {
                 await supabase.from("contacts")
                     .update({ tags: [...currentTags, newTag] })
-                    .eq("id", contactId);
+                    .eq("id", contactId)
+                    .eq("tenant_id", tenantId);
             }
             break;
         }
@@ -303,9 +329,11 @@ async function executeAction(node: any, triggerData: any, tenantId: string) {
             if (config.status) updates.status = config.status;
             if (config.pipeline_stage_id) updates.pipeline_stage_id = config.pipeline_stage_id;
 
+            // SECURITY: Explicit tenant check
             await supabase.from("opportunities")
                 .update(updates)
-                .eq("id", opportunityId);
+                .eq("id", opportunityId)
+                .eq("tenant_id", tenantId);
             break;
         }
 

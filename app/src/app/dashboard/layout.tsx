@@ -14,6 +14,17 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
+    // Onboarding Guard
+    const { data: profile } = await supabase
+        .from("users")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .single();
+
+    if (profile && !profile.onboarding_completed) {
+        redirect("/onboarding");
+    }
+
     return (
         <div className="min-h-screen bg-background text-foreground">
             <DashboardSidebar />

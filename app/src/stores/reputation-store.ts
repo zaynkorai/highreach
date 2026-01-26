@@ -1,11 +1,10 @@
 import { create } from 'zustand';
-import { Review, ReputationStats, ReviewFilter, ReviewInsight } from '@/types/reputation';
+import { Review, ReputationStats, ReviewFilter } from '@/types/reputation';
 
 interface ReputationState {
     reviews: Review[];
     stats: ReputationStats;
     filters: ReviewFilter;
-    insights: ReviewInsight[];
     savedReplies: string[];
     isLoading: boolean;
 
@@ -36,7 +35,6 @@ export const useReputationStore = create<ReputationState>((set, get) => ({
         responseRate: 0,
     },
     filters: {},
-    insights: [],
     savedReplies: [],
     isLoading: false,
 
@@ -90,7 +88,7 @@ export const useReputationStore = create<ReputationState>((set, get) => ({
                 return;
             }
 
-            const reviews: Review[] = reviewsData.map(r => ({
+            const reviews: Review[] = (reviewsData || []).map(r => ({
                 id: r.id,
                 authorName: r.reviewer_name,
                 authorPhotoUrl: r.reviewer_photo_url || '',
@@ -107,52 +105,36 @@ export const useReputationStore = create<ReputationState>((set, get) => ({
                 } : undefined
             }));
 
-            const totalReviews = reviews.length;
-            const sumRating = reviews.reduce((acc, r) => acc + r.rating, 0);
-            const averageRating = totalReviews > 0 ? sumRating / totalReviews : 0;
-            const ratingDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-            reviews.forEach(r => {
-                const rating = Math.round(r.rating);
-                if (ratingDistribution[rating] !== undefined) {
-                    ratingDistribution[rating]++;
-                }
-            });
-
-            // Mock insights for now as they require more complex aggregation
-            const insights: ReviewInsight[] = [
-                { label: 'Service Quality', percentage: 94, trend: 'up', type: 'strength' },
-                { label: 'Responsive Team', percentage: 88, trend: 'stable', type: 'strength' },
-                { label: 'Wait Times', percentage: 12, trend: 'down', type: 'opportunity' },
-                { label: 'Communication', percentage: 15, trend: 'up', type: 'opportunity' }
-            ];
+            // Calculate Stats - Simplified
+            const total = reviews.length;
+            const avg = total ? reviews.reduce((s, r) => s + r.rating, 0) / total : 0;
+            const dist = reviews.reduce((acc, r) => {
+                const rt = Math.round(r.rating);
+                acc[rt] = (acc[rt] || 0) + 1;
+                return acc;
+            }, { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as Record<number, number>);
 
             set({
                 reviews,
                 stats: {
-                    averageRating,
-                    totalReviews,
-                    newReviewsThisMonth: reviews.filter(r => {
-                        const date = new Date(r.time);
-                        const now = new Date();
-                        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                    }).length,
-                    ratingDistribution,
+                    averageRating: avg,
+                    totalReviews: total,
+                    newReviewsThisMonth: reviews.filter(r => new Date(r.time).getMonth() === new Date().getMonth()).length,
+                    ratingDistribution: dist,
                     averageResponseTime: '2h',
-                    responseRate: totalReviews > 0 ? Math.round((reviews.filter(r => r.isReplied).length / totalReviews) * 100) : 0,
+                    responseRate: total ? Math.round((reviews.filter(r => r.isReplied).length / total) * 100) : 0,
                 },
-                insights,
                 isLoading: false
             });
         },
 
-        addSavedReply: (text) => set((state) => ({ savedReplies: [...state.savedReplies, text] })),
+        addSavedReply: (text) => set((s) => ({ savedReplies: [...s.savedReplies, text] })),
     }
 }));
 
 export const useReputationActions = () => useReputationStore((state) => state.actions);
 export const useReviews = () => useReputationStore((state) => state.reviews);
 export const useReputationStats = () => useReputationStore((state) => state.stats);
-export const useReputationInsights = () => useReputationStore((state) => state.insights);
 export const useSavedReplies = () => useReputationStore((state) => state.savedReplies);
 export const useReputationLoading = () => useReputationStore((state) => state.isLoading);
 export const useReputationFilters = () => useReputationStore((state) => state.filters);

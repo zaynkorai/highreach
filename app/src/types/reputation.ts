@@ -32,13 +32,6 @@ export interface ReputationTrend {
     count: number;
 }
 
-export interface ReviewInsight {
-    label: string;
-    percentage: number;
-    trend: 'up' | 'down' | 'stable';
-    type: 'strength' | 'opportunity';
-}
-
 export interface ReviewFilter {
     rating?: number | null;
     search?: string;

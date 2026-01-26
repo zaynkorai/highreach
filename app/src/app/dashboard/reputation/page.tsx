@@ -5,10 +5,9 @@ import {
     useReputationActions,
     useReviews,
     useReputationStats,
-    useReputationLoading,
-    useReputationInsights
+    useReputationLoading
 } from "@/stores/reputation-store";
-import { Review, ReviewInsight } from "@/types/reputation";
+import { Review } from "@/types/reputation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +32,6 @@ export default function ReputationPage() {
     const { fetchReviews } = useReputationActions();
     const reviews = useReviews();
     const stats = useReputationStats();
-    const insights = useReputationInsights();
     const isLoading = useReputationLoading();
     const [searchQuery, setSearchQuery] = useState("");
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -86,45 +84,7 @@ export default function ReputationPage() {
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
                 {/* Side Insights */}
                 <div className="xl:col-span-1 space-y-6">
-                    <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-white/[0.08] p-6 rounded-3xl sticky top-8 group">
-                        <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] mb-6">Market Insights</h3>
 
-                        <div className="space-y-6">
-                            <div>
-                                <div className="text-[10px] font-bold text-emerald-500 uppercase mb-3 flex items-center gap-2">
-                                    <TrendingUp className="w-3 h-3" />
-                                    Strengths
-                                </div>
-                                <div className="space-y-2">
-                                    {insights.filter(i => i.type === 'strength').map(insight => (
-                                        <div key={insight.label} className="flex items-center justify-between text-xs p-2 rounded-xl bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 font-bold">
-                                            {insight.label}
-                                            <span className="opacity-50">{insight.percentage}%</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <div className="text-[10px] font-bold text-rose-500 uppercase mb-3 flex items-center gap-2">
-                                    <AlertCircle className="w-3 h-3" />
-                                    Opportunities
-                                </div>
-                                <div className="space-y-2">
-                                    {insights.filter(i => i.type === 'opportunity').map(insight => (
-                                        <div key={insight.label} className="flex items-center justify-between text-xs p-2 rounded-xl bg-rose-500/5 text-rose-600 dark:text-rose-400 font-bold">
-                                            {insight.label}
-                                            <span className="opacity-50">{insight.percentage}%</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <Button variant="outline" className="w-full rounded-xl text-[10px] font-bold uppercase tracking-widest h-10 border-zinc-200 dark:border-white/[0.08]">
-                                Detailed Reports
-                            </Button>
-                        </div>
-                    </Card>
                 </div>
 
                 {/* Main Feed */}

@@ -1,23 +1,13 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getSessionDetail } from "@/lib/supabase/session";
 import { Conversation, Message, ChannelType } from "@/types/inbox";
 import { revalidatePath } from "next/cache";
 
 export async function getConversations() {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) return { success: false, error: "Unauthorized" };
-
-        const { data: userData } = await supabase
-            .from("users")
-            .select("tenant_id")
-            .eq("id", user.id)
-            .single();
-
-        if (!userData?.tenant_id) return { success: false, error: "No tenant found" };
+        const { tenantId, supabase } = await getSessionDetail();
+        if (!tenantId) return { success: false, error: "Unauthorized" };
 
         const { data, error } = await supabase
             .from("conversations")
@@ -25,7 +15,7 @@ export async function getConversations() {
                 *,
                 contact:contacts(id, first_name, last_name, phone, email, tags)
             `)
-            .eq("tenant_id", userData.tenant_id)
+            .eq("tenant_id", tenantId)
             .order("last_message_at", { ascending: false });
 
         if (error) return { success: false, error: error.message };
@@ -34,7 +24,7 @@ export async function getConversations() {
             success: true,
             data: {
                 conversations: data as Conversation[],
-                tenantId: userData.tenant_id
+                tenantId
             }
         };
     } catch (e: any) {
@@ -44,8 +34,7 @@ export async function getConversations() {
 
 export async function getMessages(conversationId: string) {
     try {
-        const supabase = await createClient();
-
+        const { supabase } = await getSessionDetail();
         const { data, error } = await supabase
             .from("messages")
             .select("*")
@@ -61,29 +50,17 @@ export async function getMessages(conversationId: string) {
 
 export async function sendMessage(conversationId: string, content: string, channel: ChannelType = 'sms', isInternal: boolean = false) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const { tenantId, supabase } = await getSessionDetail();
+        if (!tenantId) return { success: false, error: "Unauthorized" };
 
-        if (!user) return { success: false, error: "Unauthorized" };
-
-        // 1. Get Tenant ID
-        const { data: userData } = await supabase
-            .from("users")
-            .select("tenant_id")
-            .eq("id", user.id)
-            .single();
-
-        if (!userData) return { success: false, error: "No tenant" };
-
-        // 2. Insert Message
         const { data: message, error: msgError } = await supabase
             .from("messages")
             .insert({
-                tenant_id: userData.tenant_id,
+                tenant_id: tenantId,
                 conversation_id: conversationId,
                 direction: 'outbound',
                 content,
-                channel: channel,
+                channel,
                 is_internal: isInternal
             })
             .select()
@@ -91,7 +68,6 @@ export async function sendMessage(conversationId: string, content: string, chann
 
         if (msgError) return { success: false, error: msgError.message };
 
-        // 3. Update Conversation
         await supabase
             .from("conversations")
             .update({
@@ -100,9 +76,7 @@ export async function sendMessage(conversationId: string, content: string, chann
                 status: 'open'
             })
             .eq("id", conversationId)
-            .eq("tenant_id", userData.tenant_id); // Security: ensure correct tenant
-
-        console.log("Mock sending SMS:", content);
+            .eq("tenant_id", tenantId);
 
         revalidatePath("/dashboard/inbox");
         return { success: true, data: message };
@@ -113,20 +87,14 @@ export async function sendMessage(conversationId: string, content: string, chann
 
 export async function createConversation(contactId: string) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const { tenantId, supabase } = await getSessionDetail();
+        if (!tenantId) return { success: false, error: "Unauthorized" };
 
-        if (!user) return { success: false, error: "Unauthorized" };
-
-        const { data: userData } = await supabase.from("users").select("tenant_id").eq("id", user.id).single();
-        if (!userData) return { success: false, error: "No tenant" };
-
-        // Check if exists
         const { data: existing } = await supabase
             .from("conversations")
             .select("*")
             .eq("contact_id", contactId)
-            .eq("tenant_id", userData.tenant_id)
+            .eq("tenant_id", tenantId)
             .single();
 
         if (existing) return { success: true, data: existing };
@@ -134,7 +102,7 @@ export async function createConversation(contactId: string) {
         const { data, error } = await supabase
             .from("conversations")
             .insert({
-                tenant_id: userData.tenant_id,
+                tenant_id: tenantId,
                 contact_id: contactId,
                 status: 'open'
             })

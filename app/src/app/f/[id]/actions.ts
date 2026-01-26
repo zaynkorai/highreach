@@ -79,26 +79,72 @@ export async function submitForm(formId: string, formData: FormData) {
     }
 
     // 5. Save Submission
-    const { error: subError } = await supabase.from("form_submissions").insert({
+    const { data: submission, error: subError } = await supabase.from("form_submissions").insert({
         form_id: form.id,
         tenant_id: form.tenant_id,
-        contact_id: contactId, // Link if we found/created one
+        contact_id: contactId,
         data: submissionData
-    });
+    }).select().single();
 
     if (subError) {
         console.error("Submission error", subError);
         return { error: "Failed to save submission" };
     }
 
-    // 6. Trigger Automation
-    // 6. Trigger Automation
+    // 6. Create/Find Conversation & Insert Inbox Message
+    if (contactId) {
+        // Find existing conversation
+        const { data: conversation } = await supabase
+            .from("conversations")
+            .select("id")
+            .eq("contact_id", contactId)
+            .single();
+
+        let targetConversationId = conversation?.id;
+
+        if (!targetConversationId) {
+            const { data: newConv } = await supabase
+                .from("conversations")
+                .insert({
+                    tenant_id: form.tenant_id,
+                    contact_id: contactId,
+                    status: 'open',
+                    last_message_at: new Date().toISOString(),
+                })
+                .select()
+                .single();
+            targetConversationId = newConv?.id;
+        }
+
+        if (targetConversationId) {
+            const previewText = `New submission: ${form.name}`;
+
+            // Insert message
+            await supabase.from("messages").insert({
+                tenant_id: form.tenant_id,
+                conversation_id: targetConversationId,
+                direction: 'inbound',
+                content: `### Form Submission: ${form.name}\n\n${Object.entries(submissionData).map(([k, v]) => `**${k}**: ${v}`).join('\n')}`,
+                channel: 'form',
+                is_internal: false
+            });
+
+            // Update conversation preview
+            await supabase.from("conversations").update({
+                last_message_at: new Date().toISOString(),
+                last_message_preview: previewText,
+                unread_count: 1 // Simple increment or set
+            }).eq("id", targetConversationId);
+        }
+    }
+
+    // 7. Trigger Automation
     await inngest.send({
         name: "form.submitted",
         data: {
             tenant_id: form.tenant_id,
             form_id: form.id,
-            submission_id: "pending", // TODO: Fetch from actual insert
+            submission_id: submission?.id || "pending",
         }
     });
 

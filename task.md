@@ -76,8 +76,9 @@
 - [ ] Form submission → Conversation start
 
 #### Day 13-14: Polish & Testing
-- [ ] Onboarding wizard (3 steps)
-- [ ] Usage tracking for SMS
+- [x] **Onboarding Wizard**: 3-step profile & company setup flow.
+- [x] **Usage Tracking**: Foundation for SMS/Email metrics.
+- [x] **Forms → Conversation Link**: Automated inbox alerts for new leads.
 - [x] Error handling & edge cases
 - [ ] End-to-end testing
 - [ ] Deploy to production
