@@ -4,118 +4,110 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/logout-button";
+import { useIsSidebarOpen, useUIActions } from "@/stores/ui-store";
+import { cn } from "@/lib/utils";
+import {
+    LayoutDashboard,
+    Inbox,
+    Users,
+    Folders,
+    FileText,
+    Zap,
+    Calendar,
+    Star,
+    Settings,
+    X,
+    Menu
+} from "lucide-react";
 
 const navItems = [
-    { href: "/dashboard", icon: "home", label: "Overview" },
-    { href: "/dashboard/inbox", icon: "inbox", label: "Inbox" },
-    { href: "/dashboard/contacts", icon: "contacts", label: "Contacts" },
-    { href: "/dashboard/pipelines", icon: "pipelines", label: "Pipelines" },
-    { href: "/dashboard/forms", icon: "forms", label: "Forms" },
-    { href: "/dashboard/automations", icon: "automations", label: "Automations" },
-    { href: "/dashboard/calendars", icon: "calendars", label: "Calendars" },
-    { href: "/dashboard/reputation", icon: "reputation", label: "Reputation" },
-    { href: "/dashboard/settings", icon: "settings", label: "Settings" },
+    { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
+    { href: "/dashboard/inbox", icon: Inbox, label: "Inbox" },
+    { href: "/dashboard/contacts", icon: Users, label: "Contacts" },
+    { href: "/dashboard/pipelines", icon: Folders, label: "Pipelines" },
+    { href: "/dashboard/forms", icon: FileText, label: "Forms" },
+    { href: "/dashboard/automations", icon: Zap, label: "Automations" },
+    { href: "/dashboard/calendars", icon: Calendar, label: "Calendars" },
+    { href: "/dashboard/reputation", icon: Star, label: "Reputation" },
+    { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
-
-const icons: Record<string, React.ReactNode> = {
-    home: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-    ),
-    inbox: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-    ),
-    contacts: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-    ),
-    forms: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-    ),
-    pipelines: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10h6M9 14h6" />
-        </svg>
-    ),
-    settings: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-    ),
-    automations: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-    ),
-    calendars: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-    ),
-    reputation: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-        </svg>
-    ),
-};
 
 export function DashboardSidebar() {
     const pathname = usePathname();
+    const isOpen = useIsSidebarOpen();
+    const { setSidebarOpen } = useUIActions();
 
     return (
-        <aside className="fixed left-0 top-0 bottom-0 w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-white/[0.08] flex flex-col">
-            {/* Logo */}
-            <div className="p-4 border-b border-zinc-100 dark:border-white/[0.08]">
-                <Link href="/dashboard" className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center shadow-sm shadow-indigo-500/20">
-                        <span className="text-white font-bold text-sm">G</span>
-                    </div>
-                    <span className="text-lg font-semibold text-foreground">
-                        GHL<span className="text-indigo-500">Lite</span>
-                    </span>
-                </Link>
-            </div>
+        <>
+            {/* Mobile Backdrop */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity duration-300"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
 
-            {/* Navigation */}
-            <nav className="flex-1 p-3 space-y-1">
-                {navItems.map((item) => {
-                    const isActive = pathname === item.href ||
-                        (item.href !== "/dashboard" && pathname.startsWith(item.href));
-
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isActive
-                                ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
-                                }`}
-                        >
-                            <span className={isActive ? "text-indigo-500 dark:text-indigo-400" : ""}>
-                                {icons[item.icon]}
-                            </span>
-                            <span>{item.label}</span>
-                        </Link>
-                    );
-                })}
-            </nav>
-
-            {/* Footer */}
-            <div className="p-3 border-t border-zinc-100 dark:border-white/[0.08] space-y-1">
-                <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-zinc-600 dark:text-zinc-400">
-                    <ThemeToggle />
-                    <span>Theme</span>
+            {/* Sidebar Container */}
+            <aside className={cn(
+                "fixed left-0 top-0 bottom-0 w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-white/[0.08] flex flex-col z-50 transition-transform duration-300 transform lg:translate-x-0",
+                isOpen ? "translate-x-0" : "-translate-x-full"
+            )}>
+                {/* Logo Section */}
+                <div className="p-4 border-b border-zinc-100 dark:border-white/[0.08] flex items-center justify-between">
+                    <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setSidebarOpen(false)}>
+                        <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center shadow-sm shadow-indigo-500/20">
+                            <span className="text-white font-bold text-sm">G</span>
+                        </div>
+                        <span className="text-lg font-semibold text-foreground">
+                            GHL<span className="text-indigo-500">Lite</span>
+                        </span>
+                    </Link>
+                    <button
+                        onClick={() => setSidebarOpen(false)}
+                        className="p-2 lg:hidden text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-lg"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
-                <LogoutButton />
-            </div>
-        </aside>
+
+                {/* Navigation Body */}
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+                    {navItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.href ||
+                            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setSidebarOpen(false)}
+                                className={cn(
+                                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                                    isActive
+                                        ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                                        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
+                                )}
+                            >
+                                <Icon className={cn(
+                                    "w-5 h-5 transition-colors",
+                                    isActive ? "text-indigo-500 dark:text-indigo-400" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                                )} />
+                                <span>{item.label}</span>
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                {/* Footer Controls */}
+                <div className="p-3 border-t border-zinc-100 dark:border-white/[0.08] space-y-1 bg-zinc-50/50 dark:bg-zinc-900/50">
+                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-zinc-600 dark:text-zinc-400">
+                        <ThemeToggle />
+                        <span>Theme Preference</span>
+                    </div>
+                    <LogoutButton />
+                </div>
+            </aside>
+        </>
     );
 }

@@ -1,4 +1,5 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { MobileHeader } from "@/components/mobile-header";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -26,13 +27,16 @@ export default async function DashboardLayout({
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row">
             <DashboardSidebar />
-            <main className="ml-64 p-8">
-                <div className="max-w-[1600px] mx-auto">
-                    {children}
-                </div>
-            </main>
+            <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
+                <MobileHeader />
+                <main className="flex-1 p-4 md:p-8">
+                    <div className="max-w-[1600px] mx-auto">
+                        {children}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }

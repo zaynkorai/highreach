@@ -86,38 +86,40 @@ export function OnboardingClient({ userEmail }: { userEmail: string }) {
                 {/* Progress Bar Container */}
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-3xl p-8 shadow-sm">
                     {/* Visual Progress */}
-                    <div className="flex items-center justify-between mb-10 px-4">
+                    <div className="flex items-center justify-between mb-10 px-4 relative">
+                        {/* Connecting Line Backdrop */}
+                        <div className="absolute top-6 left-12 right-12 h-0.5 bg-zinc-100 dark:bg-white/5 -z-0" />
+
+                        {/* Progressive Line */}
+                        <div
+                            className="absolute top-6 left-12 h-0.5 bg-emerald-500 transition-all duration-500 -z-0"
+                            style={{
+                                width: `calc(${((step - 1) / (steps.length - 1)) * 100}% - 6rem)`,
+                                display: step > 1 ? 'block' : 'none'
+                            }}
+                        />
+
                         {steps.map((s) => {
                             const Icon = s.icon;
                             const isActive = step === s.id;
                             const isCompleted = step > s.id;
 
                             return (
-                                <div key={s.id} className="flex flex-col items-center gap-3 relative">
+                                <div key={s.id} className="flex flex-col items-center gap-3 relative z-10">
                                     <div className={cn(
-                                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 z-10",
+                                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300",
                                         isActive ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-110" :
                                             isCompleted ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30" :
-                                                "bg-zinc-100 dark:bg-white/5 text-zinc-400"
+                                                "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 group-hover:text-zinc-500"
                                     )}>
                                         {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
                                     </div>
                                     <span className={cn(
                                         "text-[10px] font-bold uppercase tracking-[0.2em]",
-                                        isActive ? "text-indigo-600" : isCompleted ? "text-emerald-500" : "text-zinc-400"
+                                        isActive ? "text-indigo-600" : isCompleted ? "text-emerald-500" : "text-zinc-500"
                                     )}>
                                         {s.title}
                                     </span>
-
-                                    {/* Line between steps */}
-                                    {s.id < steps.length && (
-                                        <div className="absolute top-6 left-12 w-[11rem] h-0.5 bg-zinc-100 dark:bg-white/5 -z-10">
-                                            <div
-                                                className="h-full bg-emerald-500 transition-all duration-500"
-                                                style={{ width: isCompleted ? '100%' : '0%' }}
-                                            />
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })}
