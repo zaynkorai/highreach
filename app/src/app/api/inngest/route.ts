@@ -8,6 +8,7 @@ import { dealWonNotification } from "@/inngest/functions/deal-won";
 import { reviewRequest } from "@/inngest/functions/review-request";
 import { pushToExternalCalendar } from "@/inngest/functions/calendar-sync";
 import { syncExternalEvents } from "@/inngest/functions/calendar-pull";
+import { syncAllGoogleReviews } from "@/inngest/functions/reputation-sync";
 
 export const { GET, POST, PUT } = serve({
     client: inngest,
@@ -18,6 +19,7 @@ export const { GET, POST, PUT } = serve({
         dealWonNotification,
         reviewRequest,
         pushToExternalCalendar,
-        syncExternalEvents
+        syncExternalEvents,
+        syncAllGoogleReviews
     ],
 });

@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { ReviewCard } from "./components/review-card";
 import { ReputationOverview } from "./components/reputation-overview";
 import { RequestReviewModal } from "./components/request-review-modal";
+import { GoogleReputationConfig } from "./components/google-reputation-config";
 
 export default function ReputationPage() {
     const { fetchReviews } = useReputationActions();
@@ -76,6 +77,9 @@ export default function ReputationPage() {
                     </Button>
                 </div>
             </div>
+
+            {/* Configuration */}
+            <GoogleReputationConfig />
 
             {/* Overview Stats */}
             <ReputationOverview stats={stats} isLoading={isLoading} />
