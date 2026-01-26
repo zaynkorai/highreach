@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "../components/theme-provider";
+import { SWRegistration } from "../components/sw-registration";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,7 +16,19 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Galaxy Lite CRM",
-  description: "Created by Imagine Labs",
+  description: "The Premium Speed to Lead Platform for SMBs.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Galaxy Lite",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport = {
+  themeColor: "#4F46E5",
 };
 
 export default function RootLayout({
@@ -34,6 +47,7 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
+          <SWRegistration />
           {children}
         </ThemeProvider>
       </body>

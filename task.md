@@ -78,6 +78,7 @@
 #### Day 13-14: Polish & Testing
 - [x] **Onboarding Wizard**: 3-step profile & company setup flow.
 - [x] **Usage Tracking**: Foundation for SMS/Email metrics.
+- [x] **Simple PWA Support**: Manifest, Service Worker, and Apple Mobile Web App capability.
 - [x] **Forms → Conversation Link**: Automated inbox alerts for new leads.
 - [x] Error handling & edge cases
 - [ ] End-to-end testing
