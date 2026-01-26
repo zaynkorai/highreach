@@ -10,32 +10,8 @@
 - **Zod**: Runtime schema validation for form submissions.
 
 ### Data Model Improvements
-The `FormField` type needs expansion:
-
-```typescript
-export type FormFieldType = 
-  | 'text' | 'email' | 'phone' | 'textarea' | 'number' 
-  | 'select' | 'checkbox' | 'radio' | 'date' | 'hidden';
-
-export interface FormField {
-  id: string;
-  type: FormFieldType;
-  label: string;
-  placeholder?: string;
-  required: boolean;
-  // New props
-  helperText?: string;
-  options?: { label: string; value: string }[]; // For Select/Radio/Checkbox
-  validation?: {
-    min?: number;
-    max?: number;
-    pattern?: string; // Regex
-  };
-  hidden?: boolean; // For logic
-  logic?: LogicRule[]; // Conditional logic rules
-  width?: "50%" | "100%"; // Layout control
-}
-```
+The `FormField` data model needs expansion to support complex fields (e.g. types, options, validation, and logic).
+**Source of Truth:** Refer to [`app/src/types/form.ts`](file:///Users/zayn/ground/gal/app/src/types/form.ts) for the exact implementation of `FormField` and `FormFieldType`.
 
 ## 2. Implementation Phases
 

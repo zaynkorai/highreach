@@ -65,3 +65,18 @@ export const schemas = new EventSchemas().fromRecord<{
     "workflow.execute": WorkflowExecute;
     "test/hello.world": { data: any };
 }>();
+
+export type WorkflowNode = {
+    id: string;
+    type: string;
+    data: Record<string, any>;
+    filter?: Record<string, any>;
+};
+
+export type WorkflowEdge = {
+    id: string;
+    source: string;
+    target: string;
+    sourceHandle?: string;
+    targetHandle?: string;
+};

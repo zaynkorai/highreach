@@ -64,42 +64,14 @@
 ## 🏗️ Architecture Recommendations
 
 ### 1. Database Schema Principles
-```
-Every table MUST have:
-- id (uuid, primary key)
-- tenant_id (uuid, foreign key, indexed)
-- created_at, updated_at (timestamps)
-
-RLS policy on ALL tables:
-USING (tenant_id = auth.jwt() ->> 'tenant_id')
-```
+Enforced via shared Supabase clients and migrations. See `app/src/lib/supabase/client.ts` and `app/src/lib/supabase/server.ts` for documentation.
 
 ### 2. API Structure
-```
-/api/
-  /auth/          → Supabase Auth handlers
-  /contacts/      → CRUD for contacts
-  /conversations/ → Unified inbox
-  /webhooks/
-    /telnyx/      → Incoming SMS, missed calls
-    /resend/      → Email events
-  /workflows/     → Inngest triggers
-```
+The Next.js App Router enforces a file-system based API structure. Refer directly to the `app/src/app/api/` folder for the self-documenting routing implementation.
 
 ### 3. Workflow Pattern (Inngest)
-```typescript
-// Standard pattern for all workflows
-export const leadFollowUp = inngest.createFunction(
-  { id: "lead-follow-up", retries: 3 },
-  { event: "lead/created" },
-  async ({ event, step }) => {
-    await step.sleep("wait", "2m");
-    await step.run("send-sms", async () => {
-      await telnyx.messages.create({ ... });
-    });
-  }
-);
-```
+Workflows are defined dynamically as JSON graphs, and executed through a central fan-out logic.
+**Source of Truth:** Refer to [`app/src/lib/inngest/functions.ts`](file:///Users/zayn/ground/gal/app/src/lib/inngest/functions.ts) for the exact implementation of the `executeWorkflow` and event dispatchers.
 
 ### 4. Environment Strategy
 | Environment | Purpose | Database |
@@ -147,7 +119,7 @@ export const leadFollowUp = inngest.createFunction(
 
 ### Post-P0 Tech Debt (P1 Sprint):
 
-- [ ] Abstract Inngest workflows for portability
+- [x] Abstract Inngest workflows for portability
 - [ ] Add structured logging (Axiom or Logtail)
 - [ ] Set up error tracking (Sentry)
 - [ ] Document disaster recovery plan

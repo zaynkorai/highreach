@@ -156,13 +156,31 @@
 
 ---
 
-## 🔵 P2: AI Bundle (Days 29-45)
+## 🔵 P2: AI Native Core (Days 29-45)
 
-- [ ] FAQ Chatbot
-- [ ] Appointment booking via chat
-- [x] Review response AI
-- [ ] Lead scoring
-- [ ] White-label option
+**Goal:** Shift from "features" to "autonomous agents" that do the work.
+
+- [ ] **AI Concierge (Autonomous Inbox Agent)**
+    - [ ] **RAG Engine**: Vector database setup (Supabase pgvector) for business knowledge (hours, pricing, services).
+    - [ ] **FAQ Router**: Intercepts inbound questions and drafts/sends replies based on KB.
+    - [ ] **Booking Agent**: Heuristic-based slot negotiation ("How about Tuesday at 2pm?") connected to Calendar availability.
+    - [ ] **Human Handoff**: Sentiment analysis to detect anger/confusion and alert staff.
+
+- [ ] **Predictive Lead Intelligence**
+    - [ ] **Scoring Engine**: Activity-based scoring (site visits + email opens + reply speed).
+    - [ ] **Hot Lead Alerts**: "Zayn just checked pricing 3 times - Call him now!" notifications.
+
+- [ ] **Generative Workflow Architect**
+    - [ ] **Natural Language Builder**: "Send a text if they don't reply in 5 minutes" -> Generates Inngest workflow JSON.
+    - [ ] **Auto-Optimization**: AI suggests "Change wait time to 10min to increase reply rate".
+
+- [ ] **Review Guardian Pro**
+    - [x] **Drafting & Sentiment**: (Completed in P1).
+    - [ ] **Auto-Post Rules**: "If 5-star & positive, auto-reply with 'Thanks!'. If <3 star, draft internal ticket."
+
+- [ ] **White-Label Agency Suite**
+    - [ ] Custom domain/branding support.
+    - [ ] Sub-account cloning (AI configured).
 
 ---
 

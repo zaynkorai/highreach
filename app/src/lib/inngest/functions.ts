@@ -1,7 +1,13 @@
 import { inngest } from "./client";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { telnyx } from "@/lib/telnyx";
-import { resend } from "@/lib/resend";
+import { WorkflowNode, WorkflowEdge } from "./types";
+import { getByDotNotation, evaluateCondition, convertToWaitTime } from "./utils/helpers";
+import {
+    handleSendSms,
+    handleSendEmail,
+    handleAddTag,
+    handleUpdateOpportunity
+} from "./actions";
 
 // ============ GENERIC WORKFLOW ENGINE ============
 
@@ -44,7 +50,7 @@ export const processEvent = inngest.createFunction(
 
             return workflowsWithFilters.filter(wf => {
                 if (!wf.definition) return false;
-                const triggerNode = wf.definition.nodes?.find((n: any) => n.type === "trigger");
+                const triggerNode = wf.definition.nodes?.find((n: WorkflowNode) => n.type === "trigger");
                 const filter = triggerNode?.data?.filter || triggerNode?.filter; // Support both structures
 
                 if (!filter) return true; // No filter = all pass
@@ -86,7 +92,6 @@ export const executeWorkflow = inngest.createFunction(
 
         // Load the workflow definition (latest published version)
         const workflowData = await step.run("load-workflow-definition", async () => {
-            // Get latest published version
             const { data: version } = await supabase
                 .from("workflow_versions")
                 .select("id, definition")
@@ -103,7 +108,8 @@ export const executeWorkflow = inngest.createFunction(
         if (!workflowData?.definition) return { error: "Definition not found" };
 
         const { definition, version_id } = workflowData;
-        const { nodes, edges } = definition;
+        const nodes: WorkflowNode[] = definition.nodes || [];
+        const edges: WorkflowEdge[] = definition.edges || [];
 
         // 3. Create Execution Record
         const execution_id = await step.run("create-execution-log", async () => {
@@ -122,17 +128,16 @@ export const executeWorkflow = inngest.createFunction(
         });
 
         // Find Start Node (Trigger)
-        const startNode = nodes.find((n: any) => n.type === "trigger");
+        const startNode = nodes.find(n => n.type === "trigger");
         if (!startNode) {
             if (execution_id) await supabase.from("workflow_executions").update({ status: 'failed', error_message: 'No trigger node' }).eq('id', execution_id);
             return { error: "No trigger node" };
         }
 
-        let currentNode = startNode;
+        let currentNode: WorkflowNode | undefined = startNode;
 
         // Traversal Loop (Simplified for linear paths, handle branching conceptually)
         // In Inngest, deep loops are risky, but for <50 steps it's fine.
-        // For distinct steps, we wrap logic in step.run()
         const maxSteps = 50;
         let stepCount = 0;
 
@@ -140,18 +145,14 @@ export const executeWorkflow = inngest.createFunction(
             stepCount++;
 
             // Find next node(s)
-            const outboundEdges = edges.filter((e: any) => e.source === currentNode.id);
+            const outboundEdges = edges.filter(e => e.source === currentNode?.id);
             if (outboundEdges.length === 0) break; // End of path
 
-            // Default: Take the first edge (unless branching)
-            let nextEdge = outboundEdges[0];
-
-            // EXECUTE CURRENT NODE LOGIC
-            // (We skip trigger execution as it already happened)
+            let nextEdge: WorkflowEdge | undefined = outboundEdges[0];
 
             // Move to Next Node
             const nextNodeId = nextEdge.target;
-            const nextNode = nodes.find((n: any) => n.id === nextNodeId);
+            const nextNode = nodes.find(n => n.id === nextNodeId);
 
             if (!nextNode) break;
 
@@ -161,25 +162,21 @@ export const executeWorkflow = inngest.createFunction(
                     await executeAction(nextNode, trigger_data, tenant_id);
                 });
             } else if (nextNode.type === "wait") {
-                // Wait step logic
                 const { duration, unit } = nextNode.data;
-                const ms = convertToMs(duration, unit);
-                await step.sleep(`wait-${nextNode.id}`, ms); // e.g. "30s"
+                const waitDuration = convertToWaitTime(duration, unit);
+                await step.sleep(`wait-${nextNode.id}`, waitDuration);
             } else if (nextNode.type === "if_else") {
-                // Evaluate condition
                 const result = await step.run(`logic-${nextNode.id}`, async () => {
                     return evaluateCondition(nextNode.data, trigger_data);
                 });
 
-                // Choose edge based on result
-                const yesEdge = outboundEdges.find((e: any) => e.sourceHandle === "yes");
-                const noEdge = outboundEdges.find((e: any) => e.sourceHandle === "no");
+                const yesEdge = outboundEdges.find(e => e.sourceHandle === "yes");
+                const noEdge = outboundEdges.find(e => e.sourceHandle === "no");
                 nextEdge = result ? yesEdge : noEdge;
 
-                // Stop if branch leads nowhere
                 if (!nextEdge) break;
 
-                const branchTargetNode = nodes.find((n: any) => n.id === nextEdge.target);
+                const branchTargetNode = nodes.find(n => n.id === nextEdge!.target);
                 if (branchTargetNode) {
                     currentNode = branchTargetNode;
                     continue;
@@ -208,8 +205,9 @@ export const executeWorkflow = inngest.createFunction(
     }
 );
 
-// Helpers
-async function executeAction(node: any, triggerData: any, tenantId: string) {
+// ============ ACTION HANDLERS ============
+
+async function executeAction(node: WorkflowNode, triggerData: Record<string, any>, tenantId: string) {
     const supabase = createAdminClient();
     const actionId = node.data.actionId;
     const config = node.data;
@@ -217,176 +215,21 @@ async function executeAction(node: any, triggerData: any, tenantId: string) {
     console.log(`Executing Action: ${actionId}`, config);
 
     switch (actionId) {
-        case "send_sms": {
-            const to = triggerData.contact?.phone || triggerData.phone;
-            if (!to) throw new Error("No phone number found for SMS");
-
-            // 1. Get Tenant SMS Config (The source number)
-            const { data: tenant } = await supabase.from("tenants").select("sms_number").eq("id", tenantId).single();
-            if (!tenant?.sms_number) throw new Error("Tenant has no SMS number configured");
-
-            // 2. Format Template
-            const message = formatTemplate(config.template, triggerData);
-
-            // 3. Send via Telnyx
-            await (telnyx.messages as any).create({
-                from: tenant.sms_number,
-                to,
-                text: message
-            });
-
-            // 4. Log Communication & Usage
-            if (triggerData.contact?.id) {
-                await supabase.from("contact_activities").insert({
-                    contact_id: triggerData.contact.id,
-                    tenant_id: tenantId,
-                    type: "sms_sent",
-                    content: message,
-                    metadata: { provider: "telnyx", workflow_node_id: node.id }
-                });
-            }
-
-            // Log Usage
-            await supabase.from("usage_logs").insert({
-                tenant_id: tenantId,
-                resource_type: "sms",
-                quantity: 1,
-                metadata: { to, node_id: node.id }
-            });
+        case "send_sms":
+            await handleSendSms(node, config, triggerData, tenantId, supabase);
             break;
-        }
-
-        case "send_email": {
-            const to = triggerData.contact?.email || triggerData.email;
-            if (!to) throw new Error("No email address found for communication");
-
-            // 1. Format Template & Subject
-            const subject = formatTemplate(config.subject || "New Message", triggerData);
-            const content = formatTemplate(config.template, triggerData);
-
-            // 2. Send via Resend
-            const { error } = await resend.emails.send({
-                from: 'Galaxy CRM <onboarding@resend.dev>', // In production use tenant verified domain
-                to: [to],
-                subject: subject,
-                text: content,
-            });
-
-            if (error) throw new Error(`Resend Error: ${error.message}`);
-
-            // 3. Log Communication & Usage
-            if (triggerData.contact?.id) {
-                await supabase.from("contact_activities").insert({
-                    contact_id: triggerData.contact.id,
-                    tenant_id: tenantId,
-                    type: "email_sent",
-                    content: content,
-                    metadata: { provider: "resend", subject, workflow_node_id: node.id }
-                });
-            }
-
-            // Log Usage
-            await supabase.from("usage_logs").insert({
-                tenant_id: tenantId,
-                resource_type: "email",
-                quantity: 1,
-                metadata: { to, subject, node_id: node.id }
-            });
+        case "send_email":
+            await handleSendEmail(node, config, triggerData, tenantId, supabase);
             break;
-        }
-
-        case "add_tag": {
-            const contactId = triggerData.contact?.id || triggerData.id;
-            const newTag = config.tag;
-            if (!contactId || !newTag) return;
-
-            // SECURITY: Explicit tenant check even with admin client
-            const { data: contact } = await supabase
-                .from("contacts")
-                .select("tags")
-                .eq("id", contactId)
-                .eq("tenant_id", tenantId)
-                .single();
-
-            if (!contact) return; // Exit if contact not found in this tenant
-
-            const currentTags = Array.isArray(contact?.tags) ? contact.tags : [];
-
-            if (!currentTags.includes(newTag)) {
-                await supabase.from("contacts")
-                    .update({ tags: [...currentTags, newTag] })
-                    .eq("id", contactId)
-                    .eq("tenant_id", tenantId);
-            }
+        case "add_tag":
+            await handleAddTag(config, triggerData, tenantId, supabase);
             break;
-        }
-
-        case "update_opportunity": {
-            const opportunityId = triggerData.opportunity?.id || triggerData.id;
-            if (!opportunityId) return;
-
-            const updates: any = {};
-            if (config.status) updates.status = config.status;
-            if (config.pipeline_stage_id) updates.pipeline_stage_id = config.pipeline_stage_id;
-
-            // SECURITY: Explicit tenant check
-            await supabase.from("opportunities")
-                .update(updates)
-                .eq("id", opportunityId)
-                .eq("tenant_id", tenantId);
+        case "update_opportunity":
+            await handleUpdateOpportunity(config, triggerData, tenantId, supabase);
             break;
-        }
-
         default:
             console.warn(`Action type ${actionId} not implemented yet`);
     }
-}
-
-function getByDotNotation(obj: any, path: string) {
-    return path.split('.').reduce((prev, curr) => prev?.[curr], obj);
-}
-
-function formatTemplate(template: string, data: any) {
-    if (!template) return "";
-    return template.replace(/\{\{(.*?)\}\}/g, (match, path) => {
-        const value = getByDotNotation(data, path.trim());
-        return value !== undefined ? String(value) : match;
-    });
-}
-
-function evaluateCondition(config: any, data: any): boolean {
-    const { field, operator, value } = config;
-    if (!field || !operator) return false;
-
-    // 1. Get raw value from data using dot-notation (e.g. contact.email)
-    // The data usually comes in as { contact: { ... }, event: { ... } } or just flat
-    const parts = field.split('.');
-    let actualValue: any = data;
-    for (const part of parts) {
-        actualValue = actualValue?.[part];
-    }
-
-    const strValue = String(actualValue || "").toLowerCase();
-    const compareValue = String(value || "").toLowerCase();
-
-    // 2. Evaluate based on operator
-    switch (operator) {
-        case "equals": return strValue === compareValue;
-        case "not_equals": return strValue !== compareValue;
-        case "contains": return strValue.includes(compareValue);
-        case "does_not_contain": return !strValue.includes(compareValue);
-        case "starts_with": return strValue.startsWith(compareValue);
-        case "is_empty": return !actualValue || strValue.trim() === "";
-        case "is_not_empty": return !!actualValue && strValue.trim() !== "";
-        default: return false;
-    }
-}
-
-function convertToMs(duration: number, unit: string) {
-    // Inngest sleep accepts strings like "1h", "30s"
-    // We'll return that string format
-    const u = unit === "minutes" ? "m" : unit === "seconds" ? "s" : unit === "hours" ? "h" : "d";
-    return `${duration}${u}`;
 }
 
 export const functions = [processEvent, executeWorkflow];

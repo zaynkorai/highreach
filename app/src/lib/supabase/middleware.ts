@@ -1,6 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
+/**
+ * LIFECYCLE & STATE PERSISTENCE TESTING REQUIREMENTS
+ * 
+ * Onboarding Guard Scenario:
+ * - Scenario: Attempt to force-navigate to `/dashboard/conversations` with an incomplete onboarding session.
+ * - Assertion: Middleware must intercept and redirect to the specific step (1-4) where the user left off.
+ */
+
 export async function updateSession(request: NextRequest) {
     let response = NextResponse.next({
         request: {
