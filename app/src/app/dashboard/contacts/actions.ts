@@ -176,7 +176,7 @@ export async function uploadCSV(formData: FormData) {
         if (!userData?.tenant_id) return { success: false, error: "User has no tenant assigned" };
 
         let successCount = 0;
-        let failedRows: any[] = [];
+        const failedRows: any[] = [];
         const contactsToInsert = [];
 
         // Iterate and Validate

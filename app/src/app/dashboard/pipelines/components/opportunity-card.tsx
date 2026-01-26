@@ -3,8 +3,7 @@
 import { Opportunity } from "@/types/pipeline";
 import { Draggable } from "@hello-pangea/dnd";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { DollarSign, MessageSquare, MoreVertical, User } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 
 interface OpportunityCardProps {
     opportunity: Opportunity;

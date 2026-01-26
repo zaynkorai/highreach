@@ -6,7 +6,7 @@ import { usePipelineStore, usePipelineActions } from "@/stores/pipeline-store";
 import { OpportunityCard } from "./opportunity-card";
 import { moveOpportunity } from "../actions";
 import { toast } from "sonner";
-import { Plus, MoreHorizontal } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OpportunityModal } from "./opportunity-modal";
 import { useState } from "react";

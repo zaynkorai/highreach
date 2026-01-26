@@ -87,7 +87,7 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
 
     const appointments = appointmentData || [];
 
-    let potentialSlots: Date[] = [];
+    const potentialSlots: Date[] = [];
 
     // Generate slots for [Yesterday, Today, Tomorrow] relative to the requested date
     // This ensures we cover the timezone shift.

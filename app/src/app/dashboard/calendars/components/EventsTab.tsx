@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "lucide-react"; // Import issue? Next link is better
 import NextLink from "next/link";
 import { toast } from "sonner";
 import {
