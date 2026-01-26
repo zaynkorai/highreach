@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { inngest } from "@/lib/inngest/client";
 
 // --- Helpers -----------------------------------------------------------------
 
@@ -65,6 +66,23 @@ export async function getCalendars() {
     return data;
 }
 
+export async function getIntegrations() {
+    const context = await getAuthenticatedContext();
+    if (!context) return [];
+
+    const { adminDb, tenant_id } = context;
+    const { data, error } = await adminDb
+        .from("external_accounts")
+        .select("*")
+        .eq("tenant_id", tenant_id);
+
+    if (error) {
+        console.error("Error fetching integrations:", error);
+        return [];
+    }
+    return data;
+}
+
 export async function getCalendarWithAvailability(id: string) {
     const supabase = await createClient(); // RLS handles security here for read
     const { data: calendar, error: calError } = await supabase
@@ -121,7 +139,10 @@ export async function updateCalendar(id: string, payload: any) {
             duration_minutes: payload.duration_minutes,
             timezone: payload.timezone,
             buffer_minutes: payload.buffer_minutes,
-            location: payload.location
+            location: payload.location,
+            external_account_id: payload.external_account_id || null,
+            external_calendar_id: payload.external_calendar_id || null,
+            sync_direction: payload.sync_direction || 'off'
         })
         .eq("id", id);
 
@@ -260,6 +281,19 @@ export async function createManualAppointment(payload: any) {
     if (error) return errorResponse(error.message);
 
     revalidatePath("/dashboard/calendars");
+
+    // 3. Trigger Automation & Sync
+    await inngest.send({
+        name: "appointment.booked",
+        data: {
+            appointment_id: data.id,
+            tenant_id,
+            contact_id: contactId,
+            calendar_id: payload.calendar_id,
+            start_time: payload.start_time
+        }
+    });
+
     return successResponse(data);
 }
 

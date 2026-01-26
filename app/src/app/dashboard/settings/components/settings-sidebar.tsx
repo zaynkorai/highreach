@@ -8,9 +8,7 @@ export function SettingsSidebar() {
 
     const tabs = [
         { id: "organization", label: "Organization Profile", href: "/dashboard/settings" },
-        // { id: "account", label: "Account & Security", href: "/dashboard/settings/account" },
-        // { id: "billing", label: "Billing & Plans", href: "/dashboard/settings/billing" },
-        // { id: "integrations", label: "Integrations", href: "/dashboard/settings/integrations" },
+        { id: "integrations", label: "Integrations", href: "/dashboard/settings/integrations" },
     ];
 
     return (

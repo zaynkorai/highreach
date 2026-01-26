@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { getCalendarWithAvailability, updateAvailability, updateCalendar } from "../actions";
+import { getCalendarWithAvailability, updateAvailability, updateCalendar, getIntegrations } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,6 +50,7 @@ export default function CalendarDetailsPage({ params }: { params: Promise<{ id: 
     const [availability, setAvailability] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [integrations, setIntegrations] = useState<any[]>([]);
 
     useEffect(() => {
         const fetch = async () => {
@@ -58,6 +59,8 @@ export default function CalendarDetailsPage({ params }: { params: Promise<{ id: 
                 setCalendar(data);
                 setAvailability(data.availability || []);
             }
+            const intData = await getIntegrations();
+            setIntegrations(intData);
             setIsLoading(false);
         };
         fetch();
@@ -138,6 +141,7 @@ export default function CalendarDetailsPage({ params }: { params: Promise<{ id: 
                 <TabsList className="grid w-full grid-cols-2 md:w-[400px] mb-8 bg-zinc-100 dark:bg-zinc-800">
                     <TabsTrigger value="general">General & Links</TabsTrigger>
                     <TabsTrigger value="schedule">Availability & Limits</TabsTrigger>
+                    <TabsTrigger value="sync">Calendar Sync</TabsTrigger>
                 </TabsList>
 
                 {/* TAB: GENERAL */}
@@ -342,6 +346,77 @@ export default function CalendarDetailsPage({ params }: { params: Promise<{ id: 
                             <Info className="w-4 h-4 text-indigo-500" />
                             These hours are strictly for <strong>{calendar.timezone}</strong>.
                         </CardFooter>
+                    </Card>
+                </TabsContent>
+
+                {/* TAB: SYNC */}
+                <TabsContent value="sync" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Bi-directional Sync</CardTitle>
+                            <CardDescription>Connect this calendar to an external account to keep bookings in sync.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-4">
+                                <Label>Select Connected Account</Label>
+                                <Select
+                                    value={calendar.external_account_id || "none"}
+                                    onValueChange={v => setCalendar({ ...calendar, external_account_id: v === "none" ? null : v })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Choose an account" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Not Connected</SelectItem>
+                                        {integrations.map(acc => (
+                                            <SelectItem key={acc.id} value={acc.id}>
+                                                {acc.provider === 'google' ? 'Google' : 'Outlook'}: {acc.provider_account_id}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {integrations.length === 0 && (
+                                    <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg flex items-center gap-2">
+                                        <Info className="w-4 h-4" />
+                                        No accounts connected. <Link href="/dashboard/settings/integrations" className="underline font-bold">Manage Integrations</Link>
+                                    </p>
+                                )}
+                            </div>
+
+                            {calendar.external_account_id && (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label>Sync Direction</Label>
+                                        <Select
+                                            value={calendar.sync_direction || "off"}
+                                            onValueChange={v => setCalendar({ ...calendar, sync_direction: v })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="off">Off</SelectItem>
+                                                <SelectItem value="one_way">One-way (GAL {"->"} External)</SelectItem>
+                                                <SelectItem value="bi_directional">Bi-directional (GAL {"<->"} External)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">
+                                            Bi-directional sync will block slots in GAL if you are busy in your external calendar.
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Target Calendar ID</Label>
+                                        <Input
+                                            value={calendar.external_calendar_id || "primary"}
+                                            onChange={e => setCalendar({ ...calendar, external_calendar_id: e.target.value })}
+                                            placeholder="primary"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Use 'primary' for your default calendar.</p>
+                                    </div>
+                                </>
+                            )}
+                        </CardContent>
                     </Card>
                 </TabsContent>
             </Tabs>
