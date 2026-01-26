@@ -29,7 +29,6 @@ const navItems = [
     { href: "/dashboard/automations", icon: Zap, label: "Automations" },
     { href: "/dashboard/calendars", icon: Calendar, label: "Calendars" },
     { href: "/dashboard/reputation", icon: Star, label: "Reputation" },
-    { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
 
 export function DashboardSidebar() {
@@ -55,11 +54,11 @@ export function DashboardSidebar() {
                 {/* Logo Section */}
                 <div className="p-4 border-b border-zinc-100 dark:border-white/[0.08] flex items-center justify-between">
                     <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setSidebarOpen(false)}>
-                        <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center shadow-sm shadow-indigo-500/20">
+                        <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm shadow-primary/20">
                             <span className="text-white font-bold text-sm">G</span>
                         </div>
                         <span className="text-lg font-semibold text-foreground">
-                            GHL<span className="text-indigo-500">Lite</span>
+                            GHL<span className="text-primary">Lite</span>
                         </span>
                     </Link>
                     <button
@@ -85,13 +84,13 @@ export function DashboardSidebar() {
                                 className={cn(
                                     "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
                                     isActive
-                                        ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                                        ? "bg-primary/10 text-primary"
                                         : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
                                 )}
                             >
                                 <Icon className={cn(
                                     "w-5 h-5 transition-colors",
-                                    isActive ? "text-indigo-500 dark:text-indigo-400" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                                    isActive ? "text-primary" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
                                 )} />
                                 <span>{item.label}</span>
                             </Link>
@@ -105,6 +104,26 @@ export function DashboardSidebar() {
                         <ThemeToggle />
                         <span>Theme Preference</span>
                     </div>
+
+                    <div className="my-1 border-t border-zinc-200 dark:border-white/[0.08]" />
+
+                    <Link
+                        href="/dashboard/settings"
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                            pathname.startsWith("/dashboard/settings")
+                                ? "bg-primary/10 text-primary"
+                                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-foreground"
+                        )}
+                    >
+                        <Settings className={cn(
+                            "w-5 h-5 transition-colors",
+                            pathname.startsWith("/dashboard/settings") ? "text-primary" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                        )} />
+                        <span>Settings</span>
+                    </Link>
+
                     <LogoutButton />
                 </div>
             </aside>

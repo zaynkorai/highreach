@@ -277,7 +277,7 @@ export function PublicForm({ form }: PublicFormProps) {
                 <div className="w-5 h-5 rounded-md bg-emerald-500 flex items-center justify-center">
                     <span className="text-white text-[10px] font-bold">G</span>
                 </div>
-                <span className="text-xs text-zinc-400 font-medium">Powered by GHL Lite</span>
+                <span className="text-xs text-zinc-400 font-medium">Powered by Galaxy Lite</span>
             </div>
         </div>
     );

@@ -15,7 +15,7 @@ export default function OrganizationSettingsPage() {
                 </div>
                 <button
                     disabled={isLoading}
-                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-all shadow-sm shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
+                    className="px-4 py-2 bg-primary hover:opacity-90 text-white rounded-lg text-sm font-medium transition-all shadow-sm shadow-primary/20 active:scale-95 disabled:opacity-50"
                 >
                     Save Changes
                 </button>
@@ -30,7 +30,7 @@ export default function OrganizationSettingsPage() {
                         </svg>
                     </div>
                     <div>
-                        <button className="text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline">Upload new logo</button>
+                        <button className="text-sm font-medium text-primary hover:underline">Upload new logo</button>
                         <p className="text-xs text-zinc-500 mt-1">Recommended size: 512x512px. JPG or PNG.</p>
                     </div>
                 </div>
@@ -41,7 +41,7 @@ export default function OrganizationSettingsPage() {
                         <input
                             type="text"
                             defaultValue="Mike's Plumbing"
-                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                     </div>
                     <div className="space-y-1.5">
@@ -49,7 +49,7 @@ export default function OrganizationSettingsPage() {
                         <input
                             type="url"
                             defaultValue="https://mikesplumbing.com"
-                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                     </div>
                     <div className="space-y-1.5">
@@ -57,7 +57,7 @@ export default function OrganizationSettingsPage() {
                         <input
                             type="tel"
                             defaultValue="+1 555 123 4567"
-                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                     </div>
                     <div className="space-y-1.5">
@@ -65,7 +65,7 @@ export default function OrganizationSettingsPage() {
                         <input
                             type="email"
                             defaultValue="mike@mikesplumbing.com"
-                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                            className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                     </div>
                 </div>
@@ -75,7 +75,7 @@ export default function OrganizationSettingsPage() {
                     <textarea
                         defaultValue="123 Pipe Lane, Metropolis, NY 10012"
                         rows={3}
-                        className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none"
+                        className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
                     />
                 </div>
             </div>

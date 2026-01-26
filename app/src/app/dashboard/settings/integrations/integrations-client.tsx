@@ -42,7 +42,7 @@ export default function IntegrationsClient({ initialAccounts }: { initialAccount
                             <img src="https://www.gstatic.com/images/branding/product/1x/calendar_2020q4_48dp.png" alt="Google Calendar" className="w-full h-full object-contain" />
                         </div>
                         {googleAccount ? (
-                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none gap-1.5 py-1 px-3">
+                            <Badge variant="outline" className="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border-none gap-1.5 py-1 px-3">
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Connected
                             </Badge>
                         ) : (
@@ -69,7 +69,7 @@ export default function IntegrationsClient({ initialAccounts }: { initialAccount
                         </Button>
                     ) : (
                         <Link href="/api/integrations/google/auth" prefetch={false}>
-                            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20">
+                            <Button className="w-full bg-primary hover:opacity-90 text-white shadow-lg shadow-primary/20">
                                 Connect Google
                             </Button>
                         </Link>
@@ -85,7 +85,7 @@ export default function IntegrationsClient({ initialAccounts }: { initialAccount
                             <img src="https://upload.wikimedia.org/wikipedia/commons/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg" alt="Outlook Calendar" className="w-full h-full object-contain" />
                         </div>
                         {outlookAccount ? (
-                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none gap-1.5 py-1 px-3">
+                            <Badge variant="outline" className="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border-none gap-1.5 py-1 px-3">
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Connected
                             </Badge>
                         ) : (
@@ -112,7 +112,7 @@ export default function IntegrationsClient({ initialAccounts }: { initialAccount
                         </Button>
                     ) : (
                         <Link href="/api/integrations/outlook/auth" prefetch={false}>
-                            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20">
+                            <Button className="w-full bg-primary hover:opacity-90 text-white shadow-lg shadow-primary/20">
                                 Connect Outlook
                             </Button>
                         </Link>

@@ -195,7 +195,7 @@ export function RequestReviewModal({ isOpen, onClose }: RequestReviewModalProps)
 
                 {step !== 'rating' && (
                     <div className="px-8 py-4 bg-zinc-50 dark:bg-white/[0.02] border-t border-zinc-100 dark:border-white/[0.05] flex justify-between items-center text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">
-                        <span>Powered by GHL Lite</span>
+                        <span>Powered by Galaxy Lite</span>
                         <button onClick={() => setStep('rating')} className="hover:text-indigo-500 transition-colors">Go Back</button>
                     </div>
                 )}
