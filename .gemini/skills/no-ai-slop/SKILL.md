@@ -2,7 +2,6 @@
 name: no-ai-slop
 description: Zero tolerance for AI-generated slop and lazy patterns
 ---
-
 # No AI Slop
 
 ## Banned Patterns
@@ -17,3 +16,4 @@ description: Zero tolerance for AI-generated slop and lazy patterns
 8. **No copy-paste sprawl** — if you wrote similar code twice, extract it.
 9. **No fake error handling** — `catch (e) { console.log(e) }` is not handling.
 10. **No over-commenting** — code should be self-documenting. Comment only non-obvious logic.
+11. **No dual color headings**
