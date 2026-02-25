@@ -2,20 +2,18 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 /**
- * DATABASE SCHEMA PRINCIPLES & SECURITY (From principal.md / test.md)
+ * MULTI-TENANCY & RBAC
  * 
- * Every table MUST have:
- * - id (uuid, primary key)
- * - tenant_id (uuid, foreign key, indexed)
- * - created_at, updated_at (timestamps)
+ * RLS policies use JWT claims (auth.jwt() -> 'app_metadata'):
+ * - tenant_id: isolates all data per tenant  
+ * - role: gates write/delete via authorize() function
  * 
- * RLS policy on ALL tables MUST be:
- * USING (tenant_id = auth.jwt() ->> 'tenant_id')
+ * Claims are set by the sync_tenant_claims() trigger on tenant_members.
+ * See: app/supabase/migrations/20260226_005_jwt_claims_trigger.sql
  * 
  * Security Testing Requirements:
  * 1. Cross-Tenant Data Leakage: RLS must prevent User A from accessing User B's resources.
- *    Any direct access attempt must return 404/401.
- * 2. RLS Group Validation: Bulk queries must only return records scoped to the auth'd Tenant A.
+ * 2. Permission Escalation: Members must not be able to perform owner/admin actions.
  */
 
 export async function createClient() {

@@ -2,18 +2,30 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import type { AppRole } from "@/lib/types/database";
+import { hasPermission } from "@/lib/rbac/permissions";
 
-export function SettingsSidebar() {
+interface SettingsSidebarProps {
+    userRole?: AppRole;
+}
+
+export function SettingsSidebar({ userRole = "member" }: SettingsSidebarProps) {
     const pathname = usePathname();
 
     const tabs = [
-        { id: "organization", label: "Organization Profile", href: "/dashboard/settings" },
-        { id: "integrations", label: "Integrations", href: "/dashboard/settings/integrations" },
+        { id: "organization", label: "Organization Profile", href: "/dashboard/settings", permission: null },
+        { id: "team", label: "Team", href: "/dashboard/settings/team", permission: "team.read" as const },
+        { id: "integrations", label: "Integrations", href: "/dashboard/settings/integrations", permission: null },
+        { id: "billing", label: "Billing", href: "/dashboard/settings/billing", permission: "billing.read" as const },
     ];
+
+    const visibleTabs = tabs.filter(
+        (tab) => !tab.permission || hasPermission(userRole, tab.permission)
+    );
 
     return (
         <div className="w-full md:w-64 flex-shrink-0 space-y-1">
-            {tabs.map((tab) => {
+            {visibleTabs.map((tab) => {
                 const isActive = pathname === tab.href;
                 return (
                     <Link

@@ -16,7 +16,7 @@ export async function updateOnboarding(data: {
 
     if (!user) return { success: false, error: "Unauthorized" };
 
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     if (data.step !== undefined) updates.onboarding_step = data.step;
     if (data.completed !== undefined) updates.onboarding_completed = data.completed;
     if (data.industry) updates.industry = data.industry;
