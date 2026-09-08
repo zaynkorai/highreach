@@ -20,9 +20,7 @@ interface ReputationState {
     };
 }
 
-import { createClient } from '@/lib/supabase/client';
-
-const supabase = createClient();
+import { getReviews, replyToReviewAction } from '@/app/dashboard/reputation/actions';
 
 export const useReputationStore = create<ReputationState>((set, get) => ({
     reviews: [],
@@ -45,16 +43,7 @@ export const useReputationStore = create<ReputationState>((set, get) => ({
         setLoading: (isLoading) => set({ isLoading }),
 
         replyToReview: async (reviewId, replyText) => {
-            const { error } = await supabase
-                .from('reviews')
-                .update({
-                    reply_content: replyText,
-                    status: 'replied',
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', reviewId);
-
-            if (error) throw error;
+            await replyToReviewAction(reviewId, replyText);
 
             set((state) => ({
                 reviews: state.reviews.map(r =>
@@ -77,16 +66,7 @@ export const useReputationStore = create<ReputationState>((set, get) => ({
         fetchReviews: async () => {
             set({ isLoading: true });
 
-            const { data: reviewsData, error } = await supabase
-                .from('reviews')
-                .select('*')
-                .order('review_date', { ascending: false });
-
-            if (error) {
-                console.error('Error fetching reviews:', error);
-                set({ isLoading: false });
-                return;
-            }
+            const reviewsData = await getReviews();
 
             const reviews: Review[] = (reviewsData || []).map(r => ({
                 id: r.id,

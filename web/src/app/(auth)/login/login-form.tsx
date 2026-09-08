@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { loginAction } from "@/lib/auth/actions";
 
-// Map Supabase error messages to user-friendly messages
+// Map error messages to user-friendly messages
 function getReadableError(message: string): string {
     const errorMap: Record<string, string> = {
         "Invalid login credentials": "Incorrect email or password",
@@ -36,23 +36,16 @@ export function LoginForm() {
         setError(null);
 
         const formData = new FormData(e.currentTarget);
-        const email = formData.get("email") as string;
-        const password = formData.get("password") as string;
+        const res = await loginAction(formData);
 
-        const supabase = createClient();
-
-        const { error: authError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        if (authError) {
-            setError(getReadableError(authError.message));
+        if (!res.success) {
+            setError(getReadableError(res.error || "Failed to log in"));
             setIsLoading(false);
             return;
         }
 
         router.push("/dashboard");
+        router.refresh();
     }
 
     return (

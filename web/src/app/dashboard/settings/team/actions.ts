@@ -1,7 +1,8 @@
 "use server";
 
-import { requirePermission, requireAuth } from "@/lib/rbac/guard";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { requirePermission } from "@/lib/rbac/guard";
+import { db, tenantMembers, tenantInvitations, users } from "@/lib/db";
+import { eq, and, isNull, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { AppRole } from "@/lib/types/database";
 
@@ -15,36 +16,36 @@ export async function inviteTeamMember(data: {
 }) {
     const session = await requirePermission("team.invite");
 
-    // Owners cannot be bulk-invited
     if (data.role === "owner") {
         return { success: false, error: "Cannot invite as owner" };
     }
 
-    // Admins can only invite members, not other admins
     if (session.role === "admin" && data.role === "admin") {
         return { success: false, error: "Only owners can invite admins" };
     }
 
-    const { error } = await session.supabase
-        .from("tenant_invitations")
-        .insert({
-            tenant_id: session.tenantId,
+    try {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        await db.insert(tenantInvitations).values({
+            tenantId: session.tenantId,
             email: data.email.toLowerCase().trim(),
             role: data.role,
-            invited_by: session.user.id,
+            invitedBy: session.user.id,
+            expiresAt,
         });
 
-    if (error) {
+        // TODO: Send invitation email via Resend
+
+        revalidatePath("/dashboard/settings/team");
+        return { success: true };
+    } catch (error: any) {
         if (error.code === "23505") {
             return { success: false, error: "This email has already been invited" };
         }
         return { success: false, error: error.message };
     }
-
-    // TODO: Send invitation email via Resend
-
-    revalidatePath("/dashboard/settings/team");
-    return { success: true };
 }
 
 /**
@@ -54,43 +55,48 @@ export async function inviteTeamMember(data: {
 export async function removeTeamMember(memberId: string) {
     const session = await requirePermission("team.remove");
 
-    // Cannot remove yourself
-    const { data: member } = await session.supabase
-        .from("tenant_members")
-        .select("user_id, role")
-        .eq("id", memberId)
-        .single();
+    const [member] = await db
+        .select()
+        .from(tenantMembers)
+        .where(
+            and(
+                eq(tenantMembers.id, memberId),
+                eq(tenantMembers.tenantId, session.tenantId)
+            )
+        )
+        .limit(1);
 
     if (!member) {
         return { success: false, error: "Member not found" };
     }
 
-    if (member.user_id === session.user.id) {
+    if (member.userId === session.user.id) {
         return { success: false, error: "Cannot remove yourself" };
     }
 
-    // Cannot remove another owner
     if (member.role === "owner") {
         return { success: false, error: "Cannot remove an owner" };
     }
 
-    const { error } = await session.supabase
-        .from("tenant_members")
-        .delete()
-        .eq("id", memberId);
+    try {
+        await db.transaction(async (tx) => {
+            await tx.delete(tenantMembers).where(eq(tenantMembers.id, memberId));
 
-    if (error) return { success: false, error: error.message };
+            await tx
+                .delete(users)
+                .where(
+                    and(
+                        eq(users.id, member.userId),
+                        eq(users.tenantId, session.tenantId)
+                    )
+                );
+        });
 
-    // Also remove from users table
-    const adminClient = createAdminClient();
-    await adminClient
-        .from("users")
-        .delete()
-        .eq("id", member.user_id)
-        .eq("tenant_id", session.tenantId);
-
-    revalidatePath("/dashboard/settings/team");
-    return { success: true };
+        revalidatePath("/dashboard/settings/team");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
 }
 
 /**
@@ -104,11 +110,16 @@ export async function changeTeamMemberRole(memberId: string, newRole: AppRole) {
         return { success: false, error: "Cannot promote to owner" };
     }
 
-    const { data: member } = await session.supabase
-        .from("tenant_members")
-        .select("user_id, role")
-        .eq("id", memberId)
-        .single();
+    const [member] = await db
+        .select()
+        .from(tenantMembers)
+        .where(
+            and(
+                eq(tenantMembers.id, memberId),
+                eq(tenantMembers.tenantId, session.tenantId)
+            )
+        )
+        .limit(1);
 
     if (!member) {
         return { success: false, error: "Member not found" };
@@ -118,21 +129,24 @@ export async function changeTeamMemberRole(memberId: string, newRole: AppRole) {
         return { success: false, error: "Cannot change owner's role" };
     }
 
-    const { error } = await session.supabase
-        .from("tenant_members")
-        .update({ role: newRole })
-        .eq("id", memberId);
+    try {
+        await db.transaction(async (tx) => {
+            await tx
+                .update(tenantMembers)
+                .set({ role: newRole, updatedAt: new Date() })
+                .where(eq(tenantMembers.id, memberId));
 
-    if (error) return { success: false, error: error.message };
+            await tx
+                .update(users)
+                .set({ role: newRole, updatedAt: new Date() })
+                .where(eq(users.id, member.userId));
+        });
 
-    // Also update legacy users.role column
-    await session.supabase
-        .from("users")
-        .update({ role: newRole })
-        .eq("id", member.user_id);
-
-    revalidatePath("/dashboard/settings/team");
-    return { success: true };
+        revalidatePath("/dashboard/settings/team");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
 }
 
 /**
@@ -142,16 +156,21 @@ export async function changeTeamMemberRole(memberId: string, newRole: AppRole) {
 export async function revokeInvitation(invitationId: string) {
     const session = await requirePermission("team.invite");
 
-    const { error } = await session.supabase
-        .from("tenant_invitations")
-        .delete()
-        .eq("id", invitationId)
-        .eq("tenant_id", session.tenantId);
+    try {
+        await db
+            .delete(tenantInvitations)
+            .where(
+                and(
+                    eq(tenantInvitations.id, invitationId),
+                    eq(tenantInvitations.tenantId, session.tenantId)
+                )
+            );
 
-    if (error) return { success: false, error: error.message };
-
-    revalidatePath("/dashboard/settings/team");
-    return { success: true };
+        revalidatePath("/dashboard/settings/team");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
 }
 
 /**
@@ -160,23 +179,60 @@ export async function revokeInvitation(invitationId: string) {
 export async function getTeamData() {
     const session = await requirePermission("team.read");
 
-    const [membersResult, invitationsResult] = await Promise.all([
-        session.supabase
-            .from("tenant_members")
-            .select("*, users(email, full_name)")
-            .eq("tenant_id", session.tenantId)
-            .order("created_at", { ascending: true }),
-        session.supabase
-            .from("tenant_invitations")
-            .select("*")
-            .eq("tenant_id", session.tenantId)
-            .is("accepted_at", null)
-            .order("created_at", { ascending: false }),
+    const [membersRows, invitationsRows] = await Promise.all([
+        db
+            .select({
+                member: tenantMembers,
+                user: users,
+            })
+            .from(tenantMembers)
+            .innerJoin(users, eq(tenantMembers.userId, users.id))
+            .where(eq(tenantMembers.tenantId, session.tenantId))
+            .orderBy(asc(tenantMembers.createdAt)),
+
+        db
+            .select()
+            .from(tenantInvitations)
+            .where(
+                and(
+                    eq(tenantInvitations.tenantId, session.tenantId),
+                    isNull(tenantInvitations.acceptedAt)
+                )
+            )
+            .orderBy(desc(tenantInvitations.createdAt)),
     ]);
 
+    const members = membersRows.map(({ member, user }) => ({
+        id: member.id,
+        tenant_id: member.tenantId,
+        user_id: member.userId,
+        role: member.role as AppRole,
+        invited_by: member.invitedBy,
+        invited_at: member.invitedAt ? member.invitedAt.toISOString() : null,
+        accepted_at: member.acceptedAt ? member.acceptedAt.toISOString() : null,
+        created_at: member.createdAt.toISOString(),
+        updated_at: member.updatedAt.toISOString(),
+        users: {
+            email: user.email,
+            full_name: user.fullName,
+        },
+    }));
+
+    const invitations = invitationsRows.map((inv) => ({
+        id: inv.id,
+        tenant_id: inv.tenantId,
+        email: inv.email,
+        role: inv.role as AppRole,
+        token: inv.token,
+        invited_by: inv.invitedBy,
+        expires_at: inv.expiresAt.toISOString(),
+        accepted_at: inv.acceptedAt ? inv.acceptedAt.toISOString() : null,
+        created_at: inv.createdAt.toISOString(),
+    }));
+
     return {
-        members: membersResult.data || [],
-        invitations: invitationsResult.data || [],
+        members,
+        invitations,
         currentUserId: session.user.id,
         currentRole: session.role,
     };

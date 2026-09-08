@@ -1,8 +1,8 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db, forms } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import { PublicForm } from "./public-form";
 import { notFound } from "next/navigation";
 import { Form } from "@/types/form";
-
 import { Suspense } from "react";
 
 export default function PublicFormPage({ params }: { params: { id: string } }) {
@@ -19,33 +19,29 @@ export default function PublicFormPage({ params }: { params: { id: string } }) {
 
 async function FormContainer({ params }: { params: { id: string } }) {
     const { id } = await params;
-    const supabase = createAdminClient();
 
-    // We use admin client to fetch because public users might not have RLS access to 'forms' table
-    // depending on policy. Our policy is "Tenant isolation", so anon validly sees nothing.
-    const { data, error } = await supabase
-        .from("forms")
-        .select("*")
-        .eq("id", id)
-        .single();
+    const [found] = await db
+        .select()
+        .from(forms)
+        .where(eq(forms.id, id))
+        .limit(1);
 
-    if (error || !data) {
+    if (!found) {
         notFound();
     }
 
-    const form = data as Form;
-
-    // Only allow active forms to be viewed
-    if (form.status !== 'active') {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-zinc-50 p-4">
-                <div className="text-center">
-                    <h1 className="text-xl font-bold text-zinc-900">Form Not Available</h1>
-                    <p className="text-zinc-500 mt-2">This form is currently not accepting submissions.</p>
-                </div>
-            </div>
-        );
-    }
+    const form: Form = {
+        id: found.id,
+        tenant_id: found.tenantId,
+        name: found.name,
+        fields: found.fields as any,
+        theme: found.theme as any,
+        redirect_url: found.redirectUrl || undefined,
+        status: "active",
+        views: 0,
+        created_at: found.createdAt.toISOString(),
+        updated_at: found.updatedAt.toISOString(),
+    };
 
     return <PublicForm form={form} />;
 }

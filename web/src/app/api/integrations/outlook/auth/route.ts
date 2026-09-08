@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUrl } from "@/lib/integrations/calendar/outlook";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionWithRole } from "@/lib/auth/session";
 
 export async function GET(req: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const session = await getSessionWithRole();
 
-    if (!user) {
+    if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const state = Buffer.from(JSON.stringify({
-        userId: user.id,
-        tenantId: user.user_metadata?.tenant_id || user.app_metadata?.tenant_id
-    })).toString('base64');
+    const state = Buffer.from(
+        JSON.stringify({
+            userId: session.user.id,
+            tenantId: session.tenantId,
+        })
+    ).toString("base64");
 
     const url = await getAuthUrl(state);
     return NextResponse.redirect(url);

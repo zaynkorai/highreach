@@ -1,5 +1,5 @@
 import type { AppPermission } from "@/lib/types/database";
-import { getSessionWithRole, type SessionWithRole } from "@/lib/supabase/session";
+import { getSessionWithRole, type SessionWithRole } from "@/lib/auth/session";
 import { hasPermission, hasAllPermissions } from "@/lib/rbac/permissions";
 
 /**

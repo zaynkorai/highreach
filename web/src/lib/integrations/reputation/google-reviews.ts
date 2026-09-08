@@ -1,11 +1,11 @@
 import { google } from 'googleapis';
 
-const getAuth = (accessToken: string, refreshToken: string) => {
+const getAuth = (accessToken: string, refreshToken?: string | null) => {
     const auth = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET
     );
-    auth.setCredentials({ access_token: accessToken, refresh_token: refreshToken });
+    auth.setCredentials({ access_token: accessToken, refresh_token: refreshToken || undefined });
     return auth;
 };
 
@@ -13,7 +13,7 @@ const getAuth = (accessToken: string, refreshToken: string) => {
 // but we can use the 'mybusinessbusinessinformation' and 'mybusinessreviews' if available
 // or use generic request if not fully supported in the library version
 
-export async function listBusinessAccounts(accessToken: string, refreshToken: string) {
+export async function listBusinessAccounts(accessToken: string, refreshToken?: string | null) {
     const auth = getAuth(accessToken, refreshToken);
     // Using the My Business Account Management API
     const mybusinessaccountmanagement = (google as any).mybusinessaccountmanagement({ version: 'v1', auth });
@@ -21,7 +21,7 @@ export async function listBusinessAccounts(accessToken: string, refreshToken: st
     return response.data.accounts || [];
 }
 
-export async function listLocations(accessToken: string, refreshToken: string, accountName: string) {
+export async function listLocations(accessToken: string, refreshToken?: string | null, accountName?: string) {
     const auth = getAuth(accessToken, refreshToken);
     const mybusinessbusinessinformation = (google as any).mybusinessbusinessinformation({ version: 'v1', auth });
     const response = await mybusinessbusinessinformation.accounts.locations.list({
@@ -31,7 +31,7 @@ export async function listLocations(accessToken: string, refreshToken: string, a
     return response.data.locations || [];
 }
 
-export async function listReviews(accessToken: string, refreshToken: string, locationName: string) {
+export async function listReviews(accessToken: string, refreshToken?: string | null, locationName?: string) {
     const auth = getAuth(accessToken, refreshToken);
     // The reviews API is often handled via a direct call because the Node SDK might not have them all or they have weird versions
     // But let's try 'mybusinessreviews'
@@ -42,7 +42,7 @@ export async function listReviews(accessToken: string, refreshToken: string, loc
     return response.data.reviews || [];
 }
 
-export async function replyToReview(accessToken: string, refreshToken: string, reviewName: string, reply: string) {
+export async function replyToReview(accessToken: string, refreshToken: string | null | undefined, reviewName: string, reply: string) {
     const auth = getAuth(accessToken, refreshToken);
     const mybusinessreviews = (google as any).mybusinessreviews({ version: 'v1', auth });
     const response = await mybusinessreviews.accounts.locations.reviews.updateReply({

@@ -1,6 +1,8 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { MobileHeader } from "@/components/mobile-header";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, users } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
@@ -8,21 +10,20 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const session = await getSessionWithRole();
 
-    if (!user) {
+    if (!session) {
         redirect("/login");
     }
 
     // Onboarding Guard
-    const { data: profile } = await supabase
-        .from("users")
-        .select("onboarding_completed")
-        .eq("id", user.id)
-        .single();
+    const [profile] = await db
+        .select({ onboardingCompleted: users.onboardingCompleted })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1);
 
-    if (profile && !profile.onboarding_completed) {
+    if (profile && !profile.onboardingCompleted) {
         redirect("/onboarding");
     }
 

@@ -1,5 +1,4 @@
 import { inngest } from "./client";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { WorkflowNode, WorkflowEdge } from "./types";
 import { getByDotNotation, evaluateCondition, convertToWaitTime } from "./utils/helpers";
 import {
@@ -8,6 +7,9 @@ import {
     handleAddTag,
     handleUpdateOpportunity
 } from "./actions";
+import { db } from "@/lib/db";
+import { workflows, workflowVersions, workflowExecutions } from "@/lib/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 
 // ============ GENERIC WORKFLOW ENGINE ============
 
@@ -21,31 +23,25 @@ export const processEvent = inngest.createFunction(
         { event: "call.missed" }
     ],
     async ({ event, step }) => {
-        const supabase = createAdminClient();
-
         // Find all published workflows that match this trigger
-        const workflows = await step.run("find-matching-workflows", async () => {
-            const { data } = await supabase
-                .from("workflows")
-                .select("id, tenant_id")
-                .eq("status", "published")
-                .eq("trigger_type", event.name);
+        const matchedWorkflows = await step.run("find-matching-workflows", async () => {
+            const list = await db
+                .select({ id: workflows.id, tenantId: workflows.tenantId })
+                .from(workflows)
+                .where(and(eq(workflows.status, "published"), eq(workflows.triggerType, event.name)));
 
-            if (!data) return [];
+            if (!list || list.length === 0) return [];
 
             // FETCH DEFINITIONS TO CHECK FILTERS (Smart Triggers)
-            // Real production app would index filters, for now we filter in-memory for the matched set
-            const workflowsWithFilters = await Promise.all(data.map(async (wf) => {
-                const { data: version } = await supabase
-                    .from("workflow_versions")
-                    .select("definition")
-                    .eq("workflow_id", wf.id)
-                    .eq("is_published", true)
-                    .order("created_at", { ascending: false })
-                    .limit(1)
-                    .single();
+            const workflowsWithFilters = await Promise.all(list.map(async (wf) => {
+                const [version] = await db
+                    .select({ definition: workflowVersions.definition })
+                    .from(workflowVersions)
+                    .where(and(eq(workflowVersions.workflowId, wf.id), eq(workflowVersions.isPublished, true)))
+                    .orderBy(desc(workflowVersions.createdAt))
+                    .limit(1);
 
-                return { ...wf, definition: version?.definition };
+                return { ...wf, definition: version?.definition as any };
             }));
 
             return workflowsWithFilters.filter(wf => {
@@ -63,14 +59,14 @@ export const processEvent = inngest.createFunction(
             });
         });
 
-        if (!workflows || workflows.length === 0) return { matched: 0 };
+        if (!matchedWorkflows || matchedWorkflows.length === 0) return { matched: 0 };
 
         // Trigger execution for each workflow
-        const events = workflows.map(wf => ({
+        const events = matchedWorkflows.map(wf => ({
             name: "workflow.execute" as const,
             data: {
                 workflow_id: wf.id,
-                tenant_id: wf.tenant_id,
+                tenant_id: wf.tenantId,
                 original_event: event,
                 trigger_data: event.data
             }
@@ -78,7 +74,7 @@ export const processEvent = inngest.createFunction(
 
         await step.sendEvent("dispatch-executions", events);
 
-        return { matched: workflows.length, workflow_ids: workflows.map(w => w.id) };
+        return { matched: matchedWorkflows.length, workflow_ids: matchedWorkflows.map(w => w.id) };
     }
 );
 
@@ -88,21 +84,18 @@ export const executeWorkflow = inngest.createFunction(
     { event: "workflow.execute" },
     async ({ event, step }) => {
         const { workflow_id, tenant_id, trigger_data } = event.data;
-        const supabase = createAdminClient();
 
         // Load the workflow definition (latest published version)
         const workflowData = await step.run("load-workflow-definition", async () => {
-            const { data: version } = await supabase
-                .from("workflow_versions")
-                .select("id, definition")
-                .eq("workflow_id", workflow_id)
-                .eq("is_published", true)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .single();
+            const [version] = await db
+                .select({ id: workflowVersions.id, definition: workflowVersions.definition })
+                .from(workflowVersions)
+                .where(and(eq(workflowVersions.workflowId, workflow_id), eq(workflowVersions.isPublished, true)))
+                .orderBy(desc(workflowVersions.createdAt))
+                .limit(1);
 
             if (!version) throw new Error("No published version found");
-            return { definition: version.definition, version_id: version.id };
+            return { definition: version.definition as any, version_id: version.id };
         });
 
         if (!workflowData?.definition) return { error: "Definition not found" };
@@ -113,24 +106,28 @@ export const executeWorkflow = inngest.createFunction(
 
         // 3. Create Execution Record
         const execution_id = await step.run("create-execution-log", async () => {
-            const { data } = await supabase
-                .from("workflow_executions")
-                .insert({
-                    workflow_id,
-                    version_id,
-                    tenant_id,
-                    trigger_data,
+            const [record] = await db
+                .insert(workflowExecutions)
+                .values({
+                    workflowId: workflow_id,
+                    versionId: version_id,
+                    tenantId: tenant_id,
+                    triggerData: trigger_data,
                     status: 'running'
                 })
-                .select('id')
-                .single();
-            return data?.id;
+                .returning({ id: workflowExecutions.id });
+            return record?.id;
         });
 
         // Find Start Node (Trigger)
         const startNode = nodes.find(n => n.type === "trigger");
         if (!startNode) {
-            if (execution_id) await supabase.from("workflow_executions").update({ status: 'failed', error_message: 'No trigger node' }).eq('id', execution_id);
+            if (execution_id) {
+                await db
+                    .update(workflowExecutions)
+                    .set({ status: 'failed', errorMessage: 'No trigger node' })
+                    .where(eq(workflowExecutions.id, execution_id));
+            }
             return { error: "No trigger node" };
         }
 
@@ -191,13 +188,13 @@ export const executeWorkflow = inngest.createFunction(
         // Finalize Execution Record
         if (execution_id) {
             await step.run("finalize-execution", async () => {
-                await supabase
-                    .from("workflow_executions")
-                    .update({
+                await db
+                    .update(workflowExecutions)
+                    .set({
                         status: 'completed',
-                        completed_at: new Date().toISOString()
+                        completedAt: new Date()
                     })
-                    .eq('id', execution_id);
+                    .where(eq(workflowExecutions.id, execution_id));
             });
         }
 
@@ -208,7 +205,6 @@ export const executeWorkflow = inngest.createFunction(
 // ============ ACTION HANDLERS ============
 
 async function executeAction(node: WorkflowNode, triggerData: Record<string, any>, tenantId: string) {
-    const supabase = createAdminClient();
     const actionId = node.data.actionId;
     const config = node.data;
 
@@ -216,16 +212,16 @@ async function executeAction(node: WorkflowNode, triggerData: Record<string, any
 
     switch (actionId) {
         case "send_sms":
-            await handleSendSms(node, config, triggerData, tenantId, supabase);
+            await handleSendSms(node, config, triggerData, tenantId);
             break;
         case "send_email":
-            await handleSendEmail(node, config, triggerData, tenantId, supabase);
+            await handleSendEmail(node, config, triggerData, tenantId);
             break;
         case "add_tag":
-            await handleAddTag(config, triggerData, tenantId, supabase);
+            await handleAddTag(config, triggerData, tenantId);
             break;
         case "update_opportunity":
-            await handleUpdateOpportunity(config, triggerData, tenantId, supabase);
+            await handleUpdateOpportunity(config, triggerData, tenantId);
             break;
         default:
             console.warn(`Action type ${actionId} not implemented yet`);

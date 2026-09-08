@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { signupAction } from "@/lib/auth/actions";
 
-// Map Supabase error messages to user-friendly messages
+// Map error messages to user-friendly messages
 function getReadableError(message: string): string {
     const errorMap: Record<string, string> = {
         "Invalid login credentials": "Incorrect email or password",
@@ -49,57 +49,10 @@ export function SignupForm() {
         setError(null);
 
         const formData = new FormData(e.currentTarget);
-        const email = formData.get("email") as string;
-        const password = formData.get("password") as string;
-        const businessName = formData.get("businessName") as string;
+        const res = await signupAction(formData);
 
-        const supabase = createClient();
-
-        // 1. Sign up the user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    business_name: businessName,
-                },
-            },
-        });
-
-        if (authError) {
-            setError(getReadableError(authError.message));
-            setIsLoading(false);
-            return;
-        }
-
-        if (!authData.user) {
-            setError("Failed to create account");
-            setIsLoading(false);
-            return;
-        }
-
-        // Auto-login to ensure session is active before tenant creation
-        const { error: loginError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        if (loginError) {
-            // If auto-login fails, they might need email confirmation
-            setError("Please check your email to confirm your account");
-            setIsLoading(false);
-            return;
-        }
-
-        // 2. Create tenant and profile in one transaction
-        const { error: rpcError } = await supabase.rpc("create_tenant_and_user", {
-            business_name: businessName,
-            full_name: businessName,
-        });
-
-        if (rpcError) {
-            console.error("Setup error:", rpcError);
-            setError(`Failed to create organization: ${rpcError.message}`);
+        if (!res.success) {
+            setError(getReadableError(res.error || "Failed to create account"));
             setIsLoading(false);
             return;
         }

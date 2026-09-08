@@ -37,10 +37,10 @@ function loadEnv() {
 loadEnv();
 
 function requireDb() {
-    const url = process.env.SUPABASE_DB_URL;
+    const url = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
     if (!url) {
-        console.error("❌  Missing SUPABASE_DB_URL in .env");
-        console.error("   → Get it from Supabase Dashboard → Settings → Database → Connection string (URI)");
+        console.error("❌  Missing DATABASE_URL or SUPABASE_DB_URL in .env");
+        console.error("   → Provide PostgreSQL connection string (URI)");
         process.exit(1);
     }
     return url;

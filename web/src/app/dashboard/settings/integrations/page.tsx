@@ -1,13 +1,21 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, externalAccounts } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import IntegrationsClient from "./integrations-client";
 
 export default async function IntegrationsPage() {
-    const supabase = await createClient();
+    const session = await getSessionWithRole();
 
-    // Fetch current connected accounts
-    const { data: accounts } = await supabase
-        .from('external_accounts')
-        .select('*');
+    // Fetch current connected accounts for this tenant
+    const rawAccounts = session
+        ? await db.select().from(externalAccounts).where(eq(externalAccounts.tenantId, session.tenantId))
+        : [];
+
+    const accounts = rawAccounts.map((a) => ({
+        provider: a.provider,
+        provider_account_id: a.providerAccountId,
+        created_at: a.createdAt.toISOString(),
+    }));
 
     return (
         <div className="space-y-6">

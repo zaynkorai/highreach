@@ -1,27 +1,26 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, users, contacts } from "@/lib/db";
+import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
 export default async function DashboardPage() {
-    const supabase = await createClient();
+    const session = await getSessionWithRole();
 
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
+    if (!session) {
         redirect("/login");
     }
 
-    // Get user's tenant info
-    const { data: profile } = await supabase
-        .from("users")
-        .select("*, tenants(*)")
-        .eq("id", user.id)
-        .single();
+    // Get user's profile info
+    const [profile] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
 
-    // Get contacts count
-    const { count: contactsCount } = await supabase
-        .from("contacts")
-        .select("*", { count: "exact", head: true });
+    // Get contacts count for this tenant
+    const [contactsCountResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(contacts)
+        .where(eq(contacts.tenantId, session.tenantId));
+
+    const contactsCount = contactsCountResult?.count || 0;
 
     return (
         <div className="space-y-6">
@@ -29,7 +28,7 @@ export default async function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                        Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}!
+                        Welcome back{profile?.fullName ? `, ${profile.fullName.split(" ")[0]}` : ""}!
                     </h1>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm">
                         Here&apos;s what&apos;s happening with your business today.

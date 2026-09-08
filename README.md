@@ -26,34 +26,34 @@ An open source modern tool to convert leads into customers in **minutes** using 
 
 ## 🛠️ Tech Stack & Architecture
 
-- **Frontend/Backend**: Next.js 15 (App Router) + API Routes
+- **Frontend/Backend**: Next.js 16 (App Router) + Server Actions + API Routes
 - **Language**: TypeScript
-- **Database**: Supabase (PostgreSQL + RLS + PgVector, Multi-tenant single DB)
-- **Auth**: Supabase Auth
+- **Database**: PostgreSQL with Drizzle ORM (Multi-tenant application-level scoping)
+- **Auth**: Custom JWT session cookies via `jose` + `bcryptjs` password hashing + RBAC
 - **Styling**: Tailwind CSS v4 + Shadcn UI
 - **Telephony**: Telnyx (SMS/Voice)
 - **Email**: Resend
-- **Background Jobs**: Inngest (Serverless-friendly)
+- **Background Jobs / Agent Runtime**: Inngest (Durable workflow & agent execution)
 - **AI**: Vercel AI SDK + Claude 3.5 Sonnet / GPT-4o
+- **Architecture**: AI-Native Data Sources $\leftrightarrow$ Autonomous Agents $\leftrightarrow$ Typed Tools (See [Architecture Blueprint](file:///Users/zayn/ground/highreach/docs/ai-native-architecture.md))
 - **State Management**: Zustand (frontend) with localStorage persistence
 - **Validation**: Zod (Shared frontend/backend)
 
 | Item | Assessment |
 |------|------------|
-| **Tech stack** | Supabase + Vercel + Next.js is battle-tested. |
+| **Tech stack** | Next.js 16 + PostgreSQL + Drizzle ORM is lean, decoupled, and self-hostable. |
 | **Resend for email** | Good choice. Better deliverability than Mailgun. |
 | **Telnyx for SMS** | Smart. Modern API, 50% cheaper than Twilio, includes voice for future. |
-| **Inngest for workflows** | Excellent for "wait X → do Y" patterns. No infra to manage. |
+| **Inngest for workflows & agents** | Excellent for durable agent execution and "wait X → do Y" patterns. No infra to manage. |
 | **PWA approach** | Right call. Avoids native app complexity. |
-| **AI scope (25% for 90%)** | Smart. Avoids Voice AI infrastructure cost. |
+| **Data Sources & Agents** | Shift from rigid ERDs to grounded knowledge + autonomous tool execution. |
 | **Industry templates** | Low dev cost, high marketing value. |
-| **Single DB + RLS** | Correct for 50k tenants. Partition later if needed. |
+| **Single DB + Multi-tenant scoping** | Decoupled from vendor lock-in. |
 
 ## Project Structure
 
-- `/web` : Frontend & API routes (Next.js)
-- `/app`: Mobile App coming soon
-- `/backend`: Backend services (Fastify/Node.js)
+- `/web` : Web Application & API routes (Next.js)
+- `/docs`: Architectural blueprints, reviews, and specs
 
 ## Getting Started
 
@@ -61,9 +61,9 @@ An open source modern tool to convert leads into customers in **minutes** using 
 
 - Node.js 20+
 - [pnpm](https://pnpm.io/) (Strictly used for all package management tasks)
-- Supabase Project
-- Telnyx Account
-- Resend Account
+- PostgreSQL (Local, Docker, Railway, RDS, etc.)
+- Telnyx Account (Optional / for SMS)
+- Resend Account (Optional / for Email)
 
 ### Installation
 
@@ -72,16 +72,21 @@ An open source modern tool to convert leads into customers in **minutes** using 
    ```bash
    pnpm install
    ```
-3. Set up environment variables (create `.env.local` inside your Next.js directory):
+3. Set up environment variables (create `.env.local` inside `web/`):
    ```env
-   NEXT_PUBLIC_SUPABASE_URL=...
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/highreach"
+   AUTH_SECRET="your-secure-at-least-32-char-secret"
+   ADMIN_SECRET="your-admin-secret"
    TELNYX_API_KEY=...
    RESEND_API_KEY=...
    ```
-4. Run the development server (e.g., in `/app` or root, depending on your setup):
+4. Run migrations:
    ```bash
-   pnpm dev
+   cd web && pnpm db:migrate
+   ```
+5. Run the development server:
+   ```bash
+   cd web && pnpm dev
    ```
 5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result. You can edit functionality starting from `app/page.tsx` or `web/src/app/page.tsx`.
 
@@ -91,8 +96,12 @@ An open source modern tool to convert leads into customers in **minutes** using 
   - Unified inbox (SMS + Email), CRM, Missed Call Text Back, Forms, Auth, Tenant setup.
 - [X] **Phase 1: Conversion Core** 
   - Pipelines, Calendars, Workflows, Reviews, Webhooks, FB/IG DMs.
-- [ ] **Phase 2 (P2): AI Native Core** (20-45 days)
-  - AI chat (RAG Agents), Review AI, Auto-Booking, White-label, Lead scoring.
+- [ ] **Phase 2 (P2): AI Native Core** (See [docs/ai-native-architecture.md](file:///Users/zayn/ground/highreach/docs/ai-native-architecture.md))
+  - Supabase `pgvector` Data Sources & Knowledge Grounding Engine.
+  - Typed Tool Registry (Telnyx SMS, Resend Email, Calendar booking, CRM mutation).
+  - Autonomous Inbound Lead & Booking Agents (replacing static canned templates).
+  - Unified Inbox Copilot (AI Drafts with 1-click human approval).
+  - Review Guardian Pro (LLM sentiment analysis & automated responses).
 
 ---
 

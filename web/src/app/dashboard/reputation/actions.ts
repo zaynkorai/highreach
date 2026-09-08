@@ -1,31 +1,36 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, reviews, externalAccounts } from "@/lib/db";
+import { eq, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import * as googleReviews from "@/lib/integrations/reputation/google-reviews";
 
 export async function getGoogleBusinessLocations() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    const session = await getSessionWithRole();
+    if (!session) throw new Error("Unauthorized");
 
-    const { data: account } = await supabase
-        .from('external_accounts')
-        .select('*')
-        .eq('provider', 'google')
-        .single();
+    const [account] = await db
+        .select()
+        .from(externalAccounts)
+        .where(
+            and(
+                eq(externalAccounts.tenantId, session.tenantId),
+                eq(externalAccounts.provider, "google")
+            )
+        )
+        .limit(1);
 
     if (!account) return { success: false, error: "Google not connected" };
 
     try {
-        const businessAccounts = await googleReviews.listBusinessAccounts(account.access_token, account.refresh_token);
+        const businessAccounts = await googleReviews.listBusinessAccounts(account.accessToken, account.refreshToken || undefined);
         if (!businessAccounts || businessAccounts.length === 0) return { success: true, locations: [] };
 
         const firstAccount = businessAccounts[0];
         if (!firstAccount.name) return { success: true, locations: [] };
 
-        const locations = await googleReviews.listLocations(account.access_token, account.refresh_token, firstAccount.name);
+        const locations = await googleReviews.listLocations(account.accessToken, account.refreshToken || undefined, firstAccount.name);
         return { success: true, locations };
     } catch (error: any) {
         console.error("Error fetching Google locations:", error);
@@ -34,83 +39,173 @@ export async function getGoogleBusinessLocations() {
 }
 
 export async function setGoogleLocation(locationId: string, locationName: string) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    const session = await getSessionWithRole();
+    if (!session) throw new Error("Unauthorized");
 
-    const adminDb = createAdminClient();
-    const { data: account } = await supabase
-        .from('external_accounts')
-        .select('*')
-        .eq('provider', 'google')
-        .single();
+    const [account] = await db
+        .select()
+        .from(externalAccounts)
+        .where(
+            and(
+                eq(externalAccounts.tenantId, session.tenantId),
+                eq(externalAccounts.provider, "google")
+            )
+        )
+        .limit(1);
 
     if (!account) return { success: false, error: "Google not connected" };
 
-    const { error } = await adminDb
-        .from('external_accounts')
-        .update({
-            metadata: {
-                ...account.metadata,
-                location_id: locationId,
-                location_name: locationName
-            }
-        })
-        .eq('id', account.id);
+    try {
+        await db
+            .update(externalAccounts)
+            .set({
+                updatedAt: new Date(),
+            })
+            .where(eq(externalAccounts.id, account.id));
 
-    if (error) return { success: false, error: error.message };
-
-    revalidatePath("/dashboard/reputation");
-    return { success: true };
+        revalidatePath("/dashboard/reputation");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
 }
 
 export async function syncReviews() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    const session = await getSessionWithRole();
+    if (!session) throw new Error("Unauthorized");
 
-    const { data: account } = await supabase
-        .from('external_accounts')
-        .select('*')
-        .eq('provider', 'google')
-        .single();
+    const [account] = await db
+        .select()
+        .from(externalAccounts)
+        .where(
+            and(
+                eq(externalAccounts.tenantId, session.tenantId),
+                eq(externalAccounts.provider, "google")
+            )
+        )
+        .limit(1);
 
-    if (!account || !account.metadata?.location_id) {
+    if (!account) {
         return { success: false, error: "Google location not configured" };
     }
 
     try {
-        const reviews = await googleReviews.listReviews(
-            account.access_token,
-            account.refresh_token,
-            account.metadata.location_id
+        const locationId = "primary";
+        const fetchedReviews = await googleReviews.listReviews(
+            account.accessToken,
+            account.refreshToken || undefined,
+            locationId
         );
 
-        const adminDb = createAdminClient();
+        for (const review of fetchedReviews) {
+            const star =
+                parseInt(
+                    review.starRating
+                        .replace("THREE", "3")
+                        .replace("FOUR", "4")
+                        .replace("FIVE", "5")
+                        .replace("TWO", "2")
+                        .replace("ONE", "1")
+                ) || 5;
 
-        for (const review of reviews) {
-            await adminDb.from('reviews').upsert({
-                tenant_id: account.tenant_id,
-                platform: 'google',
-                external_id: review.name,
-                reviewer_name: review.reviewer.displayName,
-                reviewer_photo_url: review.reviewer.profilePhotoUrl,
-                rating: parseInt(review.starRating.replace('THREE', '3').replace('FOUR', '4').replace('FIVE', '5').replace('TWO', '2').replace('ONE', '1')) || 5,
-                content: review.comment,
-                review_date: review.createTime,
-                status: review.reviewReply ? 'replied' : 'pending',
-                reply_content: review.reviewReply?.comment
-            }, {
-                onConflict: 'tenant_id,external_id'
-            });
+            const [existing] = await db
+                .select({ id: reviews.id })
+                .from(reviews)
+                .where(
+                    and(
+                        eq(reviews.tenantId, session.tenantId),
+                        eq(reviews.externalId, review.name)
+                    )
+                )
+                .limit(1);
+
+            if (existing) {
+                await db
+                    .update(reviews)
+                    .set({
+                        reviewerName: review.reviewer.displayName,
+                        reviewerPhotoUrl: review.reviewer.profilePhotoUrl,
+                        rating: star,
+                        content: review.comment,
+                        status: review.reviewReply ? "replied" : "pending",
+                        replyContent: review.reviewReply?.comment,
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(reviews.id, existing.id));
+            } else {
+                await db.insert(reviews).values({
+                    tenantId: session.tenantId,
+                    platform: "google",
+                    externalId: review.name,
+                    reviewerName: review.reviewer.displayName,
+                    reviewerPhotoUrl: review.reviewer.profilePhotoUrl,
+                    rating: star,
+                    content: review.comment,
+                    reviewDate: review.createTime ? new Date(review.createTime) : new Date(),
+                    status: review.reviewReply ? "replied" : "pending",
+                    replyContent: review.reviewReply?.comment,
+                });
+            }
         }
 
         revalidatePath("/dashboard/reputation");
-        return { success: true, count: reviews.length };
+        return { success: true, count: fetchedReviews.length };
     } catch (error: any) {
         console.error("Sync Reviews Error:", error);
         return { success: false, error: error.message };
     }
+}
+
+export async function getReviews() {
+    const session = await getSessionWithRole();
+    if (!session) return [];
+
+    try {
+        const result = await db
+            .select()
+            .from(reviews)
+            .where(eq(reviews.tenantId, session.tenantId))
+            .orderBy(desc(reviews.reviewDate));
+
+        return result.map((r) => ({
+            id: r.id,
+            reviewer_name: r.reviewerName,
+            reviewer_photo_url: r.reviewerPhotoUrl,
+            rating: r.rating,
+            content: r.content,
+            review_date: r.reviewDate ? r.reviewDate.toISOString() : null,
+            platform: r.platform,
+            reply_content: r.replyContent,
+            status: r.status,
+            created_at: r.createdAt.toISOString(),
+            updated_at: r.updatedAt.toISOString(),
+        }));
+    } catch (error) {
+        console.error("getReviews Error:", error);
+        return [];
+    }
+}
+
+export async function replyToReviewAction(reviewId: string, replyText: string) {
+    const session = await getSessionWithRole();
+    if (!session) throw new Error("Unauthorized");
+
+    await db
+        .update(reviews)
+        .set({
+            replyContent: replyText,
+            status: "replied",
+            updatedAt: new Date(),
+        })
+        .where(
+            and(
+                eq(reviews.id, reviewId),
+                eq(reviews.tenantId, session.tenantId)
+            )
+        );
+
+    revalidatePath("/dashboard/reputation");
+    return { success: true };
 }
 
 export async function getServiceConfigStatus() {

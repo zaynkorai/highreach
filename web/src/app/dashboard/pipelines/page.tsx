@@ -1,19 +1,20 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, contacts } from "@/lib/db";
+import { eq, asc } from "drizzle-orm";
 import { getPipelines, getOpportunities } from "./actions";
 import { PipelineClient } from "./pipeline-client";
 import { PipelineWithStages } from "@/types/pipeline";
 import { redirect } from "next/navigation";
 
 export default async function PipelinesPage() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const session = await getSessionWithRole();
 
-    if (!user) {
+    if (!session) {
         redirect("/login");
     }
 
     // 1. Fetch Pipelines (and stages)
-    const pipelineRes = await getPipelines() as any;
+    const pipelineRes = (await getPipelines()) as any;
 
     if (!pipelineRes.success || !pipelineRes.data) {
         return (
@@ -27,34 +28,43 @@ export default async function PipelinesPage() {
                 <p className="text-sm text-zinc-500 max-w-sm mb-6">
                     {pipelineRes.error || "There was a problem connecting to the server. Please try refreshing the page."}
                 </p>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg text-sm font-medium transition-transform hover:scale-105"
-                >
-                    Refresh Page
-                </button>
             </div>
         );
     }
 
-    const pipelines = pipelineRes.data as PipelineWithStages[];
-    const activePipelineId = pipelines[0]?.id;
+    const pipelinesList = pipelineRes.data as PipelineWithStages[];
+    const activePipelineId = pipelinesList[0]?.id;
 
     // 2. Fetch Opportunities for the active pipeline
     const opportunitiesRes = await getOpportunities(activePipelineId);
-    const opportunities = (opportunitiesRes.success && opportunitiesRes.data) ? opportunitiesRes.data : [];
+    const opportunities = opportunitiesRes.success && opportunitiesRes.data ? opportunitiesRes.data : [];
 
     // 3. Fetch Contacts for the dropdowns
-    const { data: contacts } = await supabase
-        .from("contacts")
-        .select("*")
-        .order("first_name", { ascending: true });
+    const tenantContacts = await db
+        .select()
+        .from(contacts)
+        .where(eq(contacts.tenantId, session.tenantId))
+        .orderBy(asc(contacts.firstName));
+
+    const formattedContacts = tenantContacts.map((c) => ({
+        id: c.id,
+        tenant_id: c.tenantId,
+        first_name: c.firstName,
+        last_name: c.lastName,
+        email: c.email,
+        phone: c.phone,
+        tags: c.tags || [],
+        source: c.source,
+        notes: c.notes,
+        created_at: c.createdAt.toISOString(),
+        updated_at: c.updatedAt.toISOString(),
+    }));
 
     return (
         <PipelineClient
-            initialPipelines={pipelines}
+            initialPipelines={pipelinesList}
             initialOpportunities={opportunities as any[]}
-            contacts={(contacts || []) as any[]}
+            contacts={formattedContacts as any[]}
         />
     );
 }

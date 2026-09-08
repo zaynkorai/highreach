@@ -1,23 +1,27 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, users } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { OnboardingClient } from "./onboarding-client";
 
 export default async function OnboardingPage() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const session = await getSessionWithRole();
 
-    if (!user) {
+    if (!session) {
         redirect("/login");
     }
 
     // Check if user is already onboarded
-    const { data: profile } = await supabase
-        .from("users")
-        .select("onboarding_completed, email")
-        .eq("id", user.id)
-        .single();
+    const [profile] = await db
+        .select({
+            onboardingCompleted: users.onboardingCompleted,
+            email: users.email,
+        })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1);
 
-    if (profile?.onboarding_completed) {
+    if (profile?.onboardingCompleted) {
         redirect("/dashboard");
     }
 

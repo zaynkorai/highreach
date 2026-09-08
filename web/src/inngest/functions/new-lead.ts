@@ -1,7 +1,7 @@
-
 import { inngest } from "@/lib/inngest/client";
 import { getWorkflowSetting } from "../utils";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db, contacts, tenants } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import { telnyx } from "@/lib/telnyx";
 
 export const newLeadWelcome = inngest.createFunction(
@@ -18,16 +18,22 @@ export const newLeadWelcome = inngest.createFunction(
         const message = setting.config?.template || "Thanks for contacting us! We will be in touch shortly.";
 
         const contact = await step.run("fetch-contact", async () => {
-            const supabase = createAdminClient();
-            const { data } = await supabase.from("contacts").select("phone").eq("id", contact_id).single();
+            const [data] = await db
+                .select({ phone: contacts.phone })
+                .from(contacts)
+                .where(eq(contacts.id, contact_id))
+                .limit(1);
             return data;
         });
 
         if (!contact?.phone) return { skipped: "no-phone" };
 
         const tenant = await step.run("fetch-tenant-phone", async () => {
-            const supabase = createAdminClient();
-            const { data } = await supabase.from("tenants").select("phone").eq("id", tenant_id).single();
+            const [data] = await db
+                .select({ phone: tenants.phoneNumber })
+                .from(tenants)
+                .where(eq(tenants.id, tenant_id))
+                .limit(1);
             return data;
         });
 
@@ -40,7 +46,7 @@ export const newLeadWelcome = inngest.createFunction(
             await (telnyx.messages as any).create({
                 from: tenant.phone!,
                 to: contact!.phone!,
-                text: message
+                text: message,
             });
         });
     }

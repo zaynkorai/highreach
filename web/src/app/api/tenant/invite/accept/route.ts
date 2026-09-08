@@ -1,15 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, tenantInvitations, tenantMembers, users } from "@/lib/db";
+import { eq, and, isNull } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Accept a team invitation via token.
  * GET /api/tenant/invite/accept?token=<uuid>
- *
- * Flow:
- * 1. User clicks invite link → redirected here
- * 2. If not logged in → redirect to signup with redirect_to param
- * 3. If logged in → accept invitation, create membership, redirect to dashboard
  */
 export async function GET(request: NextRequest) {
     const token = request.nextUrl.searchParams.get("token");
@@ -18,81 +14,78 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL("/login?error=invalid_invite", request.url));
     }
 
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const session = await getSessionWithRole();
 
-    if (!user) {
+    if (!session) {
         // Not logged in — redirect to signup with invite token preserved
         const signupUrl = new URL("/signup", request.url);
         signupUrl.searchParams.set("invite", token);
         return NextResponse.redirect(signupUrl);
     }
 
-    // Use admin client for cross-tenant operations
-    const admin = createAdminClient();
-
     // Look up the invitation
-    const { data: invitation, error: invError } = await admin
-        .from("tenant_invitations")
-        .select("*")
-        .eq("token", token)
-        .is("accepted_at", null)
-        .single();
+    const [invitation] = await db
+        .select()
+        .from(tenantInvitations)
+        .where(
+            and(
+                eq(tenantInvitations.token, token),
+                isNull(tenantInvitations.acceptedAt)
+            )
+        )
+        .limit(1);
 
-    if (invError || !invitation) {
-        return NextResponse.redirect(
-            new URL("/login?error=invite_expired", request.url)
-        );
+    if (!invitation) {
+        return NextResponse.redirect(new URL("/login?error=invite_expired", request.url));
     }
 
     // Check expiry
-    if (new Date(invitation.expires_at) < new Date()) {
-        return NextResponse.redirect(
-            new URL("/login?error=invite_expired", request.url)
-        );
+    if (new Date(invitation.expiresAt) < new Date()) {
+        return NextResponse.redirect(new URL("/login?error=invite_expired", request.url));
     }
 
     // Check if user is already a member of this tenant
-    const { data: existingMember } = await admin
-        .from("tenant_members")
-        .select("id")
-        .eq("tenant_id", invitation.tenant_id)
-        .eq("user_id", user.id)
-        .single();
+    const [existingMember] = await db
+        .select({ id: tenantMembers.id })
+        .from(tenantMembers)
+        .where(
+            and(
+                eq(tenantMembers.tenantId, invitation.tenantId),
+                eq(tenantMembers.userId, session.user.id)
+            )
+        )
+        .limit(1);
 
     if (existingMember) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    // Create user profile in the tenant's users table (if not exists)
-    await admin
-        .from("users")
-        .upsert({
-            id: user.id,
-            tenant_id: invitation.tenant_id,
-            email: user.email || "",
-            full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "",
+    // Update user profile tenant if needed
+    await db
+        .update(users)
+        .set({
+            tenantId: invitation.tenantId,
             role: invitation.role,
-            onboarding_completed: true,
-        }, { onConflict: "id" });
+            onboardingCompleted: true,
+            updatedAt: new Date(),
+        })
+        .where(eq(users.id, session.user.id));
 
-    // Create tenant membership (triggers JWT claims sync)
-    await admin
-        .from("tenant_members")
-        .insert({
-            tenant_id: invitation.tenant_id,
-            user_id: user.id,
-            role: invitation.role,
-            invited_by: invitation.invited_by,
-            invited_at: invitation.created_at,
-            accepted_at: new Date().toISOString(),
-        });
+    // Create tenant membership
+    await db.insert(tenantMembers).values({
+        tenantId: invitation.tenantId,
+        userId: session.user.id,
+        role: invitation.role,
+        invitedBy: invitation.invitedBy,
+        invitedAt: invitation.createdAt,
+        acceptedAt: new Date(),
+    });
 
     // Mark invitation as accepted
-    await admin
-        .from("tenant_invitations")
-        .update({ accepted_at: new Date().toISOString() })
-        .eq("id", invitation.id);
+    await db
+        .update(tenantInvitations)
+        .set({ acceptedAt: new Date() })
+        .where(eq(tenantInvitations.id, invitation.id));
 
     return NextResponse.redirect(new URL("/dashboard", request.url));
 }

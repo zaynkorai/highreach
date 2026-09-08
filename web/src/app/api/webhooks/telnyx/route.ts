@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { inngest } from "@/lib/inngest/client";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db, tenants, contacts, conversations, messages } from "@/lib/db";
+import { eq, and, or } from "drizzle-orm";
 
 export async function POST(req: Request) {
     try {
@@ -12,7 +13,6 @@ export async function POST(req: Request) {
         if (event_type === "message.received") {
             const { from, to, text, direction } = payload;
 
-            // Telnyx 'to' is an array of objects
             const toNumber = to[0]?.phone_number;
             const fromNumber = from?.phone_number;
 
@@ -20,99 +20,97 @@ export async function POST(req: Request) {
                 return NextResponse.json({ message: "Ignored outbound message" });
             }
 
-            const supabase = createAdminClient();
+            // A. Find Tenant by phone
+            const [tenant] = await db
+                .select({ id: tenants.id, name: tenants.name })
+                .from(tenants)
+                .where(
+                    or(
+                        eq(tenants.phoneNumber, toNumber),
+                        eq(tenants.phoneNumber, toNumber?.replace("+1", ""))
+                    )
+                )
+                .limit(1);
 
-            // A. Find Tenant
-            const { data: tenant, error: tenantError } = await supabase
-                .from("tenants")
-                .select("id, name")
-                .eq("phone", toNumber)
-                .single();
-
-            if (tenantError || !tenant) {
+            if (!tenant) {
                 console.error(`No tenant found for number ${toNumber}`);
                 return NextResponse.json({ message: "No tenant found" }, { status: 200 });
             }
 
             // B. Find or Create Contact
-            let contactId;
-            const { data: existingContact } = await supabase
-                .from("contacts")
-                .select("id")
-                .eq("phone", fromNumber)
-                .eq("tenant_id", tenant.id)
-                .single();
+            let contactId: string;
+            const [existingContact] = await db
+                .select({ id: contacts.id })
+                .from(contacts)
+                .where(
+                    and(
+                        eq(contacts.phone, fromNumber),
+                        eq(contacts.tenantId, tenant.id)
+                    )
+                )
+                .limit(1);
 
             if (existingContact) {
                 contactId = existingContact.id;
             } else {
-                const { data: newContact, error: createContactError } = await supabase
-                    .from("contacts")
-                    .insert({
-                        tenant_id: tenant.id,
+                const [newContact] = await db
+                    .insert(contacts)
+                    .values({
+                        tenantId: tenant.id,
                         phone: fromNumber,
-                        first_name: "Unknown",
-                        last_name: "Sender",
-                        source: "Inbound SMS"
+                        firstName: "Unknown",
+                        lastName: "Sender",
+                        source: "Inbound SMS",
+                        tags: [],
                     })
-                    .select("id")
-                    .single();
-
-                if (createContactError) throw createContactError;
+                    .returning();
                 contactId = newContact.id;
             }
 
             // C. Find or Create Conversation
-            let conversationId;
-            let currentUnreadCount = 0;
-            const { data: existingConv } = await supabase
-                .from("conversations")
-                .select("id, unread_count")
-                .eq("contact_id", contactId)
-                .eq("tenant_id", tenant.id)
-                .single();
+            let conversationId: string;
+            const [existingConv] = await db
+                .select({ id: conversations.id })
+                .from(conversations)
+                .where(
+                    and(
+                        eq(conversations.contactId, contactId),
+                        eq(conversations.tenantId, tenant.id)
+                    )
+                )
+                .limit(1);
 
             if (existingConv) {
                 conversationId = existingConv.id;
-                currentUnreadCount = existingConv.unread_count || 0;
             } else {
-                const { data: newConv, error: createConvError } = await supabase
-                    .from("conversations")
-                    .insert({
-                        tenant_id: tenant.id,
-                        contact_id: contactId,
-                        status: 'open',
-                        unread_count: 0 // Will increment below
+                const [newConv] = await db
+                    .insert(conversations)
+                    .values({
+                        tenantId: tenant.id,
+                        contactId,
+                        status: "open",
                     })
-                    .select("id")
-                    .single();
-
-                if (createConvError) throw createConvError;
+                    .returning();
                 conversationId = newConv.id;
             }
 
             // D. Insert Message
-            const { error: msgError } = await supabase
-                .from("messages")
-                .insert({
-                    tenant_id: tenant.id,
-                    conversation_id: conversationId,
-                    direction: 'inbound', // Standardize to 'inbound'
-                    channel: 'sms',
-                    content: text,
-                });
-
-            if (msgError) throw msgError;
+            await db.insert(messages).values({
+                tenantId: tenant.id,
+                conversationId,
+                direction: "inbound",
+                channel: "sms",
+                content: text,
+            });
 
             // E. Update Conversation Metadata
-            await supabase
-                .from("conversations")
-                .update({
-                    last_message_at: new Date().toISOString(),
-                    last_message_preview: text,
-                    unread_count: currentUnreadCount + 1
+            await db
+                .update(conversations)
+                .set({
+                    lastMessageAt: new Date(),
+                    updatedAt: new Date(),
                 })
-                .eq("id", conversationId);
+                .where(eq(conversations.id, conversationId));
 
             return NextResponse.json({ success: true });
         }
@@ -121,41 +119,44 @@ export async function POST(req: Request) {
         if (event_type === "call.hangup") {
             const { to, from, hangup_cause, direction } = payload;
 
-            // Only handle incoming calls
             if (direction !== "incoming") {
                 return NextResponse.json({ message: "Ignored outgoing call" });
             }
 
-            // Simple filter: invalid hangup causes for "missed" call logic
             if (hangup_cause === "normal_clearing") {
                 return NextResponse.json({ message: "Call was answered (normal_clearing)" });
             }
 
-            const supabase = createAdminClient();
+            const [tenant] = await db
+                .select({ id: tenants.id, name: tenants.name })
+                .from(tenants)
+                .where(
+                    or(
+                        eq(tenants.phoneNumber, to),
+                        eq(tenants.phoneNumber, to?.replace("+1", ""))
+                    )
+                )
+                .limit(1);
 
-            // Find tenant by phone number
-            const { data: tenant, error } = await supabase
-                .from("tenants")
-                .select("id, name")
-                .eq("phone", to)
-                .single();
-
-            if (error || !tenant) {
-                console.error(`No tenant found for number ${to}: ${error?.message}`);
+            if (!tenant) {
+                console.error(`No tenant found for number ${to}`);
                 return NextResponse.json({ message: "No tenant found" }, { status: 200 });
             }
 
-            // Trigger Inngest event
-            await inngest.send({
-                name: "call.missed",
-                data: {
-                    call_control_id: payload.call_control_id, // Ensure this exists or pass something
-                    from_number: from,
-                    to_number: to,
-                    tenant_id: tenant.id,
-                    direction: direction,
-                },
-            });
+            try {
+                await inngest.send({
+                    name: "call.missed",
+                    data: {
+                        call_control_id: payload.call_control_id,
+                        from_number: from,
+                        to_number: to,
+                        tenant_id: tenant.id,
+                        direction: direction,
+                    },
+                });
+            } catch (err) {
+                console.warn("Inngest send error:", err);
+            }
 
             return NextResponse.json({ success: true });
         }

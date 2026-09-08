@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Conversation, Message, ChannelType } from "@/types/inbox";
-import { getMessages, sendMessage, updateConversationStatus } from "./actions";
+import { getConversations, getMessages, sendMessage, updateConversationStatus } from "./actions";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { useInboxStore, useInboxActions } from "@/stores/inbox-store";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { MessageThread } from "@/components/inbox/message-thread";
@@ -17,7 +16,6 @@ interface InboxClientProps {
 }
 
 export function InboxClient({ initialConversations, tenantId }: InboxClientProps) {
-    const supabase = createClient();
     const router = useRouter();
 
     // Zustand Store
@@ -42,12 +40,12 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
     // Derived state
     const selectedConversation = conversations.find(c => c.id === selectedId);
 
-    // Sync active pane with selection
+    // Sync selected conversation with URL
     useEffect(() => {
         if (selectedId) {
-            setActivePane('thread');
+            router.replace(`/dashboard/inbox?id=${selectedId}`, { scroll: false });
         }
-    }, [selectedId]);
+    }, [selectedId, router]);
 
     // Hydration
     useEffect(() => {
@@ -58,32 +56,75 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
         }
     }, [initialConversations, setConversations, selectedId, setSelectedId]);
 
-    // Subscriptions
+    // Adaptive Smart Polling for live updates
     useEffect(() => {
-        const channel = supabase
-            .channel('inbox-updates')
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'messages', filter: `tenant_id=eq.${tenantId}` },
-                (payload) => {
-                    const newMsg = payload.new as Message;
-                    addMessage(newMsg, newMsg.conversation_id);
+        let isMounted = true;
+        let isPolling = false;
+        let lastActivity = Date.now();
+
+        const onUserActivity = () => {
+            lastActivity = Date.now();
+        };
+
+        window.addEventListener("mousemove", onUserActivity, { passive: true });
+        window.addEventListener("keydown", onUserActivity, { passive: true });
+        window.addEventListener("click", onUserActivity, { passive: true });
+
+        const pollUpdates = async () => {
+            if (isPolling || !isMounted) return;
+            if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+                return;
+            }
+
+            isPolling = true;
+            try {
+                const res = await getConversations();
+                if (isMounted && res.success && res.data) {
+                    setConversations(res.data.conversations);
                 }
-            )
-            .on(
-                'postgres_changes',
-                { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `tenant_id=eq.${tenantId}` },
-                (payload) => {
-                    const updatedConv = payload.new as Conversation;
-                    updateConversation(updatedConv);
+                if (isMounted && selectedId) {
+                    const msgRes = await getMessages(selectedId);
+                    if (isMounted && msgRes.success && msgRes.data) {
+                        setMessages(msgRes.data);
+                    }
                 }
-            )
-            .subscribe();
+            } catch {
+                // Ignore transient network errors during background polling
+            } finally {
+                isPolling = false;
+            }
+        };
+
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                lastActivity = Date.now();
+                pollUpdates();
+            }
+        };
+        document.addEventListener("visibilitychange", onVisibilityChange);
+
+        // Adaptive tick timer: 6s when active, backs off when idle (>60s)
+        const intervalId = setInterval(() => {
+            const idleSeconds = (Date.now() - lastActivity) / 1000;
+            if (idleSeconds > 60) {
+                // Poll less frequently when user is idle
+                if (Math.random() < 0.3) {
+                    pollUpdates();
+                }
+            } else {
+                pollUpdates();
+            }
+        }, 6000);
 
         return () => {
-            supabase.removeChannel(channel);
+            isMounted = false;
+            clearInterval(intervalId);
+            document.removeEventListener("visibilitychange", onVisibilityChange);
+            window.removeEventListener("mousemove", onUserActivity);
+            window.removeEventListener("keydown", onUserActivity);
+            window.removeEventListener("click", onUserActivity);
         };
-    }, [tenantId, supabase, addMessage, updateConversation]);
+    }, [selectedId, setConversations, setMessages]);
 
     // Message Fetch
     useEffect(() => {

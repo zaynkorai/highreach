@@ -1,6 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, users } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function updateOnboarding(data: {
@@ -11,44 +13,42 @@ export async function updateOnboarding(data: {
     firstName?: string;
     lastName?: string;
 }) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const session = await getSessionWithRole();
+    if (!session) return { success: false, error: "Unauthorized" };
 
-    if (!user) return { success: false, error: "Unauthorized" };
+    const updates: Partial<typeof users.$inferInsert> = {
+        updatedAt: new Date(),
+    };
 
-    const updates: Record<string, unknown> = {};
-    if (data.step !== undefined) updates.onboarding_step = data.step;
-    if (data.completed !== undefined) updates.onboarding_completed = data.completed;
+    if (data.step !== undefined) updates.onboardingStep = data.step;
+    if (data.completed !== undefined) updates.onboardingCompleted = data.completed;
     if (data.industry) updates.industry = data.industry;
-    if (data.role) updates.role_in_company = data.role;
+    if (data.role) updates.roleInCompany = data.role;
     if (data.firstName || data.lastName) {
-        updates.full_name = `${data.firstName || ""} ${data.lastName || ""}`.trim();
+        updates.fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
     }
 
-    const { error } = await supabase
-        .from("users")
-        .update(updates)
-        .eq("id", user.id);
-
-    if (error) return { success: false, error: error.message };
-
-    revalidatePath("/onboarding");
-    return { success: true };
+    try {
+        await db.update(users).set(updates).where(eq(users.id, session.user.id));
+        revalidatePath("/onboarding");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
 }
 
 export async function completeOnboarding() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const session = await getSessionWithRole();
+    if (!session) return { success: false, error: "Unauthorized" };
 
-    if (!user) return { success: false, error: "Unauthorized" };
-
-    const { error } = await supabase
-        .from("users")
-        .update({ onboarding_completed: true })
-        .eq("id", user.id);
-
-    if (error) return { success: false, error: error.message };
-
-    revalidatePath("/");
-    return { success: true };
+    try {
+        await db
+            .update(users)
+            .set({ onboardingCompleted: true, updatedAt: new Date() })
+            .where(eq(users.id, session.user.id));
+        revalidatePath("/");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
 }

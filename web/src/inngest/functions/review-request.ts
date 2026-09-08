@@ -1,7 +1,7 @@
-
 import { inngest } from "@/lib/inngest/client";
 import { getWorkflowSetting } from "../utils";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db, opportunities, contacts, tenants } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import { telnyx } from "@/lib/telnyx";
 
 export const reviewRequest = inngest.createFunction(
@@ -24,24 +24,33 @@ export const reviewRequest = inngest.createFunction(
 
         // Fetch contact phone from opportunity
         const opportunity = await step.run("fetch-opportunity", async () => {
-            const supabase = createAdminClient();
-            const { data } = await supabase.from("opportunities").select("contact_id").eq("id", opportunity_id).single();
+            const [data] = await db
+                .select({ contactId: opportunities.contactId })
+                .from(opportunities)
+                .where(eq(opportunities.id, opportunity_id))
+                .limit(1);
             return data;
         });
 
-        if (!opportunity?.contact_id) return { error: "no-contact" };
+        if (!opportunity?.contactId) return { error: "no-contact" };
 
         const contact = await step.run("fetch-contact", async () => {
-            const supabase = createAdminClient();
-            const { data } = await supabase.from("contacts").select("phone").eq("id", opportunity.contact_id).single();
+            const [data] = await db
+                .select({ phone: contacts.phone })
+                .from(contacts)
+                .where(eq(contacts.id, opportunity.contactId))
+                .limit(1);
             return data;
         });
 
         if (!contact?.phone) return { skipped: "no-phone" };
 
         const tenant = await step.run("fetch-tenant", async () => {
-            const supabase = createAdminClient();
-            const { data } = await supabase.from("tenants").select("phone").eq("id", tenant_id).single();
+            const [data] = await db
+                .select({ phone: tenants.phoneNumber })
+                .from(tenants)
+                .where(eq(tenants.id, tenant_id))
+                .limit(1);
             return data;
         });
 
@@ -54,7 +63,7 @@ export const reviewRequest = inngest.createFunction(
             await (telnyx.messages as any).create({
                 from: tenant.phone!,
                 to: contact!.phone!,
-                text: message
+                text: message,
             });
         });
     }

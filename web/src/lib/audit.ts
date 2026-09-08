@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db, auditLogs } from "@/lib/db";
 
 /**
  * Audit event categories for structured logging.
@@ -56,22 +56,18 @@ interface LogAuditParams {
 }
 
 /**
- * Log an audit event. Uses the admin client to call the SECURITY DEFINER
- * RPC, bypassing RLS on audit_logs (which blocks direct inserts).
- *
+ * Log an audit event.
  * Fire-and-forget: errors are logged but don't throw.
  */
 export async function logAuditEvent(params: LogAuditParams): Promise<void> {
     try {
-        const admin = createAdminClient();
-
-        await admin.rpc("log_audit_event", {
-            p_tenant_id: params.tenantId,
-            p_user_id: params.userId,
-            p_action: params.action,
-            p_resource_type: params.resourceType || null,
-            p_resource_id: params.resourceId || null,
-            p_metadata: params.metadata || {},
+        await db.insert(auditLogs).values({
+            tenantId: params.tenantId,
+            userId: params.userId,
+            action: params.action,
+            resourceType: params.resourceType || null,
+            resourceId: params.resourceId || null,
+            metadata: params.metadata || {},
         });
     } catch (error) {
         // Audit logging should never crash the main flow

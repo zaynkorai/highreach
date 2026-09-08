@@ -156,31 +156,32 @@
 
 ---
 
-## 🔵 P2: AI Native Core (Days 29-45)
+## 🔵 P2: AI Native Core (Data Sources & Autonomous Agents)
 
-**Goal:** Shift from "features" to "autonomous agents" that do the work.
+**Goal:** Shift from traditional static CRM features to **Data Sources $\leftrightarrow$ Autonomous Agents $\leftrightarrow$ Typed Tools** architecture.  
+*Architecture Blueprint:* [docs/ai-native-architecture.md](file:///Users/zayn/ground/highreach/docs/ai-native-architecture.md)
 
-- [ ] **AI Concierge (Autonomous Inbox Agent)**
-    - [ ] **RAG Engine**: Vector database setup (Supabase pgvector) for business knowledge (hours, pricing, services).
-    - [ ] **FAQ Router**: Intercepts inbound questions and drafts/sends replies based on KB.
-    - [ ] **Booking Agent**: Heuristic-based slot negotiation ("How about Tuesday at 2pm?") connected to Calendar availability.
-    - [ ] **Human Handoff**: Sentiment analysis to detect anger/confusion and alert staff.
+- [ ] **Data Sources & Grounding Engine**
+    - [ ] **Vector Storage Foundation**: PostgreSQL `pgvector` setup with Drizzle ORM schemas for semantic retrieval (`tenant_knowledge_sources`, `knowledge_chunks`).
+    - [ ] **Knowledge Base Management**: Multi-tenant UI/API to ingest business hours, FAQs, pricing, service catalogs.
+    - [ ] **Context Assembler**: Engine to dynamically construct working memory ($\text{Tenant Knowledge} + \text{Contact History} + \text{Active Thread}$).
 
-- [ ] **Predictive Lead Intelligence**
-    - [ ] **Scoring Engine**: Activity-based scoring (site visits + email opens + reply speed).
-    - [ ] **Hot Lead Alerts**: "Zayn just checked pricing 3 times - Call him now!" notifications.
+- [ ] **Typed Tool Registry (Action Capabilities)**
+    - [ ] **AI SDK Foundation**: Core integration with Vercel AI SDK (`ai`).
+    - [ ] **Telephony & Messaging Tools**: `send_sms` (Telnyx) and `send_email` (Resend).
+    - [ ] **Calendar Tools**: `check_availability` and `book_appointment` across connected Google/Outlook calendars.
+    - [ ] **CRM State Mutation Tools**: `update_pipeline_stage`, `tag_contact`, `create_lead_note`.
+    - [ ] **Escalation Tool**: `escalate_to_human` with urgency level and context reasoning.
 
-- [ ] **Generative Workflow Architect**
-    - [ ] **Natural Language Builder**: "Send a text if they don't reply in 5 minutes" -> Generates Inngest workflow JSON.
-    - [ ] **Auto-Optimization**: AI suggests "Change wait time to 10min to increase reply rate".
+- [ ] **Autonomous Agents (Durable Inngest Execution)**
+    - [ ] **Speed-to-Lead Agent**: Replaces static missed-call and new-lead auto-responders with context-aware lead qualification.
+    - [ ] **Booking Concierge Agent**: Autonomous conversational negotiation of open calendar slots.
+    - [ ] **Review Guardian Pro**: True LLM-powered sentiment analysis and context-grounded public review replies (replacing mock functions in `reputation-store.ts`).
 
-- [ ] **Review Guardian Pro**
-    - [x] **Drafting & Sentiment**: (Completed in P1).
-    - [ ] **Auto-Post Rules**: "If 5-star & positive, auto-reply with 'Thanks!'. If <3 star, draft internal ticket."
-
-- [ ] **White-Label Agency Suite**
-    - [ ] Custom domain/branding support.
-    - [ ] Sub-account cloning (AI configured).
+- [ ] **Supervision, Guardrails & Unified Inbox Copilot**
+    - [ ] **Tenant Autonomy Policy**: Configurable `draft_only` vs `auto_pilot` modes with confidence score thresholds.
+    - [ ] **Inbox AI Drafts**: Generates suggested replies directly in the Unified Inbox with 1-click human approval.
+    - [ ] **Agent Run Traces**: Audit logs capturing perception context, reasoning thoughts, and actions taken.
 
 ---
 

@@ -1,5 +1,5 @@
 // Database Types for HighReach
-// These should be generated from Supabase, but we define them manually for now
+
 
 // =============================================================
 // RBAC Types

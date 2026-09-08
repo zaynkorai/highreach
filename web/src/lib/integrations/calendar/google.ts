@@ -29,17 +29,17 @@ export async function getTokens(code: string) {
     return tokens;
 }
 
-export async function getCalendarEvents(accessToken: string, refreshToken: string, calendarId: string = 'primary', timeMin: Date) {
+export async function getCalendarEvents(accessToken: string, refreshToken?: string | null, calendarId: string = 'primary', timeMin?: Date) {
     const auth = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET
     );
-    auth.setCredentials({ access_token: accessToken, refresh_token: refreshToken });
+    auth.setCredentials({ access_token: accessToken, refresh_token: refreshToken || undefined });
 
     const calendar = google.calendar({ version: 'v3', auth });
     const response = await calendar.events.list({
         calendarId,
-        timeMin: timeMin.toISOString(),
+        timeMin: timeMin ? timeMin.toISOString() : new Date().toISOString(),
         singleEvents: true,
         orderBy: 'startTime',
     });
@@ -47,12 +47,12 @@ export async function getCalendarEvents(accessToken: string, refreshToken: strin
     return response.data.items;
 }
 
-export async function createCalendarEvent(accessToken: string, refreshToken: string, calendarId: string = 'primary', event: any) {
+export async function createCalendarEvent(accessToken: string, refreshToken?: string | null, calendarId: string = 'primary', event?: any) {
     const auth = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET
     );
-    auth.setCredentials({ access_token: accessToken, refresh_token: refreshToken });
+    auth.setCredentials({ access_token: accessToken, refresh_token: refreshToken || undefined });
 
     const calendar = google.calendar({ version: 'v3', auth });
     const response = await calendar.events.insert({

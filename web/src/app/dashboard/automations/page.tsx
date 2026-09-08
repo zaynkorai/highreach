@@ -1,4 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, workflows } from "@/lib/db";
+import { eq, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { WorkflowList } from "./components/workflow-list";
 import { RecipeModal } from "./components/recipe-modal";
@@ -6,19 +8,26 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 export default async function AutomationsPage() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
+    const session = await getSessionWithRole();
+    if (!session) redirect("/login");
 
-    const { data: userData } = await supabase.from("users").select("tenant_id").eq("id", user.id).single();
-    if (!userData) redirect("/login");
+    // Fetch workflows for this tenant
+    const workflowList = await db
+        .select()
+        .from(workflows)
+        .where(eq(workflows.tenantId, session.tenantId))
+        .orderBy(desc(workflows.updatedAt));
 
-    // Fetch real workflows
-    const { data: workflows } = await supabase
-        .from("workflows")
-        .select("*")
-        .eq("tenant_id", userData.tenant_id)
-        .order("updated_at", { ascending: false });
+    const formatted = workflowList.map((w) => ({
+        id: w.id,
+        tenant_id: w.tenantId,
+        name: w.name,
+        description: w.description,
+        trigger_type: w.triggerType,
+        status: w.status,
+        created_at: w.createdAt.toISOString(),
+        updated_at: w.updatedAt.toISOString(),
+    }));
 
     return (
         <div className="space-y-6 container mx-auto max-w-6xl py-8">
@@ -37,7 +46,7 @@ export default async function AutomationsPage() {
                 />
             </div>
 
-            <WorkflowList initialWorkflows={workflows || []} />
+            <WorkflowList initialWorkflows={formatted as any} />
         </div>
     );
 }

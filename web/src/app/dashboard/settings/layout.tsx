@@ -1,5 +1,5 @@
 import { SettingsSidebar } from "./components/settings-sidebar";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionWithRole } from "@/lib/auth/session";
 import type { AppRole } from "@/lib/types/database";
 
 export default async function SettingsLayout({
@@ -7,9 +7,8 @@ export default async function SettingsLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const userRole = (user?.app_metadata?.role as AppRole) || "member";
+    const session = await getSessionWithRole();
+    const userRole = (session?.role as AppRole) || "member";
 
     return (
         <div className="space-y-6">

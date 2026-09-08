@@ -1,82 +1,101 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { Form, FormField } from "@/types/form";
+import { getSessionWithRole } from "@/lib/auth/session";
+import { db, forms, formSubmissions } from "@/lib/db";
+import { eq, desc, and, sql } from "drizzle-orm";
+import { Form } from "@/types/form";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 export async function getForms() {
-    const supabase = await createClient();
+    const session = await getSessionWithRole();
+    if (!session) throw new Error("Unauthorized");
 
-    // Get forms with submission counts
-    const { data, error } = await supabase
-        .from("forms")
-        .select(`
-            *,
-            submissions:form_submissions(count)
-        `)
-        .order("created_at", { ascending: false });
+    const formsList = await db
+        .select()
+        .from(forms)
+        .where(eq(forms.tenantId, session.tenantId))
+        .orderBy(desc(forms.createdAt));
 
-    if (error) {
-        throw new Error(error.message);
-    }
+    // Get submission counts per form
+    const counts = await db
+        .select({
+            formId: formSubmissions.formId,
+            count: sql<number>`count(*)::int`,
+        })
+        .from(formSubmissions)
+        .where(eq(formSubmissions.tenantId, session.tenantId))
+        .groupBy(formSubmissions.formId);
 
-    return data.map((form: any) => ({
-        ...form,
-        submissions_count: form.submissions?.[0]?.count || 0,
+    const countMap = new Map(counts.map((c) => [c.formId, c.count]));
+
+    return formsList.map((f) => ({
+        id: f.id,
+        tenant_id: f.tenantId,
+        name: f.name,
+        fields: f.fields as any,
+        theme: f.theme as any,
+        redirect_url: f.redirectUrl || undefined,
+        status: "active" as const,
+        views: 0,
+        created_at: f.createdAt.toISOString(),
+        updated_at: f.updatedAt.toISOString(),
+        submissions_count: countMap.get(f.id) || 0,
     }));
 }
 
 export async function getForm(id: string) {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from("forms")
-        .select("*")
-        .eq("id", id)
-        .single();
+    const session = await getSessionWithRole();
+    if (!session) return null;
 
-    if (error) {
-        return null;
-    }
+    const [found] = await db
+        .select()
+        .from(forms)
+        .where(and(eq(forms.id, id), eq(forms.tenantId, session.tenantId)))
+        .limit(1);
 
-    return data as Form;
+    if (!found) return null;
+
+    return {
+        id: found.id,
+        tenant_id: found.tenantId,
+        name: found.name,
+        fields: found.fields as any,
+        theme: found.theme as any,
+        redirect_url: found.redirectUrl || undefined,
+        status: "active" as const,
+        views: 0,
+        created_at: found.createdAt.toISOString(),
+        updated_at: found.updatedAt.toISOString(),
+    } as unknown as Form;
 }
 
 export async function createForm(name: string, description?: string) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const session = await getSessionWithRole();
+        if (!session) return { success: false, error: "Unauthorized" };
 
-        if (!user) {
-            return { success: false, error: "Unauthorized" };
-        }
-
-        const { data: userData } = await supabase
-            .from("users")
-            .select("tenant_id")
-            .eq("id", user.id)
-            .single();
-
-        if (!userData) return { success: false, error: "No tenant" };
-
-        const { data, error } = await supabase
-            .from("forms")
-            .insert({
-                tenant_id: userData.tenant_id,
+        const [created] = await db
+            .insert(forms)
+            .values({
+                tenantId: session.tenantId,
                 name,
-                description,
-                fields: [], // Start empty
-                status: "draft",
+                fields: [],
             })
-            .select()
-            .single();
-
-        if (error) {
-            return { success: false, error: error.message };
-        }
+            .returning();
 
         revalidatePath("/dashboard/forms");
-        return { success: true, data };
+        return {
+            success: true,
+            data: {
+                id: created.id,
+                tenant_id: created.tenantId,
+                name: created.name,
+                fields: created.fields,
+                redirect_url: created.redirectUrl,
+                created_at: created.createdAt.toISOString(),
+                updated_at: created.updatedAt.toISOString(),
+            },
+        };
     } catch (e: any) {
         console.error("createForm Error:", e);
         return { success: false, error: e.message || "Failed to create form" };
@@ -85,22 +104,22 @@ export async function createForm(name: string, description?: string) {
 
 export async function updateForm(id: string, updates: Partial<Form>) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const session = await getSessionWithRole();
+        if (!session) return { success: false, error: "Unauthorized" };
 
-        if (!user) return { success: false, error: "Unauthorized" };
+        const setValues: Partial<typeof forms.$inferInsert> = {
+            updatedAt: new Date(),
+        };
 
-        // Clean up fields to ensure they match JSON type if passed
-        const payload = { ...updates };
+        if (updates.name !== undefined) setValues.name = updates.name;
+        if (updates.fields !== undefined) setValues.fields = updates.fields as any;
+        if (updates.redirect_url !== undefined) setValues.redirectUrl = updates.redirect_url;
+        if ((updates as any).theme !== undefined) setValues.theme = (updates as any).theme;
 
-        const { error } = await supabase
-            .from("forms")
-            .update(payload)
-            .eq("id", id);
-
-        if (error) {
-            return { success: false, error: error.message };
-        }
+        await db
+            .update(forms)
+            .set(setValues)
+            .where(and(eq(forms.id, id), eq(forms.tenantId, session.tenantId)));
 
         revalidatePath("/dashboard/forms");
         revalidatePath(`/dashboard/forms/${id}`);
@@ -113,16 +132,12 @@ export async function updateForm(id: string, updates: Partial<Form>) {
 
 export async function deleteForm(id: string) {
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const session = await getSessionWithRole();
+        if (!session) return { success: false, error: "Unauthorized" };
 
-        if (!user) return { success: false, error: "Unauthorized" };
-
-        const { error } = await supabase.from("forms").delete().eq("id", id);
-
-        if (error) {
-            return { success: false, error: error.message };
-        }
+        await db
+            .delete(forms)
+            .where(and(eq(forms.id, id), eq(forms.tenantId, session.tenantId)));
 
         revalidatePath("/dashboard/forms");
         return { success: true };

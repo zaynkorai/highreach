@@ -147,28 +147,27 @@ Not just static "Snapshots" — AI pre-configures your business logic:
 
 ---
 
-## 🔵 Phase 3: AI Core (AI Native System)
+## 🔵 Phase 3: AI Native Core (Data Sources & Autonomous Agents)
 
-*Priority: 20–45 Days Build*
+*Priority: 20–45 Days Build*  
+*Architecture Blueprint:* [docs/ai-native-architecture.md](file:///Users/zayn/ground/highreach/docs/ai-native-architecture.md)
 
-**Strategy:** The system is not just "enabled" with AI, it is **AI Native**. The AI is the primary interface for getting things done.
+**Strategy:** Unlike traditional CRMs built solely around static relational database tables, HighReach is designed around **Data Sources** (Grounding & Memory) and **Autonomous Agents** (Reasoners & Typed Tools).
 
-| Feature                           | Build? | Why                                                         |
-| --------------------------------- | ------ | ----------------------------------------------------------- |
-| **Autonomous FAQ Agent**    | ✅     | "What are your hours?" "Do you offer X?" (Zero config)      |
-| **AI Booking Concierge**    | ✅     | Negotiates times and loops in calendar availability         |
-| **Review Guardian AI**      | ✅     | Drafts and posts responses to Google reviews automatically  |
-| **Predictive Lead Scoring** | ✅     | "This lead is hot because they viewed pricing page 3 times" |
-| **Generative Workflow AI**  | ✅     | "Build a sequence for missed calls" → Done.                |
-| Voice AI (phone)                  | ❌     | Expensive infra, low SMB adoption (Phase 4)                 |
+| Capability | Architecture Primitives | Why |
+| :--- | :--- | :--- |
+| **Speed-to-Lead Agent** | Inbound Webhooks + Live CRM Context + `send_sms` Tool | Engages leads in <60s, qualifies intent, replaces canned templates |
+| **Data Sources & RAG** | Supabase `pgvector` (`tenant_knowledge_sources`) | Grounds responses in verified business facts (hours, pricing, services) |
+| **AI Booking Concierge** | Calendar Integration + `book_appointment` Tool | Autonomously negotiates dates/times and slots into calendars |
+| **Review Guardian Pro** | Sentiment Embeddings + Review Platform APIs | Auto-drafts authentic responses and alerts staff to negative feedback |
+| **Unified Inbox Copilot** | Agent Deliberation + Human-in-the-Loop Mode | Agents draft replies with 1-click human approval or run autonomously |
+| Voice AI (phone) | Deferred to future phase | High infrastructure cost, prioritize SMS/Email speed-to-lead first |
 
 **Build List:**
-
-* **AI Concierge (Inbox):** Handles 80% of inbound queries automatically.
-
-  * *Stack: Vercel AI SDK + Claude 3.5 Sonnet / GPT-4o*
-* **Reviews AI:** Auto-respond to new Google reviews with context.
-* **Generative Config:** User uses natural language to configure the CRM.
+* **Data Sources Engine:** Ingestion of FAQs, service menus, and URLs with automatic vector chunking.
+* **Typed Tool Registry:** Standardized Vercel AI SDK tool definitions (`send_sms`, `book_appointment`, `tag_contact`).
+* **Durable Inngest Agents:** Long-running resilient agent loops capable of delays, retries, and supervision gates.
+* **Supervision Layer:** Tenant autonomy toggles (`draft_only` vs `auto_pilot`) with audit logging.
 
 ---
 

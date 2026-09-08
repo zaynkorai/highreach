@@ -1,43 +1,19 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getSessionWithRole } from "@/lib/auth/session";
+import {
+    db,
+    calendars,
+    calendarAvailability,
+    appointments,
+    externalAccounts,
+    contacts,
+    users,
+} from "@/lib/db";
+import { eq, desc, asc, and, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { inngest } from "@/lib/inngest/client";
 
-// --- Helpers -----------------------------------------------------------------
-
-/**
- * securely retrieves the current user and their tenant_id.
- * returns null if unauthorized or no tenant found.
- */
-async function getAuthenticatedContext() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    // Use Admin Client to strictly verify tenant association 
-    // (Bypasses RLS to ensure we find the user's config truth)
-    const adminDb = createAdminClient();
-    const { data } = await adminDb
-        .from("users")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
-
-    if (!data?.tenant_id) return null;
-
-    return {
-        user,
-        tenant_id: data.tenant_id,
-        adminDb,
-        supabase // Regular client for RLS operations if needed
-    };
-}
-
-/**
- * Standardized error response wrapper
- */
 function errorResponse(message: string) {
     console.error(`Action Error: ${message}`);
     return { success: false, error: message };
@@ -47,264 +23,382 @@ function successResponse(data?: any) {
     return { success: true, data };
 }
 
-// --- Actions -----------------------------------------------------------------
-
 export async function getCalendars() {
-    const context = await getAuthenticatedContext();
-    if (!context) return [];
+    const session = await getSessionWithRole();
+    if (!session) return [];
 
-    const { supabase } = context;
-    const { data, error } = await supabase
-        .from("calendars")
-        .select("*")
-        .order("created_at", { ascending: false });
+    try {
+        const result = await db
+            .select()
+            .from(calendars)
+            .where(eq(calendars.tenantId, session.tenantId))
+            .orderBy(desc(calendars.createdAt));
 
-    if (error) {
+        return result.map((c) => ({
+            id: c.id,
+            tenant_id: c.tenantId,
+            name: c.name,
+            slug: c.slug,
+            description: c.description,
+            location: c.location,
+            timezone: c.timezone,
+            duration_minutes: c.durationMinutes,
+            buffer_minutes: c.bufferMinutes,
+            is_active: c.isActive,
+            external_account_id: c.externalAccountId,
+            external_calendar_id: c.externalCalendarId,
+            sync_direction: c.syncDirection,
+            last_sync_at: c.lastSyncAt ? c.lastSyncAt.toISOString() : null,
+            created_at: c.createdAt.toISOString(),
+            updated_at: c.updatedAt.toISOString(),
+        }));
+    } catch (error) {
         console.error("Error fetching calendars:", error);
         return [];
     }
-    return data;
 }
 
 export async function getIntegrations() {
-    const context = await getAuthenticatedContext();
-    if (!context) return [];
+    const session = await getSessionWithRole();
+    if (!session) return [];
 
-    const { adminDb, tenant_id } = context;
-    const { data, error } = await adminDb
-        .from("external_accounts")
-        .select("*")
-        .eq("tenant_id", tenant_id);
+    try {
+        const result = await db
+            .select()
+            .from(externalAccounts)
+            .where(eq(externalAccounts.tenantId, session.tenantId));
 
-    if (error) {
+        return result.map((a) => ({
+            id: a.id,
+            tenant_id: a.tenantId,
+            provider: a.provider,
+            provider_account_id: a.providerAccountId,
+            access_token: a.accessToken,
+            refresh_token: a.refreshToken,
+            expires_at: a.expiresAt ? a.expiresAt.toISOString() : null,
+            scopes: a.scopes,
+            created_at: a.createdAt.toISOString(),
+            updated_at: a.updatedAt.toISOString(),
+        }));
+    } catch (error) {
         console.error("Error fetching integrations:", error);
         return [];
     }
-    return data;
 }
 
 export async function getCalendarWithAvailability(id: string) {
-    const supabase = await createClient(); // RLS handles security here for read
-    const { data: calendar, error: calError } = await supabase
-        .from("calendars")
-        .select("*")
-        .eq("id", id)
-        .single();
+    const session = await getSessionWithRole();
+    if (!session) return null;
 
-    if (calError) return null;
+    try {
+        const [calendar] = await db
+            .select()
+            .from(calendars)
+            .where(and(eq(calendars.id, id), eq(calendars.tenantId, session.tenantId)))
+            .limit(1);
 
-    const { data: availability } = await supabase
-        .from("calendar_availability")
-        .select("*")
-        .eq("calendar_id", id)
-        .order("day_of_week", { ascending: true });
+        if (!calendar) return null;
 
-    return { ...calendar, availability: availability || [] };
+        const availability = await db
+            .select()
+            .from(calendarAvailability)
+            .where(eq(calendarAvailability.calendarId, id))
+            .orderBy(asc(calendarAvailability.dayOfWeek));
+
+        return {
+            id: calendar.id,
+            tenant_id: calendar.tenantId,
+            name: calendar.name,
+            slug: calendar.slug,
+            description: calendar.description,
+            location: calendar.location,
+            timezone: calendar.timezone,
+            duration_minutes: calendar.durationMinutes,
+            buffer_minutes: calendar.bufferMinutes,
+            is_active: calendar.isActive,
+            external_account_id: calendar.externalAccountId,
+            external_calendar_id: calendar.externalCalendarId,
+            sync_direction: calendar.syncDirection,
+            last_sync_at: calendar.lastSyncAt ? calendar.lastSyncAt.toISOString() : null,
+            created_at: calendar.createdAt.toISOString(),
+            updated_at: calendar.updatedAt.toISOString(),
+            availability: availability.map((a) => ({
+                id: a.id,
+                calendar_id: a.calendarId,
+                day_of_week: a.dayOfWeek,
+                start_time: a.startTime,
+                end_time: a.endTime,
+            })),
+        };
+    } catch {
+        return null;
+    }
 }
 
-export async function createCalendar(payload: { name: string, slug: string, description?: string, duration?: number, location?: string }) {
-    const context = await getAuthenticatedContext();
-    if (!context) return errorResponse("Unauthorized");
-    const { tenant_id, adminDb } = context;
+export async function createCalendar(payload: {
+    name: string;
+    slug: string;
+    description?: string;
+    duration?: number;
+    location?: string;
+}) {
+    const session = await getSessionWithRole();
+    if (!session) return errorResponse("Unauthorized");
 
-    const { data, error } = await adminDb
-        .from("calendars")
-        .insert({
-            tenant_id,
-            name: payload.name,
-            slug: payload.slug,
-            description: payload.description || "",
-            duration_minutes: payload.duration || 30,
-            location: payload.location || "zoom",
-            timezone: "UTC"
-        })
-        .select()
-        .single();
+    try {
+        const [data] = await db
+            .insert(calendars)
+            .values({
+                tenantId: session.tenantId,
+                name: payload.name,
+                slug: payload.slug,
+                description: payload.description || "",
+                durationMinutes: payload.duration || 30,
+                location: payload.location || "zoom",
+                timezone: "UTC",
+            })
+            .returning();
 
-    if (error) return errorResponse(error.message);
-
-    revalidatePath("/dashboard/calendars");
-    return successResponse(data);
+        revalidatePath("/dashboard/calendars");
+        return successResponse(data);
+    } catch (error: any) {
+        return errorResponse(error.message);
+    }
 }
 
 export async function updateCalendar(id: string, payload: any) {
-    const supabase = await createClient();
-    // RLS will ensure user owns the calendar they are updating
-    const { error } = await supabase
-        .from("calendars")
-        .update({
-            name: payload.name,
-            description: payload.description,
-            slug: payload.slug,
-            duration_minutes: payload.duration_minutes,
-            timezone: payload.timezone,
-            buffer_minutes: payload.buffer_minutes,
-            location: payload.location,
-            external_account_id: payload.external_account_id || null,
-            external_calendar_id: payload.external_calendar_id || null,
-            sync_direction: payload.sync_direction || 'off'
-        })
-        .eq("id", id);
+    const session = await getSessionWithRole();
+    if (!session) return errorResponse("Unauthorized");
 
-    if (error) return errorResponse(error.message);
+    try {
+        const updates: Partial<typeof calendars.$inferInsert> = {
+            updatedAt: new Date(),
+        };
 
-    revalidatePath(`/dashboard/calendars/${id}`);
-    revalidatePath("/dashboard/calendars");
-    return successResponse();
+        if (payload.name !== undefined) updates.name = payload.name;
+        if (payload.description !== undefined) updates.description = payload.description;
+        if (payload.slug !== undefined) updates.slug = payload.slug;
+        if (payload.duration_minutes !== undefined) updates.durationMinutes = payload.duration_minutes;
+        if (payload.timezone !== undefined) updates.timezone = payload.timezone;
+        if (payload.buffer_minutes !== undefined) updates.bufferMinutes = payload.buffer_minutes;
+        if (payload.location !== undefined) updates.location = payload.location;
+        if (payload.external_account_id !== undefined) updates.externalAccountId = payload.external_account_id || null;
+        if (payload.external_calendar_id !== undefined) updates.externalCalendarId = payload.external_calendar_id || null;
+        if (payload.sync_direction !== undefined) updates.syncDirection = payload.sync_direction || "off";
+
+        await db
+            .update(calendars)
+            .set(updates)
+            .where(and(eq(calendars.id, id), eq(calendars.tenantId, session.tenantId)));
+
+        revalidatePath(`/dashboard/calendars/${id}`);
+        revalidatePath("/dashboard/calendars");
+        return successResponse();
+    } catch (error: any) {
+        return errorResponse(error.message);
+    }
 }
 
 export async function updateAvailability(calendarId: string, availability: any[]) {
-    const supabase = await createClient();
+    const session = await getSessionWithRole();
+    if (!session) return errorResponse("Unauthorized");
 
-    // Transaction-like approach: Delete old -> Insert new
-    // 1. Delete existing
-    const { error: deleteError } = await supabase
-        .from("calendar_availability")
-        .delete()
-        .eq("calendar_id", calendarId);
+    try {
+        await db.transaction(async (tx) => {
+            const [calendar] = await tx
+                .select({ id: calendars.id })
+                .from(calendars)
+                .where(and(eq(calendars.id, calendarId), eq(calendars.tenantId, session.tenantId)))
+                .limit(1);
 
-    if (deleteError) return errorResponse(deleteError.message);
+            if (!calendar) {
+                throw new Error("Calendar not found or access denied");
+            }
 
-    // 2. Insert new
-    if (availability.length > 0) {
-        const { error: insertError } = await supabase
-            .from("calendar_availability")
-            .insert(availability.map(a => ({
-                calendar_id: calendarId,
-                day_of_week: a.day_of_week,
-                start_time: a.start_time,
-                end_time: a.end_time
-            })));
+            await tx
+                .delete(calendarAvailability)
+                .where(eq(calendarAvailability.calendarId, calendarId));
 
-        if (insertError) return errorResponse(insertError.message);
+            if (availability.length > 0) {
+                await tx.insert(calendarAvailability).values(
+                    availability.map((a) => ({
+                        calendarId,
+                        dayOfWeek: a.day_of_week,
+                        startTime: a.start_time,
+                        endTime: a.end_time,
+                    }))
+                );
+            }
+        });
+
+        revalidatePath(`/dashboard/calendars/${calendarId}`);
+        return successResponse();
+    } catch (error: any) {
+        return errorResponse(error.message);
     }
-
-    revalidatePath(`/dashboard/calendars/${calendarId}`);
-    return successResponse();
 }
 
 export async function deleteCalendar(id: string) {
-    console.log("Deleting calendar:", id);
-    const context = await getAuthenticatedContext();
-    if (!context) return errorResponse("Unauthorized");
-    const { tenant_id, adminDb } = context;
+    const session = await getSessionWithRole();
+    if (!session) return errorResponse("Unauthorized");
 
-    // Use Admin DB to strictly enforce tenant ownership
-    // This avoids RLS "silent failures" where it looks like it worked but deleted nothing
-    const { error, count } = await adminDb
-        .from("calendars")
-        .delete({ count: "exact" })
-        .eq("id", id)
-        .eq("tenant_id", tenant_id); // Verification
+    try {
+        const deleted = await db
+            .delete(calendars)
+            .where(and(eq(calendars.id, id), eq(calendars.tenantId, session.tenantId)))
+            .returning();
 
-    if (error) return errorResponse(error.message);
-    if (count === 0) return errorResponse("Calendar not found or access denied");
+        if (deleted.length === 0) return errorResponse("Calendar not found or access denied");
 
-    revalidatePath("/dashboard/calendars");
-    return successResponse();
+        revalidatePath("/dashboard/calendars");
+        return successResponse();
+    } catch (error: any) {
+        return errorResponse(error.message);
+    }
 }
 
 export async function getAppointments(start: string, end: string) {
-    const context = await getAuthenticatedContext();
-    if (!context) return [];
+    const session = await getSessionWithRole();
+    if (!session) return [];
 
-    // Using AdminDB with tenant filter is often safer/faster than complex RLS joins for dashboards
-    // allowing us to select related contact data easily
-    const { adminDb, tenant_id } = context;
+    try {
+        const rows = await db
+            .select({
+                appointment: appointments,
+                contact: contacts,
+                calendar: calendars,
+            })
+            .from(appointments)
+            .innerJoin(contacts, eq(appointments.contactId, contacts.id))
+            .innerJoin(calendars, eq(appointments.calendarId, calendars.id))
+            .where(
+                and(
+                    eq(appointments.tenantId, session.tenantId),
+                    gte(appointments.startTime, new Date(start)),
+                    lte(appointments.endTime, new Date(end))
+                )
+            );
 
-    const { data, error } = await adminDb
-        .from('appointments')
-        .select(`
-            *,
-            contact:contacts(first_name, last_name, email, phone),
-            calendar:calendars(name)
-        `)
-        .eq('tenant_id', tenant_id)
-        .gte('start_time', start)
-        .lte('end_time', end);
-
-    if (error) {
+        return rows.map(({ appointment: a, contact: c, calendar: cal }) => ({
+            id: a.id,
+            calendar_id: a.calendarId,
+            tenant_id: a.tenantId,
+            contact_id: a.contactId,
+            start_time: a.startTime.toISOString(),
+            end_time: a.endTime.toISOString(),
+            status: a.status,
+            location: a.location,
+            notes: a.notes,
+            created_at: a.createdAt.toISOString(),
+            updated_at: a.updatedAt.toISOString(),
+            contact: {
+                first_name: c.firstName,
+                last_name: c.lastName,
+                email: c.email,
+                phone: c.phone,
+            },
+            calendar: {
+                name: cal.name,
+            },
+        }));
+    } catch (error) {
         console.error("Error fetching appointments:", error);
         return [];
     }
-    return data;
 }
 
 export async function createManualAppointment(payload: any) {
-    const context = await getAuthenticatedContext();
-    if (!context) return errorResponse("Unauthorized");
-    const { tenant_id, adminDb } = context;
+    const session = await getSessionWithRole();
+    if (!session) return errorResponse("Unauthorized");
 
-    // 1. Find or Create Contact
-    let contactId;
-    const { data: existingContact } = await adminDb
-        .from("contacts")
-        .select("id")
-        .eq("email", payload.email)
-        .eq("tenant_id", tenant_id)
-        .single();
+    try {
+        // 1. Find or Create Contact
+        let contactId: string;
+        const [existingContact] = await db
+            .select({ id: contacts.id })
+            .from(contacts)
+            .where(
+                and(
+                    eq(contacts.email, payload.email),
+                    eq(contacts.tenantId, session.tenantId)
+                )
+            )
+            .limit(1);
 
-    if (existingContact) {
-        contactId = existingContact.id;
-    } else {
-        const { data: newContact, error: contactError } = await adminDb
-            .from("contacts")
-            .insert({
-                tenant_id,
-                first_name: payload.name.split(" ")[0],
-                last_name: payload.name.split(" ").slice(1).join(" "),
-                email: payload.email,
-                source: "Manual Booking"
-            })
-            .select()
-            .single();
-
-        if (contactError) return errorResponse(contactError.message);
-        contactId = newContact.id;
-    }
-
-    // 2. Create Appointment
-    const { data, error } = await adminDb
-        .from("appointments")
-        .insert({
-            calendar_id: payload.calendar_id,
-            tenant_id,
-            contact_id: contactId,
-            start_time: payload.start_time,
-            end_time: payload.end_time,
-            status: "confirmed",
-            notes: "Manual Entry"
-        })
-        .select()
-        .single();
-
-    if (error) return errorResponse(error.message);
-
-    revalidatePath("/dashboard/calendars");
-
-    // 3. Trigger Automation & Sync
-    await inngest.send({
-        name: "appointment.booked",
-        data: {
-            appointment_id: data.id,
-            tenant_id,
-            contact_id: contactId,
-            calendar_id: payload.calendar_id,
-            start_time: payload.start_time
+        if (existingContact) {
+            contactId = existingContact.id;
+        } else {
+            const splitName = payload.name.split(" ");
+            const [newContact] = await db
+                .insert(contacts)
+                .values({
+                    tenantId: session.tenantId,
+                    firstName: splitName[0],
+                    lastName: splitName.slice(1).join(" ") || "",
+                    email: payload.email,
+                    source: "Manual Booking",
+                    tags: [],
+                })
+                .returning();
+            contactId = newContact.id;
         }
-    });
 
-    return successResponse(data);
+        // 2. Create Appointment
+        const [data] = await db
+            .insert(appointments)
+            .values({
+                calendarId: payload.calendar_id,
+                tenantId: session.tenantId,
+                contactId,
+                startTime: new Date(payload.start_time),
+                endTime: new Date(payload.end_time),
+                status: "confirmed",
+                notes: "Manual Entry",
+            })
+            .returning();
+
+        revalidatePath("/dashboard/calendars");
+
+        // 3. Trigger Inngest
+        try {
+            await inngest.send({
+                name: "appointment.booked",
+                data: {
+                    appointment_id: data.id,
+                    tenant_id: session.tenantId,
+                    contact_id: contactId,
+                    calendar_id: payload.calendar_id,
+                    start_time: payload.start_time,
+                },
+            });
+        } catch (err) {
+            console.warn("Inngest send error:", err);
+        }
+
+        return successResponse(data);
+    } catch (error: any) {
+        return errorResponse(error.message);
+    }
 }
 
 export async function cancelAppointment(id: string) {
-    const supabase = await createClient();
-    const { error } = await supabase
-        .from("appointments")
-        .update({ status: "cancelled" })
-        .eq("id", id);
+    const session = await getSessionWithRole();
+    if (!session) return errorResponse("Unauthorized");
 
-    if (error) return errorResponse(error.message);
-    revalidatePath("/dashboard/calendars");
-    return successResponse();
+    try {
+        await db
+            .update(appointments)
+            .set({ status: "cancelled", updatedAt: new Date() })
+            .where(
+                and(
+                    eq(appointments.id, id),
+                    eq(appointments.tenantId, session.tenantId)
+                )
+            );
+
+        revalidatePath("/dashboard/calendars");
+        return successResponse();
+    } catch (error: any) {
+        return errorResponse(error.message);
+    }
 }
