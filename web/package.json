@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --test --experimental-strip-types 'src/__tests__/*.test.ts'",
     "db:migrate": "node supabase/migrate.mjs",
     "db:migrate:status": "node supabase/migrate.mjs status",
     "db:migrate:create": "node supabase/migrate.mjs create"

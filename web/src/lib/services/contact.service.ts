@@ -1,9 +1,9 @@
 import { db, contacts, contactActivities, contactViews } from "@/lib/db";
-import { eq, inArray, desc, asc, and, sql } from "drizzle-orm";
+import { eq, inArray, desc, asc, and, sql, count, ilike, or } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { parse } from "csv-parse/sync";
 import { contactSchema } from "@/lib/validations/contact";
-import type { CreateContactDTO, UpdateContactDTO, Contact, ContactView } from "@/types/contact";
+import type { CreateContactDTO, UpdateContactDTO, ContactView, GetContactsOptions, PaginatedContacts } from "@/types/contact";
 
 export class ContactService {
     static async createContact(
@@ -184,26 +184,82 @@ export class ContactService {
         });
     }
 
-    static async getContacts(tenantId: string): Promise<Contact[]> {
+    static async getContacts(
+        tenantId: string,
+        options?: GetContactsOptions
+    ): Promise<PaginatedContacts> {
+        const page = Math.max(1, options?.page ?? 1);
+        const limit = Math.min(100, Math.max(1, options?.limit ?? 25));
+        const offset = (page - 1) * limit;
+
+        const conditions = [eq(contacts.tenantId, tenantId)];
+
+        if (options?.search && options.search.trim()) {
+            const pattern = `%${options.search.trim()}%`;
+            const searchCondition = or(
+                ilike(contacts.firstName, pattern),
+                ilike(contacts.lastName, pattern),
+                ilike(contacts.email, pattern),
+                ilike(contacts.phone, pattern)
+            );
+            if (searchCondition) {
+                conditions.push(searchCondition);
+            }
+        }
+
+        if (options?.tag && options.tag.trim()) {
+            conditions.push(sql`${options.tag.trim()} = ANY(${contacts.tags})`);
+        }
+
+        const whereClause = and(...conditions);
+
+        const [countResult] = await db
+            .select({ total: count() })
+            .from(contacts)
+            .where(whereClause);
+
+        const total = Number(countResult?.total ?? 0);
+
+        const orderByClause =
+            options?.sortBy === "name"
+                ? options.sortOrder === "desc"
+                    ? desc(contacts.firstName)
+                    : asc(contacts.firstName)
+                : options?.sortBy === "email"
+                ? options.sortOrder === "desc"
+                    ? desc(contacts.email)
+                    : asc(contacts.email)
+                : options?.sortOrder === "asc"
+                ? asc(contacts.createdAt)
+                : desc(contacts.createdAt);
+
         const rows = await db
             .select()
             .from(contacts)
-            .where(eq(contacts.tenantId, tenantId))
-            .orderBy(desc(contacts.createdAt));
+            .where(whereClause)
+            .orderBy(orderByClause)
+            .limit(limit)
+            .offset(offset);
 
-        return rows.map((c) => ({
-            id: c.id,
-            tenant_id: c.tenantId,
-            first_name: c.firstName,
-            last_name: c.lastName,
-            email: c.email,
-            phone: c.phone,
-            tags: c.tags || [],
-            source: c.source,
-            notes: c.notes,
-            created_at: c.createdAt.toISOString(),
-            updated_at: c.updatedAt.toISOString(),
-        }));
+        return {
+            contacts: rows.map((c) => ({
+                id: c.id,
+                tenant_id: c.tenantId,
+                first_name: c.firstName,
+                last_name: c.lastName,
+                email: c.email,
+                phone: c.phone,
+                tags: c.tags || [],
+                source: c.source,
+                notes: c.notes,
+                created_at: c.createdAt.toISOString(),
+                updated_at: c.updatedAt.toISOString(),
+            })),
+            total,
+            page,
+            pageSize: limit,
+            totalPages: Math.max(1, Math.ceil(total / limit)),
+        };
     }
 
     static async getContactViews(tenantId: string): Promise<ContactView[]> {

@@ -1,38 +1,25 @@
 "use server";
 
-import { requirePermission } from "@/lib/rbac/guard";
 import { withPermission } from "@/lib/actions/action-handler";
 import { CalendarService } from "@/lib/services/calendar.service";
 import { revalidatePath } from "next/cache";
 
 export async function getCalendars() {
-    try {
-        const session = await requirePermission("calendars.read");
+    return await withPermission("calendars.read", async (session) => {
         return await CalendarService.getCalendars(session.tenantId);
-    } catch (error) {
-        console.error("Error fetching calendars:", error);
-        return [];
-    }
+    });
 }
 
 export async function getIntegrations() {
-    try {
-        const session = await requirePermission("calendars.read");
+    return await withPermission("calendars.read", async (session) => {
         return await CalendarService.getIntegrations(session.tenantId);
-    } catch (error) {
-        console.error("Error fetching integrations:", error);
-        return [];
-    }
+    });
 }
 
 export async function getCalendarWithAvailability(id: string) {
-    try {
-        const session = await requirePermission("calendars.read");
+    return await withPermission("calendars.read", async (session) => {
         return await CalendarService.getCalendarWithAvailability(session.tenantId, id);
-    } catch (error) {
-        console.error("Error fetching calendar availability:", error);
-        return null;
-    }
+    });
 }
 
 export async function createCalendar(payload: {
@@ -53,15 +40,15 @@ export async function updateCalendar(
     id: string,
     payload: {
         name?: string;
-        description?: string;
+        description?: string | null;
         slug?: string;
         duration_minutes?: number;
         timezone?: string;
         buffer_minutes?: number;
-        location?: string;
+        location?: string | null;
         external_account_id?: string | null;
         external_calendar_id?: string | null;
-        sync_direction?: string;
+        sync_direction?: string | null;
     }
 ) {
     return await withPermission("calendars.write", async (session) => {
@@ -92,13 +79,9 @@ export async function deleteCalendar(id: string) {
 }
 
 export async function getAppointments(start: string, end: string) {
-    try {
-        const session = await requirePermission("calendars.read");
+    return await withPermission("calendars.read", async (session) => {
         return await CalendarService.getAppointments(session.tenantId, start, end);
-    } catch (error) {
-        console.error("Error fetching appointments:", error);
-        return [];
-    }
+    });
 }
 
 export async function createManualAppointment(payload: {

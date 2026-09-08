@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
 import EventsTab from "./components/EventsTab";
 import MeetingsTab from "./components/MeetingsTab";
 import AvailabilityTab from "./components/AvailabilityTab";

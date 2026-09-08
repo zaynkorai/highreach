@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Contact, ContactView } from "@/types/contact";
+import { Contact, ContactView, PaginatedContacts } from "@/types/contact";
 import { useContactActions } from "@/stores/contact-store";
 import { bulkDeleteContacts, bulkAddTags } from "../actions";
 import { toast } from "sonner";
@@ -16,16 +16,19 @@ import { DeleteContactModal } from "./delete-contact-modal";
 import { CsvImportModal } from "./csv-import-modal";
 
 interface ContactListProps {
-    initialContacts: Contact[];
+    initialPaginatedContacts: PaginatedContacts;
     initialViews: ContactView[];
 }
 
-export function ContactList({ initialContacts, initialViews }: ContactListProps) {
+export function ContactList({ initialPaginatedContacts, initialViews }: ContactListProps) {
     const router = useRouter();
     const { setContacts, setSelectedContactId } = useContactActions();
 
     // Custom Hooks
-    const filters = useContactFilters(initialViews);
+    const filters = useContactFilters({
+        initialViews,
+        paginatedContacts: initialPaginatedContacts,
+    });
     const selection = useContactSelection();
 
     // Modal States
@@ -36,8 +39,8 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
 
     // Sync initial contacts into store
     useEffect(() => {
-        setContacts(initialContacts);
-    }, [initialContacts, setContacts]);
+        setContacts(initialPaginatedContacts.contacts);
+    }, [initialPaginatedContacts.contacts, setContacts]);
 
     const handleRefresh = () => {
         router.refresh();
@@ -117,25 +120,23 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
                 onSourceChange={filters.setFilterSource}
                 filterTags={filters.filterTags}
                 allTags={filters.allTags}
-                onTagToggle={(tag) => {
-                    if (filters.filterTags.includes(tag)) {
-                        filters.setFilterTags(filters.filterTags.filter((t) => t !== tag));
-                    } else {
-                        filters.setFilterTags([...filters.filterTags, tag]);
+                onTagToggle={filters.onTagToggle}
+                onClearTags={() => {
+                    if (filters.filterTags.length > 0) {
+                        filters.onTagToggle(filters.filterTags[0]);
                     }
                 }}
-                onClearTags={() => filters.setFilterTags([])}
                 hasActiveFilters={filters.hasActiveFilters}
                 onResetFilters={filters.resetFilters}
             />
 
             <ContactTable
-                contacts={filters.filteredContacts}
+                contacts={filters.contacts}
                 selectedIds={selection.selectedIds}
                 onSelectAll={(checked) =>
                     selection.handleSelectAll(
                         checked,
-                        filters.filteredContacts.map((c) => c.id)
+                        filters.contacts.map((c) => c.id)
                     )
                 }
                 onSelectOne={selection.handleSelectOne}
@@ -143,6 +144,11 @@ export function ContactList({ initialContacts, initialViews }: ContactListProps)
                 onSort={filters.handleSort}
                 onEditContact={handleOpenEdit}
                 onDeleteContact={handleOpenDelete}
+                total={filters.total}
+                page={filters.page}
+                pageSize={filters.pageSize}
+                totalPages={filters.totalPages}
+                onPageChange={filters.handlePageChange}
             />
 
             <ContactBulkBar

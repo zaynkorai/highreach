@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-    ChevronLeft, Save, Clock, Globe,
+    ChevronLeft, Save, Globe,
     Calendar as CalendarIcon, Info, Copy, ExternalLink, Activity
 } from "lucide-react";
 import {
@@ -23,6 +23,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import type { CalendarService } from "@/lib/services/calendar.service";
+
+type CalendarDetails = NonNullable<Awaited<ReturnType<typeof CalendarService.getCalendarWithAvailability>>>;
+type AvailabilitySlot = CalendarDetails["availability"][number];
+type IntegrationItem = Awaited<ReturnType<typeof CalendarService.getIntegrations>>[number];
 
 const DAYS = [
     { label: "Monday", value: 1 },
@@ -46,21 +51,23 @@ const TIMEZONES = [
 
 export default function CalendarDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const [calendar, setCalendar] = useState<any>(null);
-    const [availability, setAvailability] = useState<any[]>([]);
+    const [calendar, setCalendar] = useState<CalendarDetails | null>(null);
+    const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [integrations, setIntegrations] = useState<any[]>([]);
+    const [integrations, setIntegrations] = useState<IntegrationItem[]>([]);
 
     useEffect(() => {
         const fetch = async () => {
-            const data = await getCalendarWithAvailability(id);
-            if (data) {
-                setCalendar(data);
-                setAvailability(data.availability || []);
+            const calRes = await getCalendarWithAvailability(id);
+            if (calRes.success && calRes.data) {
+                setCalendar(calRes.data);
+                setAvailability(calRes.data.availability || []);
             }
-            const intData = await getIntegrations();
-            setIntegrations(intData);
+            const intRes = await getIntegrations();
+            if (intRes.success && intRes.data) {
+                setIntegrations(intRes.data);
+            }
             setIsLoading(false);
         };
         fetch();
@@ -71,7 +78,7 @@ export default function CalendarDetailsPage({ params }: { params: Promise<{ id: 
         if (isActive) {
             setAvailability(prev => prev.filter(a => a.day_of_week !== dayValue));
         } else {
-            setAvailability(prev => [...prev, { day_of_week: dayValue, start_time: "09:00", end_time: "17:00" }]);
+            setAvailability(prev => [...prev, { id: crypto.randomUUID(), calendar_id: id, day_of_week: dayValue, start_time: "09:00", end_time: "17:00" }]);
         }
     };
 
@@ -82,6 +89,7 @@ export default function CalendarDetailsPage({ params }: { params: Promise<{ id: 
     };
 
     const handleSave = async () => {
+        if (!calendar) return;
         setIsSaving(true);
 
         // Parallel save
@@ -93,7 +101,7 @@ export default function CalendarDetailsPage({ params }: { params: Promise<{ id: 
         if (calRes.success && availRes.success) {
             toast.success("Settings updated successfully!");
         } else {
-            const errorMsg = (!calRes.success && (calRes as any).error) || (!availRes.success && (availRes as any).error) || "Failed to update";
+            const errorMsg = (!calRes.success && calRes.error) || (!availRes.success && availRes.error) || "Failed to update";
             toast.error(errorMsg);
         }
         setIsSaving(false);
@@ -412,7 +420,7 @@ export default function CalendarDetailsPage({ params }: { params: Promise<{ id: 
                                             onChange={e => setCalendar({ ...calendar, external_calendar_id: e.target.value })}
                                             placeholder="primary"
                                         />
-                                        <p className="text-xs text-muted-foreground">Use 'primary' for your default calendar.</p>
+                                        <p className="text-xs text-muted-foreground">Use &apos;primary&apos; for your default calendar.</p>
                                     </div>
                                 </>
                             )}

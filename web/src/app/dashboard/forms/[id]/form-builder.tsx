@@ -17,14 +17,13 @@ import {
 import {
     User, Calendar, Phone, Mail,
     Type, Hash, AlignLeft, ChevronDown, CircleDot, CheckSquare,
-    MousePointerClick, Archive, CreditCard, MapPin, Building2, Map, Globe, Link
+    MousePointerClick, Archive, CreditCard, MapPin, Building2, Map, Globe
 } from "lucide-react";
 import {
     SortableContext,
     verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import {
-    useFormEditorStore,
     useFormEditorActions,
     useFormFields,
     useSelectedFieldId,
@@ -102,10 +101,10 @@ const ELEMENT_CATEGORIES: { title: string; items: SidebarItem[] }[] = [
 ];
 
 const PRESET_THEMES = [
-    { id: 'brand', label: 'HighReach Red (Default)', primary: '#FF2D55', bg: '#ffffff', text: '#000000', font: 'modern' },
-    { id: 'midnight', label: 'Midnight Ocean', primary: '#3b82f6', bg: '#0f172a', text: '#ffffff', font: 'sans' },
-    { id: 'elegant', label: 'Classic Elegant', primary: '#FF2D55', bg: '#faf5ff', text: '#1e1b4b', font: 'serif' },
-    { id: 'professional', label: 'Graphite Pro', primary: '#0f172a', bg: '#f8fafc', text: '#0f172a', font: 'mono' },
+    { id: 'brand', label: 'HighReach Red (Default)', primary: '#FF2D55', bg: '#ffffff', text: '#000000', font: 'modern' as const },
+    { id: 'midnight', label: 'Midnight Ocean', primary: '#3b82f6', bg: '#0f172a', text: '#ffffff', font: 'sans' as const },
+    { id: 'elegant', label: 'Classic Elegant', primary: '#FF2D55', bg: '#faf5ff', text: '#1e1b4b', font: 'serif' as const },
+    { id: 'professional', label: 'Graphite Pro', primary: '#0f172a', bg: '#f8fafc', text: '#0f172a', font: 'mono' as const },
 ];
 
 export function FormBuilder({ form }: FormBuilderProps) {
@@ -181,6 +180,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                 });
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.id]); // Only re-run if we switch to a different form
 
     // Auto-Save Logic
@@ -414,7 +414,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                                     primaryColor: p.primary,
                                                     backgroundColor: p.bg,
                                                     textColor: p.text,
-                                                    fontFamily: p.font as any
+                                                    fontFamily: p.font
                                                 })}
                                                 className="group w-full flex items-center gap-3 p-2 rounded-lg border border-zinc-100 dark:border-white/5 hover:border-brand-500/50 transition-all text-left"
                                             >
@@ -474,15 +474,15 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                 <div className="pt-4 border-t border-zinc-100 dark:border-white/10">
                                     <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Typography</label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {[
+                                        {([
                                             { id: 'modern', label: 'Modern', stack: 'font-sans italic' },
                                             { id: 'sans', label: 'Classic Sans', stack: 'font-sans' },
                                             { id: 'serif', label: 'Elegant Serif', stack: 'font-serif' },
                                             { id: 'mono', label: 'Technical Mono', stack: 'font-mono' },
-                                        ].map((font) => (
+                                        ] as const).map((font) => (
                                             <button
                                                 key={font.id}
-                                                onClick={() => updateTheme({ fontFamily: font.id as any })}
+                                                onClick={() => updateTheme({ fontFamily: font.id })}
                                                 className={`px-3 py-2 text-xs rounded-lg border transition-all text-left ${theme?.fontFamily === font.id
                                                     ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400'
                                                     : 'border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'

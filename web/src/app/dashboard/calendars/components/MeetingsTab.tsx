@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Calendar as CalendarIcon, ChevronLeft, ChevronRight,
     Plus, User, Loader2, Globe, Mail, Phone, Ban
@@ -31,12 +31,15 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { getAppointments, getCalendars, createManualAppointment, cancelAppointment } from "../actions";
+import type { CalendarService } from "@/lib/services/calendar.service";
+
+type AppointmentItem = Awaited<ReturnType<typeof CalendarService.getAppointments>>[number];
+type CalendarItem = Awaited<ReturnType<typeof CalendarService.getCalendars>>[number];
 
 export default function MeetingsTab() {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [appointments, setAppointments] = useState<any[]>([]);
-    const [calendars, setCalendars] = useState<any[]>([]);
-    const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
+    const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
+    const [calendars, setCalendars] = useState<CalendarItem[]>([]);
 
     // Manual Appointment
     const [isApptOpen, setIsApptOpen] = useState(false);
@@ -51,32 +54,45 @@ export default function MeetingsTab() {
     const [isBooking, setIsBooking] = useState(false);
 
     // View Appointment
-    const [selectedAppt, setSelectedAppt] = useState<any>(null);
+    const [selectedAppt, setSelectedAppt] = useState<AppointmentItem | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-    const fetchCalendars = async () => {
-        const data = await getCalendars();
-        setCalendars(data);
-        if (data.length > 0 && !newAppt.calendar_id) {
-            setNewAppt(prev => ({ ...prev, calendar_id: data[0].id }));
-        }
-    };
 
-    const fetchAppointments = async () => {
-        setIsLoadingAppointments(true);
+
+    const fetchAppointments = useCallback(async () => {
         const start = startOfMonth(currentDate).toISOString();
         const end = endOfMonth(currentDate).toISOString();
-        const data = await getAppointments(start, end);
-        setAppointments(data || []);
-        setIsLoadingAppointments(false);
-    };
+        const res = await getAppointments(start, end);
+        setAppointments(res.success ? res.data : []);
+    }, [currentDate]);
 
     useEffect(() => {
-        fetchCalendars();
+        let isMounted = true;
+        getCalendars().then((res) => {
+            if (!isMounted) return;
+            if (res.success) {
+                setCalendars(res.data);
+                if (res.data.length > 0) {
+                    setNewAppt(prev => (prev.calendar_id ? prev : { ...prev, calendar_id: res.data[0].id }));
+                }
+            }
+        });
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     useEffect(() => {
-        fetchAppointments();
+        let isMounted = true;
+        const start = startOfMonth(currentDate).toISOString();
+        const end = endOfMonth(currentDate).toISOString();
+        getAppointments(start, end).then((res) => {
+            if (!isMounted) return;
+            setAppointments(res.success ? res.data : []);
+        });
+        return () => {
+            isMounted = false;
+        };
     }, [currentDate]);
 
     const handleCreateAppointment = async () => {
@@ -100,7 +116,7 @@ export default function MeetingsTab() {
             setIsApptOpen(false);
             fetchAppointments();
         } else {
-            toast.error((res as any).error || "Failed to schedule");
+            toast.error(res.error || "Failed to schedule");
         }
         setIsBooking(false);
     };
@@ -113,7 +129,7 @@ export default function MeetingsTab() {
             setIsSheetOpen(false);
             fetchAppointments();
         } else {
-            toast.error((res as any).error || "Failed to cancel");
+            toast.error(res.error || "Failed to cancel");
         }
     };
 
@@ -232,7 +248,7 @@ export default function MeetingsTab() {
                 </div>
 
                 <div className="grid grid-cols-7 divide-x dark:divide-zinc-800 divide-y dark:divide-zinc-800">
-                    {calendarDays.map((date, idx) => {
+                    {calendarDays.map((date) => {
                         const isCurrentMonth = isSameMonth(date, currentDate);
                         const isToday = isSameDay(date, new Date());
                         const dayAppts = appointments.filter(a => isSameDay(new Date(a.start_time), date));

@@ -2,7 +2,6 @@
 
 import { useFormEditorActions, useFormFields, useSelectedField } from "@/stores/form-editor-store";
 import { LogicOperator, LogicRule } from "@/types/form";
-import { useState } from "react";
 
 export function LogicEditor() {
     const field = useSelectedField();
@@ -40,7 +39,11 @@ export function LogicEditor() {
         updateField(field.id, { logic: newLogic });
     };
 
-    const updateCondition = (ruleIndex: number, conditionIndex: number, updates: any) => {
+    const updateCondition = (
+        ruleIndex: number,
+        conditionIndex: number,
+        updates: Partial<LogicRule['conditions'][number]>
+    ) => {
         if (!field.logic) return;
         const newLogic = [...field.logic];
         const newConditions = [...newLogic[ruleIndex].conditions];

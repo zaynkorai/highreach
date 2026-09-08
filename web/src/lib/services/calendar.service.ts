@@ -140,15 +140,15 @@ export class CalendarService {
         id: string,
         payload: {
             name?: string;
-            description?: string;
+            description?: string | null;
             slug?: string;
             duration_minutes?: number;
             timezone?: string;
             buffer_minutes?: number;
-            location?: string;
+            location?: string | null;
             external_account_id?: string | null;
             external_calendar_id?: string | null;
-            sync_direction?: string;
+            sync_direction?: string | null;
         }
     ) {
         const updates: Partial<typeof calendars.$inferInsert> = {
@@ -261,6 +261,7 @@ export class CalendarService {
             },
             calendar: {
                 name: cal.name,
+                timezone: cal.timezone,
             },
         }));
     }

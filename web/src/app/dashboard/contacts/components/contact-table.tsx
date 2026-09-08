@@ -17,6 +17,11 @@ interface ContactTableProps {
     onSort: (key: keyof Contact | "name") => void;
     onEditContact: (contact: Contact) => void;
     onDeleteContact: (contact: Contact) => void;
+    total?: number;
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+    onPageChange?: (page: number) => void;
 }
 
 export function ContactTable({
@@ -28,6 +33,11 @@ export function ContactTable({
     onSort,
     onEditContact,
     onDeleteContact,
+    total,
+    page = 1,
+    pageSize = 25,
+    totalPages = 1,
+    onPageChange,
 }: ContactTableProps) {
     const isAllSelected = contacts.length > 0 && selectedIds.size === contacts.length;
 
@@ -197,6 +207,45 @@ export function ContactTable({
                     </tbody>
                 </table>
             </div>
+
+            {total !== undefined && onPageChange && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3.5 border-t border-zinc-200 dark:border-white/[0.08] bg-zinc-50/50 dark:bg-white/[0.02]">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Showing{" "}
+                        <span className="font-semibold text-zinc-700 dark:text-zinc-200">
+                            {total === 0 ? 0 : (page - 1) * pageSize + 1}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-semibold text-zinc-700 dark:text-zinc-200">
+                            {Math.min(total, page * pageSize)}
+                        </span>{" "}
+                        of <span className="font-semibold text-zinc-700 dark:text-zinc-200">{total}</span> contacts
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onPageChange(page - 1)}
+                            disabled={page <= 1}
+                            className="h-8 text-xs font-medium"
+                        >
+                            Previous
+                        </Button>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 px-2 font-medium">
+                            Page {page} of {Math.max(1, totalPages)}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onPageChange(page + 1)}
+                            disabled={page >= totalPages}
+                            className="h-8 text-xs font-medium"
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

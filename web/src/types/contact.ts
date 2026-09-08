@@ -43,3 +43,21 @@ export interface ContactView {
     };
     created_at: string;
 }
+
+export interface GetContactsOptions {
+    search?: string;
+    tag?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: "name" | "email" | "created_at";
+    sortOrder?: "asc" | "desc";
+}
+
+export interface PaginatedContacts {
+    contacts: Contact[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+

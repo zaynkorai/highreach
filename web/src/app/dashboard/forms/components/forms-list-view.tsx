@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Form, FormWithStats } from "@/types/form";
+import { FormWithStats } from "@/types/form";
 import { CreateFormModal } from "./create-form-modal";
 import Link from "next/link";
 

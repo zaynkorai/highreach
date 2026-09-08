@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Calendar as CalendarIcon, MoreHorizontal, ExternalLink,
     Settings, Trash2, Clock, Globe, Plus, Video, Phone, MapPin
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
     Sheet, SheetContent, SheetHeader,
-    SheetTitle, SheetDescription, SheetFooter,
+    SheetTitle, SheetDescription,
     SheetTrigger
 } from "@/components/ui/sheet";
 import {
@@ -34,9 +34,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getCalendars, createCalendar, deleteCalendar } from "../actions";
+import type { CalendarService } from "@/lib/services/calendar.service";
+
+type CalendarItem = Awaited<ReturnType<typeof CalendarService.getCalendars>>[number];
 
 export default function EventsTab() {
-    const [calendars, setCalendars] = useState<any[]>([]);
+    const [calendars, setCalendars] = useState<CalendarItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     // Create State
@@ -52,15 +55,31 @@ export default function EventsTab() {
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [calendarToDelete, setCalendarToDelete] = useState<string | null>(null);
 
-    const fetchCalendars = async () => {
+    const fetchCalendars = useCallback(async () => {
         setIsLoading(true);
-        const data = await getCalendars();
-        setCalendars(data);
+        const res = await getCalendars();
+        if (res.success) {
+            setCalendars(res.data);
+        } else {
+            toast.error(res.error || "Failed to load calendars");
+        }
         setIsLoading(false);
-    };
+    }, []);
 
     useEffect(() => {
-        fetchCalendars();
+        let isMounted = true;
+        getCalendars().then((res) => {
+            if (!isMounted) return;
+            if (res.success) {
+                setCalendars(res.data);
+            } else {
+                toast.error(res.error || "Failed to load calendars");
+            }
+            setIsLoading(false);
+        });
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const handleCreate = async () => {
@@ -84,7 +103,7 @@ export default function EventsTab() {
             setNewCalendar({ name: "", slug: "", duration: "30", location: "zoom" });
             fetchCalendars();
         } else {
-            toast.error((res as any).error || "Failed to create");
+            toast.error(res.error || "Failed to create");
         }
     };
 
@@ -101,7 +120,7 @@ export default function EventsTab() {
             toast.success("Calendar deleted");
             setCalendars(prev => prev.filter(c => c.id !== calendarToDelete));
         } else {
-            toast.error((res as any).error || "Failed to delete");
+            toast.error(res.error || "Failed to delete");
         }
         setIsDeleteOpen(false);
         setCalendarToDelete(null);
