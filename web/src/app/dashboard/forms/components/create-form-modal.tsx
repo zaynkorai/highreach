@@ -29,7 +29,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
 
         try {
             const result = await createForm(name || "New Form", description);
-            if (result.success && result.data) {
+            if (result.success) {
                 toast.success("Form created successfully!");
                 onClose();
                 router.push(`/dashboard/forms/${result.data.id}`); // Redirect to builder

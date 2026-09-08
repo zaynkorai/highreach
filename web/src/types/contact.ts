@@ -26,7 +26,7 @@ export interface ContactActivity {
     tenant_id: string;
     type: 'note' | 'call_log' | 'sms' | 'email' | 'system';
     content: string | null;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     created_at: string;
     created_by: string;
 }

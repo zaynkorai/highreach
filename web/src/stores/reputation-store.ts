@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Review, ReputationStats, ReviewFilter } from '@/types/reputation';
+import { getReviews, replyToReviewAction } from '@/app/dashboard/reputation/actions';
 
 interface ReputationState {
     reviews: Review[];
@@ -20,9 +21,7 @@ interface ReputationState {
     };
 }
 
-import { getReviews, replyToReviewAction } from '@/app/dashboard/reputation/actions';
-
-export const useReputationStore = create<ReputationState>((set, get) => ({
+export const useReputationStore = create<ReputationState>((set) => ({
     reviews: [],
     stats: {
         averageRating: 0,
@@ -55,8 +54,8 @@ export const useReputationStore = create<ReputationState>((set, get) => ({
         },
 
         generateAiReply: async (reviewText) => {
-            // This would typically call an edge function or API route
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Simulated AI assistant response for reviews
+            await new Promise(resolve => setTimeout(resolve, 500));
             if (reviewText.toLowerCase().includes('wait time')) {
                 return "Thank you for sharing your experience! We apologize for the wait time you encountered. We're actively working on optimizing our scheduling to ensure a smoother experience for everyone. We hope to see you again soon!";
             }
@@ -68,24 +67,31 @@ export const useReputationStore = create<ReputationState>((set, get) => ({
 
             const reviewsData = await getReviews();
 
-            const reviews: Review[] = (reviewsData || []).map(r => ({
-                id: r.id,
-                authorName: r.reviewer_name,
-                authorPhotoUrl: r.reviewer_photo_url || '',
-                rating: r.rating,
-                text: r.content || '',
-                relativeTimeDescription: r.review_date ? new Date(r.review_date).toLocaleDateString() : 'recently',
-                time: r.review_date ? new Date(r.review_date).getTime() : Date.now(),
-                source: r.platform as any,
-                sentiment: r.rating >= 4 ? 'positive' : r.rating === 3 ? 'neutral' : 'negative',
-                isReplied: r.status === 'replied',
-                reply: r.reply_content ? {
-                    text: r.reply_content,
-                    time: r.updated_at ? new Date(r.updated_at).getTime() : Date.now()
-                } : undefined
-            }));
+            const reviews: Review[] = (reviewsData || []).map((r) => {
+                const source: Review["source"] =
+                    r.platform === "google" || r.platform === "facebook"
+                        ? r.platform
+                        : "other";
 
-            // Calculate Stats - Simplified
+                return {
+                    id: r.id,
+                    authorName: r.reviewer_name,
+                    authorPhotoUrl: r.reviewer_photo_url || '',
+                    rating: r.rating,
+                    text: r.content || '',
+                    relativeTimeDescription: r.review_date ? new Date(r.review_date).toLocaleDateString() : 'recently',
+                    time: r.review_date ? new Date(r.review_date).getTime() : Date.now(),
+                    source,
+                    sentiment: r.rating >= 4 ? 'positive' : r.rating === 3 ? 'neutral' : 'negative',
+                    isReplied: r.status === 'replied',
+                    reply: r.reply_content ? {
+                        text: r.reply_content,
+                        time: r.updated_at ? new Date(r.updated_at).getTime() : Date.now()
+                    } : undefined
+                };
+            });
+
+            // Calculate Stats
             const total = reviews.length;
             const avg = total ? reviews.reduce((s, r) => s + r.rating, 0) / total : 0;
             const dist = reviews.reduce((acc, r) => {
