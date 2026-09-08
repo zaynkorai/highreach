@@ -3,7 +3,7 @@ import { eq, inArray, desc, asc, and, sql } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { parse } from "csv-parse/sync";
 import { contactSchema } from "@/lib/validations/contact";
-import type { CreateContactDTO, UpdateContactDTO } from "@/types/contact";
+import type { CreateContactDTO, UpdateContactDTO, Contact, ContactView } from "@/types/contact";
 
 export class ContactService {
     static async createContact(
@@ -184,7 +184,29 @@ export class ContactService {
         });
     }
 
-    static async getContactViews(tenantId: string) {
+    static async getContacts(tenantId: string): Promise<Contact[]> {
+        const rows = await db
+            .select()
+            .from(contacts)
+            .where(eq(contacts.tenantId, tenantId))
+            .orderBy(desc(contacts.createdAt));
+
+        return rows.map((c) => ({
+            id: c.id,
+            tenant_id: c.tenantId,
+            first_name: c.firstName,
+            last_name: c.lastName,
+            email: c.email,
+            phone: c.phone,
+            tags: c.tags || [],
+            source: c.source,
+            notes: c.notes,
+            created_at: c.createdAt.toISOString(),
+            updated_at: c.updatedAt.toISOString(),
+        }));
+    }
+
+    static async getContactViews(tenantId: string): Promise<ContactView[]> {
         const views = await db
             .select()
             .from(contactViews)
@@ -195,9 +217,8 @@ export class ContactService {
             id: v.id,
             tenant_id: v.tenantId,
             name: v.name,
-            filters: v.filters,
+            filters: (v.filters || {}) as ContactView["filters"],
             created_at: v.createdAt.toISOString(),
-            created_by: v.createdBy,
         }));
     }
 
@@ -227,7 +248,7 @@ export class ContactService {
             throw new Error("No records found in CSV");
         }
 
-        const failedRows: Array<{ row: number; data: unknown; errors: unknown }> = [];
+        const failedRows: Array<{ row: number; data: unknown; errors: Record<string, string[] | undefined> }> = [];
         const contactsToInsert: Array<typeof contacts.$inferInsert> = [];
 
         const rows = rawData as Array<Record<string, string>>;

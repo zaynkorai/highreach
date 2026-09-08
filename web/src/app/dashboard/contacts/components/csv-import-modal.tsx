@@ -9,6 +9,12 @@ interface CsvImportModalProps {
     onSuccess: () => void;
 }
 
+interface ImportFailureDetail {
+    row: number;
+    data?: unknown;
+    errors: Record<string, string[] | undefined>;
+}
+
 export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalProps) {
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -16,7 +22,7 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
     const [result, setResult] = useState<{
         success: number;
         failed: number;
-        details?: any[];
+        details?: ImportFailureDetail[];
     } | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,8 +62,8 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
             } else {
                 setError(response.error || "Failed to upload CSV");
             }
-        } catch (err: any) {
-            setError(err.message || "An unexpected error occurred");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "An unexpected error occurred");
         } finally {
             setIsUploading(false);
         }
@@ -158,8 +164,8 @@ export function CsvImportModal({ isOpen, onClose, onSuccess }: CsvImportModalPro
                                         <div key={idx} className="text-xs p-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                                             <span className="font-bold text-zinc-900 dark:text-zinc-200">Row {detail.row}:</span>
                                             <span className="text-zinc-500 ml-1">
-                                                {Object.entries(detail.errors).map(([field, msgs]: [string, any]) =>
-                                                    `${field}: ${msgs.join(', ')}`
+                                                {Object.entries(detail.errors).map(([field, msgs]) =>
+                                                    `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : String(msgs)}`
                                                 ).join('; ')}
                                             </span>
                                         </div>

@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Loader2, Plus, X } from "lucide-react"; // Removed duplicates
+import { Loader2, X } from "lucide-react";
 import {
     Sheet,
     SheetContent,

@@ -1,7 +1,7 @@
 import { create, useStore } from 'zustand';
 import { FormField, FormFieldType, FormTheme } from '@/types/form';
 import { arrayMove } from '@dnd-kit/sortable';
-import { temporal } from 'zundo';
+import { temporal, type TemporalState } from 'zundo';
 
 interface FormEditorState {
     fields: FormField[];
@@ -99,10 +99,11 @@ export const useSelectedField = () => useFormEditorStore((state) =>
 );
 
 // Zundo Hooks
+type FormEditorTrackedState = Pick<FormEditorState, 'fields' | 'theme'>;
+
 export const useTemporalStore = () => {
-    const store = useFormEditorStore as any;
-    return store.temporal;
-}
+    return useFormEditorStore.temporal;
+};
 
 export const useUndo = () => {
     const temporal = useTemporalStore();
@@ -117,10 +118,11 @@ export const useRedo = () => {
 // For reactive state, we use useStore with the temporal store
 export const usePastStates = () => {
     const temporal = useTemporalStore();
-    return useStore(temporal, (state: any) => state.pastStates);
+    return useStore(temporal, (state: TemporalState<FormEditorTrackedState>) => state.pastStates);
 };
 
 export const useFutureStates = () => {
     const temporal = useTemporalStore();
-    return useStore(temporal, (state: any) => state.futureStates);
+    return useStore(temporal, (state: TemporalState<FormEditorTrackedState>) => state.futureStates);
 };
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ const step2Schema = z.object({
 type Step2Data = z.infer<typeof step2Schema>;
 
 export function Step2({ onNext, isSubmitting }: { onNext: (data: Step2Data) => void, isSubmitting: boolean }) {
-    const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<Step2Data>({
+    const { handleSubmit, setValue, control, formState: { errors } } = useForm<Step2Data>({
         resolver: zodResolver(step2Schema),
         defaultValues: {
             industry: '',
@@ -24,8 +24,8 @@ export function Step2({ onNext, isSubmitting }: { onNext: (data: Step2Data) => v
         }
     });
 
-    const selectedIndustry = watch("industry");
-    const selectedRole = watch("role");
+    const selectedIndustry = useWatch({ control, name: "industry" });
+    const selectedRole = useWatch({ control, name: "role" });
 
     const industries = [
         "Real Estate", "Professional Services", "Medical", "Retail", "Technology", "Other"

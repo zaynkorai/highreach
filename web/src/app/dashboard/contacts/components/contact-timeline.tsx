@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Loader2, Send, Phone, Mail, FileText, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ export function ContactTimeline({ contactId }: ContactTimelineProps) {
     const [note, setNote] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const fetchActivities = async () => {
+    const fetchActivities = useCallback(async () => {
         try {
             const result = await getContactActivities(contactId);
             if (result.success) {
@@ -34,11 +34,11 @@ export function ContactTimeline({ contactId }: ContactTimelineProps) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [contactId]);
 
     useEffect(() => {
         fetchActivities();
-    }, [contactId]);
+    }, [fetchActivities]);
 
     const handleSubmitNote = async () => {
         if (!note.trim()) return;
@@ -52,7 +52,7 @@ export function ContactTimeline({ contactId }: ContactTimelineProps) {
             } else {
                 toast.error(result.error || "Failed to add note");
             }
-        } catch (error) {
+        } catch {
             toast.error("An unexpected error occurred");
         } finally {
             setIsSubmitting(false);
