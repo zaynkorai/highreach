@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokens } from "@/lib/integrations/calendar/outlook";
 import { db, externalAccounts } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
+import { verifyOAuthState } from "@/lib/integrations/oauth-state";
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -12,8 +13,13 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Missing code or state" }, { status: 400 });
     }
 
+    const stateData = verifyOAuthState(state);
+    if (!stateData || !stateData.tenantId) {
+        return NextResponse.json({ error: "Invalid or expired state parameter" }, { status: 403 });
+    }
+
     try {
-        const { tenantId } = JSON.parse(Buffer.from(state, "base64").toString());
+        const { tenantId } = stateData;
         const response = await getTokens(code);
 
         const providerAccountId = response.account?.username || "primary";

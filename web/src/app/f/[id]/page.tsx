@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Form } from "@/types/form";
 import { Suspense } from "react";
 
-export default function PublicFormPage({ params }: { params: { id: string } }) {
+export default function PublicFormPage({ params }: { params: Promise<{ id: string }> }) {
     return (
         <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center bg-zinc-50 p-4">
@@ -17,7 +17,7 @@ export default function PublicFormPage({ params }: { params: { id: string } }) {
     );
 }
 
-async function FormContainer({ params }: { params: { id: string } }) {
+async function FormContainer({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
     const [found] = await db

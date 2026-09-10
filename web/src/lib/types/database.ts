@@ -27,7 +27,9 @@ export type AppPermission =
     // Team Management
     | 'team.read' | 'team.invite' | 'team.remove' | 'team.change_role'
     // Billing
-    | 'billing.read' | 'billing.write';
+    | 'billing.read' | 'billing.write'
+    // Social Studio
+    | 'social.read' | 'social.write' | 'social.delete';
 
 // =============================================================
 // Core Entities
@@ -146,4 +148,103 @@ export interface FormSubmission {
     contact_id?: string;
     data: Record<string, string>;
     submitted_at: string;
+}
+
+// =============================================================
+// Social Studio Entities (Postiz Alternative)
+// =============================================================
+
+export type SocialPlatform =
+    | 'twitter'
+    | 'linkedin'
+    | 'facebook'
+    | 'instagram'
+    | 'youtube'
+    | 'tiktok'
+    | 'threads'
+    | 'pinterest'
+    | 'twitch'
+    | 'kick';
+
+export type ShortLinkingPreference = 'always' | 'never' | 'ask';
+
+export interface TenantSocialSettings {
+    shortLinking: ShortLinkingPreference;
+    defaultTimeSlots: string[]; // e.g. ["09:00", "13:00", "18:00", "21:00"]
+    defaultTags: string[];
+    streakReminderEmail: boolean;
+}
+
+export type SocialPostStatus =
+    | 'draft'
+    | 'scheduled'
+    | 'publishing'
+    | 'published'
+    | 'failed';
+
+export interface SocialAccount {
+    id: string;
+    tenant_id: string;
+    platform: SocialPlatform;
+    account_name: string;
+    account_handle?: string | null;
+    avatar_url?: string | null;
+    status: 'connected' | 'disconnected' | 'expired';
+    external_account_id?: string | null;
+    settings?: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface SocialPostMetrics {
+    likes?: number;
+    shares?: number;
+    comments?: number;
+    views?: number;
+    clicks?: number;
+}
+
+export interface SocialPostSettings {
+    firstComment?: string;
+    tags?: string[];
+    thread?: string[];
+    utm?: {
+        url?: string;
+        campaign?: string;
+    };
+    platformOverrides?: Partial<Record<SocialPlatform, { content?: string }>>;
+}
+
+export interface SocialPost {
+    id: string;
+    tenant_id: string;
+    content: string;
+    media_urls?: string[];
+    platforms: SocialPlatform[];
+    status: SocialPostStatus;
+    scheduled_at?: string | null;
+    published_at?: string | null;
+    settings?: SocialPostSettings;
+    error_message?: string | null;
+    metrics?: SocialPostMetrics;
+    created_by?: string | null;
+    created_at: string;
+    updated_at: string;
+    channels?: SocialPostChannel[];
+}
+
+export interface SocialPostChannel {
+    id: string;
+    tenant_id: string;
+    post_id: string;
+    account_id: string;
+    platform: SocialPlatform;
+    status: 'pending' | 'published' | 'failed';
+    external_post_id?: string | null;
+    external_post_url?: string | null;
+    error_message?: string | null;
+    published_at?: string | null;
+    metrics?: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
 }
