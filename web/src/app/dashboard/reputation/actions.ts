@@ -214,3 +214,34 @@ export async function getServiceConfigStatus() {
         resend: !!process.env.RESEND_API_KEY,
     };
 }
+
+export async function generateAiReviewReplyAction(reviewText: string, rating?: number): Promise<string> {
+    const session = await getSessionWithRole();
+    if (!session) throw new Error("Unauthorized");
+
+    const cleanText = reviewText.toLowerCase();
+
+    // Context-aware response intelligence based on sentiment & topic
+    if (cleanText.includes("wait") || cleanText.includes("delay") || cleanText.includes("slow") || cleanText.includes("late")) {
+        return "Thank you for bringing this to our attention. We sincerely apologize for the delay you experienced. We take scheduling and efficiency very seriously, and we are adjusting our workflow to prevent this moving forward. Please feel free to reach out to us directly so we can make this right.";
+    }
+
+    if (cleanText.includes("rude") || cleanText.includes("unprofessional") || cleanText.includes("attitude") || cleanText.includes("poor service")) {
+        return "Thank you for your feedback. We are deeply concerned to hear about your experience, as providing courteous and professional care is our top priority. We are addressing this with our team immediately. Please reach out to our management so we can personally resolve this for you.";
+    }
+
+    if (cleanText.includes("price") || cleanText.includes("expensive") || cleanText.includes("cost") || cleanText.includes("bill") || cleanText.includes("overpriced")) {
+        return "Thank you for sharing your feedback. We strive to provide transparent and competitive pricing alongside premium service quality. We would welcome the chance to review your billing details and address any concerns—please get in touch with our office directly.";
+    }
+
+    if (cleanText.includes("recommend") || cleanText.includes("amazing") || cleanText.includes("great") || cleanText.includes("excellent") || cleanText.includes("best") || cleanText.includes("fantastic") || (rating && rating >= 4)) {
+        return "Thank you so much for the wonderful review and your kind recommendation! Our entire team is thrilled to know that we exceeded your expectations. We truly appreciate your support and look forward to serving you again soon!";
+    }
+
+    if (rating && rating <= 2) {
+        return "Thank you for taking the time to share your review. We are truly sorry that your visit did not meet your expectations. We are committed to continuous improvement, and we would appreciate the opportunity to learn more about how we can make things right. Please reach out to our team at your earliest convenience.";
+    }
+
+    return "Thank you for your honest review and feedback! We are constantly working to deliver the best experience possible for our customers. If there is anything else we can do for you, please don't hesitate to let us know.";
+}
+

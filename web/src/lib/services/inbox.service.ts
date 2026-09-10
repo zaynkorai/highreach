@@ -1,6 +1,8 @@
-import { db, conversations, messages, contacts } from "@/lib/db";
+import { db, conversations, messages, contacts, tenants } from "@/lib/db";
 import { eq, and, desc, asc } from "drizzle-orm";
 import type { Conversation, Message, ChannelType } from "@/types/inbox";
+import { telnyx } from "@/lib/telnyx";
+import { resend } from "@/lib/resend";
 
 export class InboxService {
     static async getConversations(tenantId: string): Promise<Conversation[]> {
@@ -67,18 +69,86 @@ export class InboxService {
         channel: ChannelType = "sms",
         isInternal: boolean = false
     ): Promise<Message> {
-        // Verify conversation belongs to this tenant
-        const [conv] = await db
-            .select({ id: conversations.id })
+        // Verify conversation belongs to this tenant and fetch associated contact
+        const [convData] = await db
+            .select({
+                conversation: conversations,
+                contact: contacts,
+            })
             .from(conversations)
+            .innerJoin(contacts, eq(conversations.contactId, contacts.id))
             .where(and(eq(conversations.id, conversationId), eq(conversations.tenantId, tenantId)))
             .limit(1);
 
-        if (!conv) {
+        if (!convData) {
             throw new Error("Conversation not found or access denied");
         }
 
-        const metadata = isInternal ? { is_internal: true } : {};
+        const metadata: Record<string, any> = isInternal ? { is_internal: true } : {};
+
+        // Dispatch message to external provider if outbound non-internal message
+        if (!isInternal) {
+            if (channel === "sms") {
+                const recipientPhone = convData.contact?.phone;
+                if (!recipientPhone) {
+                    throw new Error("Cannot send SMS: Contact does not have a phone number");
+                }
+
+                const [tenant] = await db
+                    .select({ phoneNumber: tenants.phoneNumber, name: tenants.name })
+                    .from(tenants)
+                    .where(eq(tenants.id, tenantId))
+                    .limit(1);
+
+                const senderPhone = tenant?.phoneNumber;
+                if (!senderPhone) {
+                    throw new Error("Tenant does not have an outbound SMS phone number configured");
+                }
+
+                if (!telnyx) {
+                    throw new Error("TELNYX_API_KEY is not configured on the server");
+                }
+
+                try {
+                    const smsRes = await (telnyx.messages as any).create({
+                        from: senderPhone,
+                        to: recipientPhone,
+                        text: content,
+                    });
+                    metadata.provider = "telnyx";
+                    metadata.telnyx_id = smsRes?.data?.id;
+                } catch (smsErr: any) {
+                    console.error("Failed to send Telnyx SMS:", smsErr);
+                    throw new Error(`Failed to send SMS: ${smsErr.message || "Unknown error"}`);
+                }
+            } else if (channel === "email") {
+                const recipientEmail = convData.contact?.email;
+                if (!recipientEmail) {
+                    throw new Error("Cannot send email: Contact does not have an email address");
+                }
+
+                if (!process.env.RESEND_API_KEY) {
+                    throw new Error("RESEND_API_KEY is not configured on the server");
+                }
+
+                try {
+                    const { data: emailData, error: emailErr } = await resend.emails.send({
+                        from: "HighReach <onboarding@resend.dev>",
+                        to: [recipientEmail],
+                        subject: `New message regarding your inquiry`,
+                        text: content,
+                    });
+                    if (emailErr) {
+                        throw new Error(emailErr.message);
+                    }
+                    metadata.provider = "resend";
+                    metadata.resend_id = emailData?.id;
+                } catch (emailErr: any) {
+                    console.error("Failed to send Resend email:", emailErr);
+                    throw new Error(`Failed to send email: ${emailErr.message || "Unknown error"}`);
+                }
+            }
+        }
 
         const [message] = await db
             .insert(messages)

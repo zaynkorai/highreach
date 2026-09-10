@@ -3,7 +3,7 @@
 import { db, calendars, calendarAvailability, appointments, contacts } from "@/lib/db";
 import { eq, and, ne, gte, lte, asc } from "drizzle-orm";
 import { addMinutes, areIntervalsOverlapping } from "date-fns";
-import { format, toZonedTime } from "date-fns-tz";
+import { format, toZonedTime, fromZonedTime } from "date-fns-tz";
 
 /**
  * Gets public calendar details by slug.
@@ -82,9 +82,6 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
     const daysToCheck = [-1, 0, 1];
 
     for (const offset of daysToCheck) {
-        const baseDate = new Date(queryDate);
-        baseDate.setDate(baseDate.getDate() + offset);
-
         const [y, m, d] = dateStr.split("-").map(Number);
         const refDate = new Date(Date.UTC(y, m - 1, d + offset, 12, 0, 0));
         const dayInCalTzStr = format(toZonedTime(refDate, calendarTimezone), "yyyy-MM-dd");
@@ -96,12 +93,14 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
             const [startH, startM] = rule.startTime.split(":").map(Number);
             const [endH, endM] = rule.endTime.split(":").map(Number);
 
-            let current = new Date(`${dayInCalTzStr}T${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}:00`);
-            const end = new Date(`${dayInCalTzStr}T${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}:00`);
+            const startLocalStr = `${dayInCalTzStr}T${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}:00`;
+            const endLocalStr = `${dayInCalTzStr}T${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}:00`;
+
+            let current = fromZonedTime(startLocalStr, calendarTimezone);
+            const end = fromZonedTime(endLocalStr, calendarTimezone);
 
             while (addMinutes(current, duration) <= end) {
-                const calTzDate = toZonedTime(current, calendarTimezone);
-                potentialSlots.push(calTzDate);
+                potentialSlots.push(current);
                 current = addMinutes(current, duration + buffer);
             }
         }
@@ -124,7 +123,7 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
             );
 
             if (!hasConflict) {
-                slots.push(format(userZoned, "HH:mm"));
+                slots.push(slot.toISOString());
             }
         }
     }
@@ -136,11 +135,45 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
  * Creates a new appointment securely.
  */
 export async function createBooking(calendarId: string, payload: any) {
-    if (!payload.email || !payload.start_time || !payload.tenant_id) {
+    if (!payload.email || !payload.start_time) {
         return { success: false, error: "Missing required booking information" };
     }
 
     try {
+        const [calendar] = await db
+            .select()
+            .from(calendars)
+            .where(eq(calendars.id, calendarId))
+            .limit(1);
+
+        if (!calendar) {
+            return { success: false, error: "Calendar not found" };
+        }
+
+        const tenantId = calendar.tenantId;
+        const requestedStart = new Date(payload.start_time);
+        const requestedEnd = payload.end_time
+            ? new Date(payload.end_time)
+            : addMinutes(requestedStart, calendar.durationMinutes);
+
+        // Conflict check to prevent double bookings
+        const conflictingAppointments = await db
+            .select({ id: appointments.id })
+            .from(appointments)
+            .where(
+                and(
+                    eq(appointments.calendarId, calendarId),
+                    ne(appointments.status, "cancelled"),
+                    gte(appointments.endTime, requestedStart),
+                    lte(appointments.startTime, requestedEnd)
+                )
+            );
+
+        const hasConflict = conflictingAppointments.length > 0;
+        if (hasConflict) {
+            return { success: false, error: "The selected time slot is no longer available. Please select another slot." };
+        }
+
         let contactId: string;
         const [existingContact] = await db
             .select({ id: contacts.id })
@@ -148,7 +181,7 @@ export async function createBooking(calendarId: string, payload: any) {
             .where(
                 and(
                     eq(contacts.email, payload.email),
-                    eq(contacts.tenantId, payload.tenant_id)
+                    eq(contacts.tenantId, tenantId)
                 )
             )
             .limit(1);
@@ -160,12 +193,12 @@ export async function createBooking(calendarId: string, payload: any) {
             const [newContact] = await db
                 .insert(contacts)
                 .values({
-                    tenantId: payload.tenant_id,
+                    tenantId,
                     firstName: splitName[0],
                     lastName: splitName.slice(1).join(" ") || "",
                     email: payload.email,
                     phone: payload.phone || null,
-                    source: "Booking: " + (payload.calendar_name || "Widget"),
+                    source: "Booking: " + (payload.calendar_name || calendar.name || "Widget"),
                     tags: [],
                 })
                 .returning();
@@ -176,13 +209,13 @@ export async function createBooking(calendarId: string, payload: any) {
             .insert(appointments)
             .values({
                 calendarId,
-                tenantId: payload.tenant_id,
+                tenantId,
                 contactId,
-                startTime: new Date(payload.start_time),
-                endTime: new Date(payload.end_time),
+                startTime: requestedStart,
+                endTime: requestedEnd,
                 status: "confirmed",
                 notes: payload.notes || null,
-                location: payload.location || null,
+                location: payload.location || calendar.location || null,
             })
             .returning();
 

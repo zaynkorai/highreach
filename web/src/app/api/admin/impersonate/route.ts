@@ -7,11 +7,11 @@ import type { AppRole } from "@/lib/types/database";
 
 export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
-    const serviceKey = process.env.ADMIN_SECRET || "highreach-admin-secret";
+    const serviceKey = process.env.ADMIN_SECRET;
 
-    if (!authHeader || authHeader !== `Bearer ${serviceKey}`) {
+    if (!serviceKey || !authHeader || authHeader !== `Bearer ${serviceKey}`) {
         return NextResponse.json(
-            { error: "Unauthorized — admin secret required" },
+            { error: "Unauthorized — valid admin secret required" },
             { status: 401 }
         );
     }

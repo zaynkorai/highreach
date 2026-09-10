@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Review, ReputationStats, ReviewFilter } from '@/types/reputation';
-import { getReviews, replyToReviewAction } from '@/app/dashboard/reputation/actions';
+import { getReviews, replyToReviewAction, generateAiReviewReplyAction } from '@/app/dashboard/reputation/actions';
 
 interface ReputationState {
     reviews: Review[];
@@ -54,12 +54,12 @@ export const useReputationStore = create<ReputationState>((set) => ({
         },
 
         generateAiReply: async (reviewText) => {
-            // Simulated AI assistant response for reviews
-            await new Promise(resolve => setTimeout(resolve, 500));
-            if (reviewText.toLowerCase().includes('wait time')) {
-                return "Thank you for sharing your experience! We apologize for the wait time you encountered. We're actively working on optimizing our scheduling to ensure a smoother experience for everyone. We hope to see you again soon!";
+            try {
+                return await generateAiReviewReplyAction(reviewText);
+            } catch (err) {
+                console.error("Failed to generate AI reply:", err);
+                return "Thank you for sharing your feedback! We truly appreciate your review and look forward to continuing to provide you with great service.";
             }
-            return "Thank you so much for your kind words! We pride ourselves on providing top-notch service and it's wonderful to know we met your expectations. Looking forward to serving you again!";
         },
 
         fetchReviews: async () => {

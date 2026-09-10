@@ -1,6 +1,8 @@
 import { getConversations } from "./actions";
 import { InboxClient } from "./inbox-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function InboxPage() {
     const result = await getConversations();
 
