@@ -56,6 +56,14 @@ type WorkflowExecute = {
     }
 }
 
+type SocialPostScheduled = {
+    data: {
+        post_id: string;
+        tenant_id: string;
+        scheduled_at: string;
+    };
+};
+
 export const schemas = new EventSchemas().fromRecord<{
     "contact.created": ContactCreated;
     "form.submitted": FormSubmitted;
@@ -64,6 +72,7 @@ export const schemas = new EventSchemas().fromRecord<{
     "appointment.booked": AppointmentBooked;
     "workflow.execute": WorkflowExecute;
     "test/hello.world": { data: any };
+    "social/post.scheduled": SocialPostScheduled;
 }>();
 
 export type WorkflowNode = {

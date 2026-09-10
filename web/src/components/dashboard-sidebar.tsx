@@ -16,6 +16,7 @@ import {
     Zap,
     Calendar,
     Star,
+    Share2,
     Settings,
     X,
 } from "lucide-react";
@@ -26,6 +27,7 @@ const navItems = [
     { href: "/dashboard/contacts", icon: Users, label: "Contacts" },
     { href: "/dashboard/pipelines", icon: Folders, label: "Pipelines" },
     { href: "/dashboard/forms", icon: FileText, label: "Forms" },
+    { href: "/dashboard/social", icon: Share2, label: "Social Studio" },
     { href: "/dashboard/automations", icon: Zap, label: "Automations" },
     { href: "/dashboard/calendars", icon: Calendar, label: "Calendars" },
     { href: "/dashboard/reputation", icon: Star, label: "Reputation" },

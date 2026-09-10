@@ -156,6 +156,44 @@
 
 ---
 
+## 🟣 P1.5: Social Studio & Omnichannel Lead Generation (Postiz 2026 Parity)
+
+- [x] **Core Scheduling & Multi-Platform Engine**
+    - [x] Database foundation: `social_posts`, `social_post_channels`, and `social_accounts` tables.
+    - [x] Multi-platform support for 10 channels: Twitter/X, LinkedIn, Facebook, Instagram, Threads, YouTube Community, Twitch, Kick, Skool, and Whop.
+    - [x] Character limits, branding, and platform preview mockups for all 10 channels.
+    - [x] Unlimited batch media upload with full-resolution Lightbox viewer.
+    - [x] Interactive tag management with individual tag deletion.
+    - [x] Edge-case safeguards: Safe edit prevention on published posts with 1-click "Duplicate as Draft".
+- [x] **Omnichannel Comment-to-Lead & Comment-to-DM Engine**
+    - [x] Inbound comment keyword parser with case-insensitive token matching (`social-utils.ts`).
+    - [x] Dynamic DM template formatter with `{name}`, `{handle}`, and resource link injection.
+    - [x] Direct CRM contact ingestion: Ingests commenters as contacts in `contacts` table with `["social-lead", "keyword-{keyword}"]` tags.
+    - [x] In-app interactive simulation sandbox in post analytics modal for real-time testing.
+- [x] **Evergreen Queue Recycling & AI Hook Rewriter**
+    - [x] Evergreen queue settings with configurable interval days and recycle loop limits.
+    - [x] Automated rescheduling hook triggered upon publish dispatch.
+    - [x] AI Hook Rewriter to craft fresh hooks and CTAs to prevent duplicate content algorithmic penalties.
+- [x] **Client Social Connect Magic Links ("Add Channels Without Login")**
+    - [x] Cryptographic token generation (`hr_sc_...`) with configurable expiration (7 days).
+    - [x] Client Connect Modal enabling agencies to invite clients to link accounts password-free.
+    - [x] Embedded testing preview for client self-service authorization.
+- [x] **LinkedIn Carousel / Slide Deck Generator**
+    - [x] Multi-slide deck editor supporting reordering, title, and body customization.
+    - [x] 4 high-contrast color themes: Modern Dark, Ocean Royal, Sunset Crimson, Forest Emerald.
+    - [x] Interactive slide swiper preview component with pagination and slide indicators.
+- [x] **Analytics & Streak Consistency Gamification**
+    - [x] `calculatePostingStreak` with active days, personal bests, and at-risk detection.
+    - [x] Header streak counter badge (`🔥 X Day Streak`) with at-risk warning banners.
+    - [x] Single-post analytics modal: Views, likes, shares, clicks, CTR %, and platform breakdown.
+    - [x] Global social settings tab: Short-linking preferences (`always`, `never`, `ask`), queue slot presets, and default tags.
+- [x] **Testing & Verification**
+    - [x] 14 dedicated unit tests in `web/src/__tests__/social.test.ts` (100% pass).
+    - [x] Full workspace suite passes: 35/35 tests in `pnpm test`.
+    - [x] Complete TypeScript type safety: `pnpm tsc --noEmit` exits with 0 errors.
+
+---
+
 ## 🔵 P2: AI Native Core (Data Sources & Autonomous Agents)
 
 **Goal:** Shift from traditional static CRM features to **Data Sources $\leftrightarrow$ Autonomous Agents $\leftrightarrow$ Typed Tools** architecture.  
@@ -195,4 +233,4 @@
 
 ---
 
-*Last updated: January 26, 2026*
+*Last updated: September 11, 2026*

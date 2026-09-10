@@ -4,17 +4,17 @@ function getOauthSecret(): string {
     return process.env.AUTH_SECRET || process.env.JWT_SECRET || "highreach-oauth-state-signing-secret-default";
 }
 
-export interface OAuthStateData {
+export type OAuthStateData = {
     userId: string;
     tenantId: string;
     timestamp: number;
     [key: string]: unknown;
-}
+};
 
 /**
  * Encodes and cryptographically signs an OAuth state payload.
  */
-export function createOAuthState(data: Omit<OAuthStateData, "timestamp">): string {
+export function createOAuthState(data: { userId: string; tenantId: string; [key: string]: unknown }): string {
     const payload: OAuthStateData = {
         ...data,
         timestamp: Date.now(),

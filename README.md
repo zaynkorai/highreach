@@ -1,108 +1,175 @@
-# HighReach - AI Native Speed to Lead Platform
+# HighReach — AI-Native Speed to Lead & Social Growth Platform
 
-HighReach is opensource platform designed effectively for "Speed to Lead" targeting local SMBs without the bloat. It leverages autonomous agents to handle SMS, Email, Booking, and Reviews.
+HighReach is an open-source, multi-tenant platform purpose-built for **Speed to Lead** and **Omnichannel Lead Generation** for local SMBs, agencies, and high-growth teams. It unifies autonomous communication agents, interactive workflows, a high-converting CRM, and an omnichannel **Social Studio** (with full Postiz 2026 parity) into a single, cohesive engine.
 
-## Mission
+---
 
-An open source modern tool to convert leads into customers in **minutes** using Autonomous AI Agents,
+## 🎯 Mission
 
-## The Core Loop
+Convert inbound inquiries and social engagement into paying customers in **seconds**, not days, through autonomous AI agents, multi-network broadcasting, and automated lead capture.
 
-### 1. Capture
+---
 
-* **Unified Inbox 2.0**: Omnichannel support (SMS/Email) with AI-ready infrastructure.
-* **Autonomous CRM**: Contact management with predictive activity timelines.
-* **Missed Call Text-back**: Immediate response to missed calls.
+## ⚡️ The Core Engine
 
-### 2. Nurture
+### 1. Capture & Lead Magnet Engine
+* **Unified Inbox 2.0**: 3-pane omnichannel inbox supporting SMS (Telnyx), Email (Resend), and internal team notes with keyboard shortcuts and canned responses.
+* **Social Studio (Postiz 2026 Parity)**: Complete social media scheduling, analytics, and lead capture platform:
+  * **10 Supported Networks**: Twitter/X, LinkedIn, Facebook, Instagram, Threads, YouTube Community, Twitch, Kick, Skool, and Whop.
+  * **Comment-to-Lead / Comment-to-DM**: Ingests social comments, evaluates keyword triggers (e.g. `GUIDE`, `GROWTH`), auto-dispatches personalized DMs with resource links, and **automatically inserts qualified contacts directly into HighReach's CRM**.
+  * **Interactive Testing Sandbox**: Test comment triggers and preview real-time DM dispatch and CRM contact creation right from the post analytics modal.
+* **Autonomous CRM**: Contact management with smart filters, tags, custom attributes, CSV batch ingestion, and interactive timeline drawers.
+* **Missed Call Text-back**: Automated instant SMS responses for incoming calls when teams are unavailable.
+* **Forms & Lead Capture**: Embedded and standalone forms with automated conversation handoffs.
 
-* **Workflow Engine**: Inngest-powered automation builder (Action/Wait/If-Else).
-* **Reputation AI**: Sentiment analysis and auto-drafted review responses.
+### 2. Nurture & Consistency
+* **Workflow Automations (Inngest)**: Visual drag-and-drop workflow canvas with Action, Wait, and Smart Branching (If/Else) logic nodes.
+* **Evergreen Post Recycling**: Automated evergreen queue scheduling with configurable recurrence intervals, loop limits, and **AI Hook Rewriting** to bypass social algorithm duplicate content penalties.
+* **Reputation AI**: Review monitoring across Google Business and Facebook with automated sentiment classification and AI-drafted reply assistance.
+* **Daily Posting Streak**: Gamified consistency tracker (`🔥 X Day Streak`) with at-risk warnings and reminder notifications.
 
-### 3. Close
+### 3. Close & Scale
+* **Visual Deal Pipelines**: Interactive drag-and-drop Kanban boards with opportunity value aggregations, stage transitions, and deal metrics.
+* **Client Social Connect ("Add Channels Without Login")**: Tokenized magic links allowing agencies to onboard clients' social channels in 30 seconds without sharing passwords or workspace access.
+* **LinkedIn Carousel Builder**: Native multi-page document generator with slide editors, custom branding, and interactive card swipers.
+* **Global Social Settings**: Tenant-wide preferences for short-linking (`Always`, `Never`, `Ask`), automated time slot presets, and default tags.
 
-* **Visual Pipelines**: Kanban boards for deal tracking.
-* **AI Booking Agent**: Autonomous scheduling.
+---
 
 ## 🛠️ Tech Stack & Architecture
 
-- **Frontend/Backend**: Next.js 16 (App Router) + Server Actions + API Routes
-- **Language**: TypeScript
+- **Web Application**: Next.js 16 (App Router) + React Server Components + Server Actions
+- **Language**: TypeScript (Strict Mode)
 - **Database**: PostgreSQL with Drizzle ORM (Multi-tenant application-level scoping)
-- **Auth**: Custom JWT session cookies via `jose` + `bcryptjs` password hashing + RBAC
-- **Styling**: Tailwind CSS v4 + Shadcn UI
-- **Telephony**: Telnyx (SMS/Voice)
-- **Email**: Resend
-- **Background Jobs / Agent Runtime**: Inngest (Durable workflow & agent execution)
-- **AI**: Vercel AI SDK + Claude 3.5 Sonnet / GPT-4o
-- **Architecture**: AI-Native Data Sources $\leftrightarrow$ Autonomous Agents $\leftrightarrow$ Typed Tools (See [Architecture Blueprint](file:///Users/zayn/ground/highreach/docs/ai-native-architecture.md))
-- **State Management**: Zustand (frontend) with localStorage persistence
-- **Validation**: Zod (Shared frontend/backend)
+- **State Management**: Zustand with persistent client storage
+- **Styling & UI**: Tailwind CSS v4, Lucide Icons, Shadcn UI primitives
+- **Background Jobs & Workflows**: Inngest (Durable event-driven execution)
+- **Telephony & SMS**: Telnyx SDK (Inbound/Outbound SMS, webhooks)
+- **Email Delivery**: Resend SDK
+- **Validation**: Zod (Shared schemas across client, server actions, and API routes)
+- **Testing**: Node.js Test Runner (`node:test`) + Native Type Stripping (35 passing unit tests)
 
-| Item | Assessment |
-|------|------------|
-| **Tech stack** | Next.js 16 + PostgreSQL + Drizzle ORM is lean, decoupled, and self-hostable. |
-| **Resend for email** | Good choice. Better deliverability than Mailgun. |
-| **Telnyx for SMS** | Smart. Modern API, 50% cheaper than Twilio, includes voice for future. |
-| **Inngest for workflows & agents** | Excellent for durable agent execution and "wait X → do Y" patterns. No infra to manage. |
-| **PWA approach** | Right call. Avoids native app complexity. |
-| **Data Sources & Agents** | Shift from rigid ERDs to grounded knowledge + autonomous tool execution. |
-| **Industry templates** | Low dev cost, high marketing value. |
-| **Single DB + Multi-tenant scoping** | Decoupled from vendor lock-in. |
+---
 
-## Project Structure
+## 📁 Repository Structure
 
-- `/web` : Web Application & API routes (Next.js)
-- `/docs`: Architectural blueprints, reviews, and specs
+```
+highreach/
+├── docs/                        # Architectural documentation, blueprints & reviews
+│   ├── ai-native-architecture.md# AI data sources & agent architecture blueprint
+│   ├── forms.md                 # Forms & lead capture specification
+│   ├── social-studio.md         # Social Studio & Postiz 2026 parity reference
+│   ├── staff-code-quality-review.md # Code quality & security audit
+│   └── task.md                  # Project task list & milestone tracking
+├── web/                         # Core Next.js 16 application
+│   ├── src/
+│   │   ├── app/                 # Next.js App Router (Dashboard, API, Auth)
+│   │   │   ├── dashboard/
+│   │   │   │   ├── calendars/   # Booking & calendar management
+│   │   │   │   ├── contacts/    # CRM contacts & Smart Lists
+│   │   │   │   ├── inbox/       # Unified Omnichannel Inbox
+│   │   │   │   ├── pipelines/   # Kanban deal pipelines
+│   │   │   │   ├── reputation/  # Review monitoring & AI responses
+│   │   │   │   ├── social/      # Social Studio & Postiz engine
+│   │   │   │   └── workflows/   # Inngest automation flow builder
+│   │   ├── lib/
+│   │   │   ├── auth/            # JWT session handling & RBAC
+│   │   │   ├── db/              # Drizzle ORM schemas & client
+│   │   │   ├── services/        # Domain services & pure utilities
+│   │   │   └── types/           # Core database & domain TypeScript types
+│   │   ├── stores/              # Zustand global client stores
+│   │   └── __tests__/           # Unit tests (CRM, actions, Social Studio)
+│   └── package.json
+└── README.md
+```
 
-## Getting Started
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js 20+
-- [pnpm](https://pnpm.io/) (Strictly used for all package management tasks)
-- PostgreSQL (Local, Docker, Railway, RDS, etc.)
-- Telnyx Account (Optional / for SMS)
-- Resend Account (Optional / for Email)
+- [pnpm](https://pnpm.io/) (`pnpm` is strictly required for all package management tasks)
+- PostgreSQL (Local instance, Docker, Supabase, Neon, or Railway)
 
-### Installation
+### Quick Setup
 
-1. Clone the repo
-2. Install dependencies (make sure you use `pnpm`):
+1. **Clone the repository:**
    ```bash
+   git clone https://github.com/zaynkorai/highreach.git
+   cd highreach
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   cd web
    pnpm install
    ```
-3. Set up environment variables (create `.env.local` inside `web/`):
+
+3. **Configure environment variables:**
+   Create a `.env.local` file inside the `web/` directory:
    ```env
    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/highreach"
-   AUTH_SECRET="your-secure-at-least-32-char-secret"
-   ADMIN_SECRET="your-admin-secret"
-   TELNYX_API_KEY=...
-   RESEND_API_KEY=...
-   ```
-4. Run migrations:
-   ```bash
-   cd web && pnpm db:migrate
-   ```
-5. Run the development server:
-   ```bash
-   cd web && pnpm dev
-   ```
-5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result. You can edit functionality starting from `app/page.tsx` or `web/src/app/page.tsx`.
+   AUTH_SECRET="your-secure-at-least-32-char-secret-key"
+   ADMIN_SECRET="your-admin-secret-key"
+   NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
-## Roadmap & Rollout
+   # Optional external integrations
+   TELNYX_API_KEY=""
+   TELNYX_PUBLIC_KEY=""
+   RESEND_API_KEY=""
+   INNGEST_EVENT_KEY=""
+   INNGEST_SIGNING_KEY=""
+   ```
 
-- [X] **Phase 0: Speed to Lead**
-  - Unified inbox (SMS + Email), CRM, Missed Call Text Back, Forms, Auth, Tenant setup.
-- [X] **Phase 1: Conversion Core** 
-  - Pipelines, Calendars, Workflows, Reviews, Webhooks, FB/IG DMs.
-- [ ] **Phase 2 (P2): AI Native Core** (See [docs/ai-native-architecture.md](file:///Users/zayn/ground/highreach/docs/ai-native-architecture.md))
-  - Supabase `pgvector` Data Sources & Knowledge Grounding Engine.
-  - Typed Tool Registry (Telnyx SMS, Resend Email, Calendar booking, CRM mutation).
-  - Autonomous Inbound Lead & Booking Agents (replacing static canned templates).
-  - Unified Inbox Copilot (AI Drafts with 1-click human approval).
-  - Review Guardian Pro (LLM sentiment analysis & automated responses).
+4. **Initialize Database:**
+   ```bash
+   pnpm db:push
+   ```
+
+5. **Run the Development Server:**
+   ```bash
+   pnpm dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-*Built with by the HighReach Team*
+## 🧪 Testing & Verification
+
+Run the automated unit test suite:
+```bash
+cd web
+pnpm test
+```
+
+Run TypeScript compiler type verification:
+```bash
+cd web
+pnpm tsc --noEmit
+```
+
+---
+
+## 🛣️ Project Milestones
+
+- [x] **P0: Speed to Lead Foundation**
+  - Unified Inbox (SMS/Email), Contacts CRM with CSV import, Missed Call Text-back, Custom JWT Auth, Tenant isolation.
+- [x] **P1: Conversion Core**
+  - Kanban Deal Pipelines, Inngest Workflow Automation Canvas, Reputation Management with Smart Review Gate, Calendar control center.
+- [x] **Social Studio (Postiz 2026 Flagship Parity)**
+  - 10-Platform Scheduler (Twitter/X, LinkedIn, Facebook, Instagram, Threads, YouTube, Twitch, Kick, Skool, Whop).
+  - Comment-to-Lead & Auto-DM conversion engine with direct CRM contact creation.
+  - Evergreen Queue Recycling with AI Hook Rewriter.
+  - Client Connect Magic Links for passwordless channel authorization.
+  - LinkedIn Carousel & Slide Deck Generator.
+  - Posting Streak consistency engine & single-post analytics.
+- [ ] **P2: AI-Native Core & Autonomous Agents**
+  - PostgreSQL `pgvector` knowledge grounding engine.
+  - Autonomous conversational booking agent.
+  - Unified Inbox Copilot (AI drafts with 1-click human approvals).
+
+---
+
+*Built with ❤️ by the HighReach Team*

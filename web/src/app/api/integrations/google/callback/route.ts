@@ -3,6 +3,7 @@ import { getTokens } from "@/lib/integrations/calendar/google";
 import { db, externalAccounts } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { google } from "googleapis";
+import { verifyOAuthState } from "@/lib/integrations/oauth-state";
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -13,8 +14,13 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Missing code or state" }, { status: 400 });
     }
 
+    const stateData = verifyOAuthState(state);
+    if (!stateData || !stateData.tenantId) {
+        return NextResponse.json({ error: "Invalid or expired state parameter" }, { status: 403 });
+    }
+
     try {
-        const { tenantId } = JSON.parse(Buffer.from(state, "base64").toString());
+        const { tenantId } = stateData;
         const tokens = await getTokens(code);
 
         // Get user email from Google
