@@ -9,6 +9,7 @@ interface ThreadHeaderProps {
     onBack: () => void;
     onToggleSidebar: () => void;
     onStatusChange: (status: 'open' | 'closed') => void;
+    onToggleStar?: () => void;
     sidebarOpen: boolean;
     activePane: 'list' | 'thread' | 'info';
 }
@@ -18,6 +19,7 @@ export function ThreadHeader({
     onBack,
     onToggleSidebar,
     onStatusChange,
+    onToggleStar,
     sidebarOpen,
     activePane
 }: ThreadHeaderProps) {
@@ -25,6 +27,8 @@ export function ThreadHeader({
         if (!contact) return "?";
         return (contact.first_name[0] + (contact.last_name?.[0] || "")).toUpperCase();
     };
+
+    const phoneNumber = conversation.contact?.phone;
 
     return (
         <div className="h-16 border-b border-zinc-200 dark:border-zinc-800 px-4 md:px-6 flex items-center justify-between shrink-0 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-md sticky top-0 z-10 font-sans">
@@ -59,11 +63,23 @@ export function ThreadHeader({
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-xl hidden sm:flex">
-                                <Star className="h-4 w-4 text-zinc-400" />
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="rounded-xl hidden sm:flex"
+                                onClick={onToggleStar}
+                            >
+                                <Star className={cn(
+                                    "h-4 w-4 transition-colors",
+                                    conversation.is_starred
+                                        ? "fill-amber-400 text-amber-400"
+                                        : "text-zinc-400 hover:text-amber-400"
+                                )} />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Star Conversation</TooltipContent>
+                        <TooltipContent>
+                            {conversation.is_starred ? "Unstar Conversation" : "Star Conversation"}
+                        </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
 
@@ -89,9 +105,26 @@ export function ThreadHeader({
 
                 <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block" />
 
-                <Button variant="ghost" size="icon" className="rounded-xl">
-                    <Phone className="h-4 w-4 text-zinc-400 hover:text-brand-500 transition-colors" />
-                </Button>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            {phoneNumber ? (
+                                <a href={`tel:${phoneNumber}`} className="inline-flex">
+                                    <Button variant="ghost" size="icon" className="rounded-xl">
+                                        <Phone className="h-4 w-4 text-zinc-400 hover:text-brand-500 transition-colors" />
+                                    </Button>
+                                </a>
+                            ) : (
+                                <Button variant="ghost" size="icon" className="rounded-xl opacity-40 cursor-not-allowed">
+                                    <Phone className="h-4 w-4 text-zinc-400" />
+                                </Button>
+                            )}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {phoneNumber ? `Call ${phoneNumber}` : "No phone number"}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
 
                 <Button
                     variant="ghost"

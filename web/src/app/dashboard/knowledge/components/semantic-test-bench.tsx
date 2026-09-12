@@ -53,9 +53,6 @@ export function SemanticTestBench() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <span className="p-1.5 rounded-xl bg-primary/10 text-primary">
-                                <Sparkles className="w-4 h-4" />
-                            </span>
                             <h3 className="text-base font-bold text-foreground">
                                 Interactive Semantic Retrieval Playground
                             </h3>
@@ -103,7 +100,6 @@ export function SemanticTestBench() {
                         disabled={isSearching || !testQuery.trim()}
                         className="h-12 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-xs gap-2 shrink-0 shadow-xs"
                     >
-                        <Zap className="w-4 h-4" />
                         {isSearching ? "Searching Vectors..." : "Retrieve Chunks"}
                     </Button>
                 </form>

@@ -1,7 +1,7 @@
 "use server";
 
 import { getSessionWithRole } from "@/lib/auth/session";
-import { db, workflows, workflowVersions, workflowExecutions } from "@/lib/db";
+import { db, workflows, workflowVersions, workflowExecutions, workflowSettings } from "@/lib/db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -56,8 +56,9 @@ export async function saveWorkflow(workflowId: string, definition: any, name?: s
         if (name) updates.name = name;
 
         const triggerNode = definition.nodes?.find((n: any) => n.type === "trigger");
-        if (triggerNode?.data?.triggerId) {
-            updates.triggerType = triggerNode.data.triggerId;
+        const triggerId = triggerNode?.data?.triggerId || triggerNode?.triggerId;
+        if (triggerId) {
+            updates.triggerType = triggerId;
         }
 
         await tx
@@ -113,17 +114,84 @@ export async function publishWorkflow(workflowId: string, definition: any): Prom
                     createdBy: session.user.id,
                 });
 
+            const updates: Partial<typeof workflows.$inferInsert> = {
+                status: "published",
+                updatedAt: new Date(),
+            };
+
+            const triggerNode = definition.nodes?.find((n: any) => n.type === "trigger");
+            const triggerId = triggerNode?.data?.triggerId || triggerNode?.triggerId;
+            if (triggerId) {
+                updates.triggerType = triggerId;
+            }
+
             await tx
                 .update(workflows)
-                .set({
-                    status: "published",
-                    updatedAt: new Date(),
-                })
+                .set(updates)
                 .where(and(eq(workflows.id, workflowId), eq(workflows.tenantId, session.tenantId)));
         });
 
         revalidatePath("/dashboard/automations");
         return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}
+
+export async function duplicateWorkflow(id: string): Promise<{ success: boolean; workflow?: any; error?: string }> {
+    const session = await getSessionWithRole();
+    if (!session) return { success: false, error: "Unauthorized" };
+
+    try {
+        const [existing] = await db
+            .select()
+            .from(workflows)
+            .where(and(eq(workflows.id, id), eq(workflows.tenantId, session.tenantId)))
+            .limit(1);
+
+        if (!existing) return { success: false, error: "Workflow not found" };
+
+        const [latestVersion] = await db
+            .select()
+            .from(workflowVersions)
+            .where(eq(workflowVersions.workflowId, id))
+            .orderBy(desc(workflowVersions.createdAt))
+            .limit(1);
+
+        const [created] = await db
+            .insert(workflows)
+            .values({
+                tenantId: session.tenantId,
+                name: `${existing.name} (Copy)`,
+                description: existing.description || "",
+                triggerType: existing.triggerType,
+                status: "draft",
+            })
+            .returning();
+
+        if (latestVersion?.definition) {
+            await db.insert(workflowVersions).values({
+                workflowId: created.id,
+                versionNumber: 1,
+                definition: latestVersion.definition,
+                isPublished: false,
+                createdBy: session.user.id,
+            });
+        }
+
+        revalidatePath("/dashboard/automations");
+        return {
+            success: true,
+            workflow: {
+                id: created.id,
+                name: created.name,
+                description: created.description,
+                status: created.status,
+                trigger_type: created.triggerType,
+                created_at: created.createdAt.toISOString(),
+                updated_at: created.updatedAt.toISOString(),
+            }
+        };
     } catch (err: any) {
         return { success: false, error: err.message };
     }
@@ -139,7 +207,31 @@ async function getNextVersionNumber(workflowId: string, tx: any = db): Promise<n
 }
 
 export async function updateWorkflowSetting(key: string, enabled: boolean, template?: string) {
-    return { success: true, error: undefined };
+    const session = await getSessionWithRole();
+    if (!session) return { success: false, error: "Unauthorized" };
+
+    try {
+        await db
+            .insert(workflowSettings)
+            .values({
+                tenantId: session.tenantId,
+                key,
+                enabled,
+                config: template ? { template } : {},
+                updatedAt: new Date(),
+            })
+            .onConflictDoUpdate({
+                target: [workflowSettings.tenantId, workflowSettings.key],
+                set: {
+                    enabled,
+                    config: template ? { template } : {},
+                    updatedAt: new Date(),
+                },
+            });
+        return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
 }
 
 export async function getWorkflow(id: string) {
@@ -206,8 +298,12 @@ export async function getWorkflowExecutions(workflowId: string) {
 
     try {
         const rows = await db
-            .select()
+            .select({
+                execution: workflowExecutions,
+                versionNumber: workflowVersions.versionNumber,
+            })
             .from(workflowExecutions)
+            .leftJoin(workflowVersions, eq(workflowExecutions.versionId, workflowVersions.id))
             .where(
                 and(
                     eq(workflowExecutions.workflowId, workflowId),
@@ -217,7 +313,7 @@ export async function getWorkflowExecutions(workflowId: string) {
             .orderBy(desc(workflowExecutions.startedAt))
             .limit(50);
 
-        return rows.map((r) => ({
+        return rows.map(({ execution: r, versionNumber }) => ({
             id: r.id,
             workflow_id: r.workflowId,
             version_id: r.versionId,
@@ -229,6 +325,7 @@ export async function getWorkflowExecutions(workflowId: string) {
             started_at: r.startedAt.toISOString(),
             completed_at: r.completedAt ? r.completedAt.toISOString() : null,
             error_message: r.errorMessage,
+            version_number: versionNumber || 1,
         }));
     } catch (error) {
         console.error("Executions fetch error", error);

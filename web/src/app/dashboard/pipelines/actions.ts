@@ -3,7 +3,8 @@
 import { withPermission } from "@/lib/actions/action-handler";
 import { PipelineService } from "@/lib/services/pipeline.service";
 import { revalidatePath } from "next/cache";
-import type { OpportunityFormData } from "@/lib/validations/opportunity";
+import type { OpportunityFormData, UpdateOpportunityFormData } from "@/lib/validations/opportunity";
+import type { OpportunityStatus } from "@/types/pipeline";
 
 export async function getPipelines() {
     return await withPermission("pipelines.read", async (session) => {
@@ -29,6 +30,18 @@ export async function createOpportunity(formData: OpportunityFormData) {
     });
 }
 
+export async function updateOpportunity(id: string, formData: UpdateOpportunityFormData) {
+    return await withPermission("pipelines.write", async (session) => {
+        const updated = await PipelineService.updateOpportunity(
+            session.tenantId,
+            id,
+            formData
+        );
+        revalidatePath("/dashboard/pipelines");
+        return updated;
+    });
+}
+
 export async function moveOpportunity(
     opportunityId: string,
     newStageId: string,
@@ -46,11 +59,11 @@ export async function moveOpportunity(
     });
 }
 
-export async function updateOpportunityStatus(id: string, status: "won" | "lost") {
+export async function updateOpportunityStatus(id: string, status: OpportunityStatus) {
     return await withPermission("pipelines.write", async (session) => {
-        await PipelineService.updateOpportunityStatus(session.tenantId, id, status);
+        const updated = await PipelineService.updateOpportunityStatus(session.tenantId, id, status);
         revalidatePath("/dashboard/pipelines");
-        return { success: true };
+        return updated;
     });
 }
 
@@ -85,3 +98,34 @@ export async function deletePipeline(id: string) {
         return { success: true };
     });
 }
+
+export async function createStage(pipelineId: string, name: string) {
+    return await withPermission("pipelines.write", async (session) => {
+        const stage = await PipelineService.createStage(session.tenantId, pipelineId, name);
+        revalidatePath("/dashboard/pipelines");
+        return stage;
+    });
+}
+
+export async function updateStage(stageId: string, name: string) {
+    return await withPermission("pipelines.write", async (session) => {
+        const stage = await PipelineService.updateStage(session.tenantId, stageId, name);
+        revalidatePath("/dashboard/pipelines");
+        return stage;
+    });
+}
+
+export async function deleteStage(stageId: string) {
+    return await withPermission("pipelines.delete", async (session) => {
+        await PipelineService.deleteStage(session.tenantId, stageId);
+        revalidatePath("/dashboard/pipelines");
+        return { success: true };
+    });
+}
+
+export async function getContactOpportunities(contactId: string) {
+    return await withPermission("pipelines.read", async (session) => {
+        return await PipelineService.getContactOpportunities(session.tenantId, contactId);
+    });
+}
+

@@ -28,7 +28,7 @@ function TriggerNode({ data }: NodeProps) {
             <div className="px-4 py-3 bg-brand-600 text-white rounded-lg shadow-lg min-w-[180px]">
                 <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4" />
-                    <span className="font-semibold text-sm">{data.label as string}</span>
+                    <span className="font-semibold text-sm">{(data as any)?.label || "Trigger"}</span>
                 </div>
             </div>
             <Handle type="source" position={Position.Bottom} className="!bg-brand-500 !w-3 !h-3" />
@@ -42,11 +42,11 @@ function ActionNode({ data }: NodeProps) {
             <Handle type="target" position={Position.Top} className="!bg-zinc-400 !w-3 !h-3" />
             <div className="px-4 py-3 bg-white dark:bg-zinc-800 border-2 border-blue-500 rounded-lg shadow-md min-w-[180px]">
                 <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                    {getActionIcon(data.actionType as string)}
-                    <span className="font-medium text-sm">{data.label as string}</span>
+                    {getActionIcon((data as any)?.actionType as string)}
+                    <span className="font-medium text-sm">{(data as any)?.label || "Action"}</span>
                 </div>
-                {(data.description as string) && (
-                    <p className="text-xs text-muted-foreground mt-1">{data.description as string}</p>
+                {Boolean((data as any)?.description) && (
+                    <p className="text-xs text-muted-foreground mt-1">{(data as any).description as string}</p>
                 )}
             </div>
             <Handle type="source" position={Position.Bottom} className="!bg-zinc-400 !w-3 !h-3" />
@@ -61,7 +61,7 @@ function DelayNode({ data }: NodeProps) {
             <div className="px-4 py-3 bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-500 rounded-lg shadow-md min-w-[140px]">
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                     <Clock className="w-4 h-4" />
-                    <span className="font-medium text-sm">{data.label as string}</span>
+                    <span className="font-medium text-sm">{(data as any)?.label || "Delay"}</span>
                 </div>
             </div>
             <Handle type="source" position={Position.Bottom} className="!bg-zinc-400 !w-3 !h-3" />
@@ -75,12 +75,12 @@ function ConditionNode({ data }: NodeProps) {
             <Handle type="target" position={Position.Top} className="!bg-zinc-400 !w-3 !h-3" />
             <div className={cn(
                 "px-4 py-3 rounded-lg shadow-md min-w-[140px] border-2",
-                data.variant === "success"
+                (data as any)?.variant === "success"
                     ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-500 text-emerald-600"
                     : "bg-red-50 dark:bg-red-900/30 border-red-500 text-red-600"
             )}>
                 <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">{data.label as string}</span>
+                    <span className="font-semibold text-sm">{(data as any)?.label || "Condition"}</span>
                 </div>
             </div>
             <Handle type="source" position={Position.Bottom} className="!bg-zinc-400 !w-3 !h-3" />

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Form, FormFieldType } from "@/types/form";
-import { updateForm } from "../actions";
+import { Form, FormFieldType, FormField } from "@/types/form";
+import { updateForm, deleteForm } from "../actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -17,13 +17,18 @@ import {
 import {
     User, Calendar, Phone, Mail,
     Type, Hash, AlignLeft, ChevronDown, CircleDot, CheckSquare,
-    MousePointerClick, Archive, CreditCard, MapPin, Building2, Map, Globe
+    MousePointerClick, Archive, CreditCard, MapPin, Building2, Map, Globe,
+    Trash2
 } from "lucide-react";
 import {
     SortableContext,
     verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import {
+    useFormName,
+    useFormDescription,
+    useFormStatus,
+    useFormRedirectUrl,
     useFormEditorActions,
     useFormFields,
     useSelectedFieldId,
@@ -39,6 +44,7 @@ import {
 import { SortableField } from "./components/sortable-field";
 import { ShareModal } from "./components/share-modal";
 import { LogicEditor } from "./components/logic-editor";
+import { SubmissionsTab } from "./components/submissions-tab";
 import debounce from "lodash.debounce";
 
 interface FormBuilderProps {
@@ -46,22 +52,23 @@ interface FormBuilderProps {
 }
 
 interface SidebarItem {
-    type: string;
+    type: FormFieldType;
     label: string;
     icon: React.ReactNode;
     disabled?: boolean;
+    defaultProps?: Partial<FormField>;
 }
 
 const ELEMENT_CATEGORIES: { title: string; items: SidebarItem[] }[] = [
     {
         title: "Personal Info",
         items: [
-            { type: "text", label: "Full Name", icon: <User className="w-5 h-5" /> },
-            { type: "text", label: "First Name", icon: <User className="w-5 h-5" /> },
-            { type: "text", label: "Last Name", icon: <User className="w-5 h-5" /> },
+            { type: "text", label: "Full Name", icon: <User className="w-5 h-5" />, defaultProps: { placeholder: "Jane Doe" } },
+            { type: "text", label: "First Name", icon: <User className="w-5 h-5" />, defaultProps: { placeholder: "Jane" } },
+            { type: "text", label: "Last Name", icon: <User className="w-5 h-5" />, defaultProps: { placeholder: "Doe" } },
             { type: "date", label: "Date of birth", icon: <Calendar className="w-5 h-5" /> },
-            { type: "phone", label: "Phone", icon: <Phone className="w-5 h-5" /> },
-            { type: "email", label: "Email", icon: <Mail className="w-5 h-5" /> },
+            { type: "phone", label: "Phone", icon: <Phone className="w-5 h-5" />, defaultProps: { placeholder: "(555) 000-0000" } },
+            { type: "email", label: "Email", icon: <Mail className="w-5 h-5" />, defaultProps: { placeholder: "jane@example.com" } },
         ]
     },
     {
@@ -80,11 +87,11 @@ const ELEMENT_CATEGORIES: { title: string; items: SidebarItem[] }[] = [
     {
         title: "Address",
         items: [
-            { type: "text", label: "Address", icon: <MapPin className="w-5 h-5" /> },
-            { type: "text", label: "City", icon: <Building2 className="w-5 h-5" /> },
-            { type: "text", label: "State", icon: <Map className="w-5 h-5" /> },
-            { type: "text", label: "Country", icon: <Globe className="w-5 h-5" /> },
-            { type: "number", label: "Postal Code", icon: <Hash className="w-5 h-5" /> },
+            { type: "text", label: "Address", icon: <MapPin className="w-5 h-5" />, defaultProps: { placeholder: "123 Main St" } },
+            { type: "text", label: "City", icon: <Building2 className="w-5 h-5" />, defaultProps: { placeholder: "San Francisco" } },
+            { type: "text", label: "State", icon: <Map className="w-5 h-5" />, defaultProps: { placeholder: "California" } },
+            { type: "text", label: "Country", icon: <Globe className="w-5 h-5" />, defaultProps: { placeholder: "United States" } },
+            { type: "number", label: "Postal Code", icon: <Hash className="w-5 h-5" />, defaultProps: { placeholder: "94103" } },
         ]
     },
     {
@@ -92,10 +99,10 @@ const ELEMENT_CATEGORIES: { title: string; items: SidebarItem[] }[] = [
         items: [
             { type: "text", label: "Text Field", icon: <Type className="w-5 h-5" /> },
             { type: "number", label: "Number", icon: <Hash className="w-5 h-5" /> },
-            { type: "textarea", label: "Long Text", icon: <AlignLeft className="w-5 h-5" /> },
+            { type: "textarea", label: "Long Text", icon: <AlignLeft className="w-5 h-5" />, defaultProps: { placeholder: "Write here..." } },
             { type: "select", label: "Dropdown", icon: <ChevronDown className="w-5 h-5" /> },
             { type: "radio", label: "Radio", icon: <CircleDot className="w-5 h-5" /> },
-            { type: "checkbox", label: "Checkbox", icon: <CheckSquare className="w-5 h-5" /> },
+            { type: "checkbox", label: "Checkbox", icon: <CheckSquare className="w-5 h-5" />, defaultProps: { helperText: "I agree to the terms and privacy policy." } },
         ]
     },
 ];
@@ -109,10 +116,14 @@ const PRESET_THEMES = [
 
 export function FormBuilder({ form }: FormBuilderProps) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<"build" | "appearance" | "settings">("build");
+    const [activeTab, setActiveTab] = useState<"build" | "appearance" | "settings" | "submissions">("build");
     const [isShareOpen, setIsShareOpen] = useState(false);
 
     // Store State
+    const name = useFormName();
+    const description = useFormDescription();
+    const status = useFormStatus();
+    const redirectUrl = useFormRedirectUrl();
     const fields = useFormFields();
     const theme = useFormTheme();
     const selectedFieldId = useSelectedFieldId();
@@ -128,6 +139,10 @@ export function FormBuilder({ form }: FormBuilderProps) {
 
     // Actions
     const {
+        setName,
+        setDescription,
+        setStatus,
+        setRedirectUrl,
         setFields,
         setTheme,
         updateTheme,
@@ -164,33 +179,38 @@ export function FormBuilder({ form }: FormBuilderProps) {
         updateField(fieldId, { options: field.options.filter((_, i) => i !== index) });
     };
 
-    // Initialize Store - Only once on mount
+    // Initialize Store - Once on mount / form change
     useEffect(() => {
-        if (fields.length === 0 && !theme) {
-            setFields(form.fields || []);
-            if (form.theme) {
-                setTheme(form.theme);
-            } else {
-                setTheme({
-                    primaryColor: "#FF2D55",
-                    backgroundColor: "#ffffff",
-                    textColor: "#000000",
-                    borderRadius: 8,
-                    fontFamily: "modern"
-                });
-            }
+        setName(form.name || "New Form");
+        setDescription(form.description || "");
+        setStatus(form.status || "active");
+        setRedirectUrl(form.redirect_url || "");
+        setFields(form.fields || []);
+        if (form.theme) {
+            setTheme(form.theme);
+        } else {
+            setTheme({
+                primaryColor: "#FF2D55",
+                backgroundColor: "#ffffff",
+                textColor: "#000000",
+                borderRadius: 8,
+                fontFamily: "modern"
+            });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [form.id]); // Only re-run if we switch to a different form
+    }, [form.id]);
 
     // Auto-Save Logic
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const debouncedSave = useCallback(
-        debounce(async (currentFields, currentTheme) => {
+        debounce(async (currentName, currentDescription, currentStatus, currentRedirectUrl, currentFields, currentTheme) => {
             setSaveStatus('saving');
             try {
-                // Only save draft status updates implicitly
                 const result = await updateForm(form.id, {
+                    name: currentName,
+                    description: currentDescription,
+                    status: currentStatus,
+                    redirect_url: currentRedirectUrl,
                     fields: currentFields,
                     theme: currentTheme,
                 });
@@ -211,10 +231,10 @@ export function FormBuilder({ form }: FormBuilderProps) {
     );
 
     useEffect(() => {
-        if (fields.length > 0 || theme) {
-            debouncedSave(fields, theme);
+        if (fields.length > 0 || theme || name) {
+            debouncedSave(name, description, status, redirectUrl, fields, theme);
         }
-    }, [fields, theme, debouncedSave]);
+    }, [name, description, status, redirectUrl, fields, theme, debouncedSave]);
 
     // Sensors for DnD
     const sensors = useSensors(
@@ -245,12 +265,16 @@ export function FormBuilder({ form }: FormBuilderProps) {
         setIsSaving(true);
         try {
             const result = await updateForm(form.id, {
+                name,
+                description,
+                status: "active",
+                redirect_url: redirectUrl,
                 fields,
                 theme,
-                status: "active"
             });
 
             if (result.success) {
+                setStatus("active");
                 toast.success("Form published successfully!");
                 router.refresh();
             } else {
@@ -264,6 +288,25 @@ export function FormBuilder({ form }: FormBuilderProps) {
         }
     };
 
+    const handleDeleteForm = async () => {
+        if (!confirm("Are you sure you want to delete this form? This cannot be undone.")) return;
+        setIsSaving(true);
+        try {
+            const res = await deleteForm(form.id);
+            if (res.success) {
+                toast.success("Form deleted successfully");
+                router.push("/dashboard/forms");
+            } else {
+                toast.error(res.error || "Failed to delete form");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to delete form");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <div className="h-[calc(100vh-6rem)] flex flex-col">
             {/* Toolbar */}
@@ -271,11 +314,11 @@ export function FormBuilder({ form }: FormBuilderProps) {
                 <div className="flex items-center gap-4">
                     <div>
                         <div className="flex items-center gap-3 text-sm mb-1">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${form.status === 'active'
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${status === 'active'
                                 ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400'
                                 : 'bg-zinc-100 text-zinc-600 dark:bg-white/10 dark:text-zinc-400'
                                 }`}>
-                                {form.status}
+                                {status}
                             </span>
                             <span className="text-zinc-400 flex items-center gap-1.5 min-w-[100px]">
                                 {saveStatus === 'saving' && (
@@ -301,7 +344,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                 )}
                             </span>
                         </div>
-                        <h1 className="text-lg font-bold text-foreground">{form.name}</h1>
+                        <h1 className="text-lg font-bold text-foreground">{name}</h1>
                     </div>
 
                     {/* Undo/Redo */}
@@ -334,28 +377,34 @@ export function FormBuilder({ form }: FormBuilderProps) {
                             Builder
                         </button>
                         <button
+                            onClick={() => setActiveTab("appearance")}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'appearance' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-zinc-500 hover:text-foreground'}`}
+                        >
+                            Appearance
+                        </button>
+                        <button
                             onClick={() => setActiveTab("settings")}
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'settings' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-zinc-500 hover:text-foreground'}`}
                         >
                             Settings
                         </button>
                         <button
-                            onClick={() => setActiveTab("appearance")}
-                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'appearance' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-zinc-500 hover:text-foreground'}`}
+                            onClick={() => setActiveTab("submissions")}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === 'submissions' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground' : 'text-zinc-500 hover:text-foreground'}`}
                         >
-                            Appearance
+                            Responses
                         </button>
                     </div>
 
                     <a href={`/f/${form.id}`} target="_blank" className="px-3 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2">
-                        <span></span> Preview
+                        Preview
                     </a>
 
                     <button
                         onClick={() => setIsShareOpen(true)}
                         className="px-3 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
                     >
-                        <span></span> Share
+                        Share
                     </button>
 
                     <button
@@ -384,7 +433,7 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                                 <button
                                                     key={i}
                                                     disabled={item.disabled}
-                                                    onClick={() => !item.disabled && addField(item.type as FormFieldType)}
+                                                    onClick={() => !item.disabled && addField(item.type, item.label, item.defaultProps)}
                                                     className="flex flex-col items-center justify-center gap-2 p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-lg hover:border-brand-500 hover:shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group h-24"
                                                 >
                                                     <span className="text-2xl opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all">{item.icon}</span>
@@ -512,8 +561,8 @@ export function FormBuilder({ form }: FormBuilderProps) {
                             }}
                         >
                             <div className="border-b border-zinc-100 dark:border-white/[0.08] pb-6 mb-6">
-                                <h2 style={{ color: theme?.textColor || 'inherit' }} className="text-3xl font-bold mb-2">{form.name}</h2>
-                                <p style={{ color: theme?.textColor || 'inherit' }} className="opacity-70">{form.description || "No description provided."}</p>
+                                <h2 style={{ color: theme?.textColor || 'inherit' }} className="text-3xl font-bold mb-2">{name}</h2>
+                                <p style={{ color: theme?.textColor || 'inherit' }} className="opacity-70">{description || "No description provided."}</p>
                             </div>
 
                             {fields.length === 0 ? (
@@ -663,12 +712,74 @@ export function FormBuilder({ form }: FormBuilderProps) {
                                         <div className="flex items-center justify-between">
                                             <label className="text-sm font-medium text-foreground">Required Field</label>
                                             <input
-                                                type="checkbox"
-                                                checked={selectedField.required}
-                                                onChange={(e) => updateField(selectedField.id, { required: e.target.checked })}
-                                                className="w-4 h-4 text-brand-500 rounded border-zinc-300 focus:ring-brand-500"
-                                            />
+                                                 type="checkbox"
+                                                 checked={selectedField.required}
+                                                 onChange={(e) => updateField(selectedField.id, { required: e.target.checked })}
+                                                 className="w-4 h-4 text-brand-500 rounded border-zinc-300 focus:ring-brand-500"
+                                             />
                                         </div>
+                                    </div>
+
+                                    {/* Validation Constraints */}
+                                    <div className="space-y-3 pt-4 border-t border-zinc-100 dark:border-white/10">
+                                        <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider">Validation Rules</label>
+
+                                        {(selectedField.type === 'number' || selectedField.type === 'text' || selectedField.type === 'textarea') && (
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label className="block text-[10px] text-zinc-400 mb-1">
+                                                        {selectedField.type === 'number' ? 'Min Value' : 'Min Length'}
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={selectedField.validation?.min ?? ''}
+                                                        onChange={(e) => updateField(selectedField.id, {
+                                                            validation: {
+                                                                ...selectedField.validation,
+                                                                min: e.target.value !== '' ? parseInt(e.target.value) : undefined
+                                                            }
+                                                        })}
+                                                        placeholder="None"
+                                                        className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] text-zinc-400 mb-1">
+                                                        {selectedField.type === 'number' ? 'Max Value' : 'Max Length'}
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={selectedField.validation?.max ?? ''}
+                                                        onChange={(e) => updateField(selectedField.id, {
+                                                            validation: {
+                                                                ...selectedField.validation,
+                                                                max: e.target.value !== '' ? parseInt(e.target.value) : undefined
+                                                            }
+                                                        })}
+                                                        placeholder="None"
+                                                        className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {(selectedField.type === 'text' || selectedField.type === 'phone') && (
+                                            <div>
+                                                <label className="block text-[10px] text-zinc-400 mb-1">Regex Pattern</label>
+                                                <input
+                                                    type="text"
+                                                    value={selectedField.validation?.pattern || ''}
+                                                    onChange={(e) => updateField(selectedField.id, {
+                                                        validation: {
+                                                            ...selectedField.validation,
+                                                            pattern: e.target.value || undefined
+                                                        }
+                                                    })}
+                                                    placeholder="e.g. ^[0-9]{5}$"
+                                                    className="w-full bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs font-mono"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="pt-4 border-t border-zinc-100 dark:border-white/10">
@@ -684,23 +795,84 @@ export function FormBuilder({ form }: FormBuilderProps) {
                         </div>
                     )}
                 </div>
+            ) : activeTab === "submissions" ? (
+                <SubmissionsTab form={{ ...form, name, description, status, redirect_url: redirectUrl, fields, theme }} />
             ) : (
-                <div className="flex-1 p-8 overflow-y-auto max-w-4xl mx-auto w-full">
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-xl p-6">
-                        <h2 className="text-lg font-bold mb-4">Form Settings</h2>
+                <div className="flex-1 p-8 overflow-y-auto max-w-4xl mx-auto w-full space-y-6">
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-xl p-6 shadow-sm space-y-5">
+                        <h2 className="text-lg font-bold text-foreground">Form Settings</h2>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Redirect URL</label>
+                                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+                                    Form Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="e.g. Contact Us"
+                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+                                    Description <span className="text-zinc-400 font-normal lowercase">(optional)</span>
+                                </label>
+                                <textarea
+                                    value={description || ""}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Brief summary or instructions displayed on the form..."
+                                    rows={2}
+                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+                                    Status
+                                </label>
+                                <select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value as any)}
+                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                                >
+                                    <option value="active">Active (Accepting submissions)</option>
+                                    <option value="draft">Draft (Private testing)</option>
+                                    <option value="archived">Archived (Disabled)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+                                    Redirect URL <span className="text-zinc-400 font-normal lowercase">(optional)</span>
+                                </label>
                                 <input
                                     type="url"
                                     placeholder="https://example.com/thank-you"
-                                    className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm"
-                                    defaultValue={form.redirect_url || ""}
+                                    value={redirectUrl || ""}
+                                    onChange={(e) => setRedirectUrl(e.target.value)}
+                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                                 />
                                 <p className="text-xs text-zinc-500 mt-1">Where to send users after they submit the form.</p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Danger Zone */}
+                    <div className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/30 rounded-xl p-6 shadow-sm">
+                        <h3 className="text-sm font-bold text-red-600 dark:text-red-400 mb-1">Danger Zone</h3>
+                        <p className="text-xs text-zinc-500 mb-4">
+                            Deleting this form permanently removes its configuration, embeds, and historical submissions.
+                        </p>
+                        <button
+                            onClick={handleDeleteForm}
+                            className="px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Form
+                        </button>
                     </div>
                 </div>
             )}

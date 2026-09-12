@@ -153,7 +153,6 @@ export function ClientConnectModal() {
                                     : "text-zinc-500 hover:text-foreground"
                             )}
                         >
-                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                             <span>2. Preview Client Experience</span>
                         </button>
                     </div>

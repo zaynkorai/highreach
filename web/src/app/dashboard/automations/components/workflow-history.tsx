@@ -8,10 +8,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { formatDistanceToNow, format } from "date-fns";
 import {
     Activity, CheckCircle2, XCircle, Clock,
-    ChevronRight, Search, Filter, History as HistoryIcon
+    ChevronRight, Search, Filter, History as HistoryIcon,
+    AlertTriangle, Code2, Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,7 @@ export function WorkflowHistory({ workflowId }: WorkflowHistoryProps) {
     const [executions, setExecutions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [selectedExecution, setSelectedExecution] = useState<any | null>(null);
 
     const fetchLogs = async () => {
         setIsLoading(true);
@@ -105,7 +108,11 @@ export function WorkflowHistory({ workflowId }: WorkflowHistoryProps) {
                             </TableHeader>
                             <TableBody>
                                 {filtered.map((exec) => (
-                                    <TableRow key={exec.id} className="cursor-pointer group hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 transition-colors">
+                                    <TableRow
+                                        key={exec.id}
+                                        onClick={() => setSelectedExecution(exec)}
+                                        className="cursor-pointer group hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 transition-colors"
+                                    >
                                         <TableCell>
                                             <div className="flex flex-col">
                                                 <span className="font-semibold text-sm">
@@ -141,6 +148,79 @@ export function WorkflowHistory({ workflowId }: WorkflowHistoryProps) {
                     </div>
                 )}
             </ScrollArea>
+
+            {/* Execution Detail Modal */}
+            <Dialog open={!!selectedExecution} onOpenChange={(open) => !open && setSelectedExecution(null)}>
+                <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col overflow-hidden">
+                    <DialogHeader>
+                        <div className="flex items-center justify-between mr-6">
+                            <DialogTitle className="text-base flex items-center gap-2">
+                                Execution Details
+                                <Badge variant="outline" className="text-[10px]">v{selectedExecution?.version?.version_number || 1}</Badge>
+                            </DialogTitle>
+                            {selectedExecution && getStatusBadge(selectedExecution.status)}
+                        </div>
+                        <DialogDescription className="text-xs">
+                            Execution ID: <code className="font-mono">{selectedExecution?.id}</code>
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedExecution && (
+                        <div className="space-y-4 py-2 overflow-y-auto flex-1">
+                            {/* Timing */}
+                            <div className="grid grid-cols-2 gap-3 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg text-xs">
+                                <div>
+                                    <span className="text-muted-foreground block text-[11px]">Started</span>
+                                    <span className="font-medium">
+                                        {selectedExecution.started_at ? format(new Date(selectedExecution.started_at), "PPpp") : "—"}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-muted-foreground block text-[11px]">Completed</span>
+                                    <span className="font-medium">
+                                        {selectedExecution.completed_at ? format(new Date(selectedExecution.completed_at), "PPpp") : "In Progress"}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Error if failed */}
+                            {selectedExecution.status === "failed" && selectedExecution.error_message && (
+                                <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg flex items-start gap-2 text-xs text-red-600 dark:text-red-400">
+                                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-semibold">Execution Error</p>
+                                        <p className="mt-0.5">{selectedExecution.error_message}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Trigger Event Payload */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                                    <Code2 className="w-3.5 h-3.5" />
+                                    <span>Trigger Context Payload</span>
+                                </div>
+                                <pre className="p-3 bg-zinc-950 text-zinc-100 rounded-lg text-[11px] font-mono overflow-x-auto max-h-56 leading-relaxed">
+                                    {JSON.stringify(selectedExecution.trigger_data, null, 2)}
+                                </pre>
+                            </div>
+
+                            {/* Step Data if available */}
+                            {selectedExecution.step_data && Object.keys(selectedExecution.step_data).length > 0 && (
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                                        <Activity className="w-3.5 h-3.5" />
+                                        <span>Step Results</span>
+                                    </div>
+                                    <pre className="p-3 bg-zinc-950 text-zinc-100 rounded-lg text-[11px] font-mono overflow-x-auto max-h-48 leading-relaxed">
+                                        {JSON.stringify(selectedExecution.step_data, null, 2)}
+                                    </pre>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
 
             {/* Footer Stats Area */}
             <div className="p-3 border-t bg-white dark:bg-zinc-900 flex items-center gap-6 px-6 text-[10px] uppercase font-bold tracking-widest text-muted-foreground justify-center">

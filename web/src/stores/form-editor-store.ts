@@ -4,6 +4,10 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { temporal, type TemporalState } from 'zundo';
 
 interface FormEditorState {
+    name: string;
+    description?: string;
+    status: 'draft' | 'active' | 'archived';
+    redirectUrl?: string;
     fields: FormField[];
     theme?: FormTheme;
     selectedFieldId: string | null;
@@ -11,10 +15,14 @@ interface FormEditorState {
     saveStatus: 'idle' | 'saving' | 'saved' | 'error';
 
     actions: {
+        setName: (name: string) => void;
+        setDescription: (description: string) => void;
+        setStatus: (status: 'draft' | 'active' | 'archived') => void;
+        setRedirectUrl: (redirectUrl: string) => void;
         setFields: (fields: FormField[]) => void;
         setTheme: (theme: FormTheme) => void;
         updateTheme: (updates: Partial<FormTheme>) => void;
-        addField: (type: FormFieldType) => void;
+        addField: (type: FormFieldType, defaultLabel?: string, extra?: Partial<FormField>) => void;
         updateField: (id: string, updates: Partial<FormField>) => void;
         deleteField: (id: string) => void;
         moveField: (activeId: string, overId: string) => void;
@@ -27,6 +35,10 @@ interface FormEditorState {
 export const useFormEditorStore = create<FormEditorState>()(
     temporal(
         (set) => ({
+            name: "New Form",
+            description: "",
+            status: "draft",
+            redirectUrl: "",
             fields: [],
             theme: undefined,
             selectedFieldId: null,
@@ -34,21 +46,29 @@ export const useFormEditorStore = create<FormEditorState>()(
             saveStatus: 'idle',
 
             actions: {
+                setName: (name) => set({ name }),
+                setDescription: (description) => set({ description }),
+                setStatus: (status) => set({ status }),
+                setRedirectUrl: (redirectUrl) => set({ redirectUrl }),
                 setFields: (fields) => set({ fields }),
                 setTheme: (theme) => set({ theme }),
                 updateTheme: (updates) => set((state) => ({
                     theme: state.theme ? { ...state.theme, ...updates } : undefined
                 })),
 
-                addField: (type) => set((state) => {
+                addField: (type, defaultLabel, extra = {}) => set((state) => {
                     const newField: FormField = {
                         id: crypto.randomUUID(),
                         type,
-                        label: `New ${type} field`,
-                        placeholder: "",
-                        required: false,
-                        helperText: "",
-                        options: [],
+                        label: defaultLabel || `New ${type} field`,
+                        placeholder: extra.placeholder ?? "",
+                        required: extra.required ?? false,
+                        helperText: extra.helperText ?? "",
+                        options: extra.options ?? (type === 'select' || type === 'radio' ? [
+                            { label: "Option 1", value: "option_1" },
+                            { label: "Option 2", value: "option_2" },
+                        ] : []),
+                        ...extra,
                     };
                     return {
                         fields: [...state.fields, newField],
@@ -89,6 +109,10 @@ export const useFormEditorStore = create<FormEditorState>()(
 
 export const useFormEditorActions = () => useFormEditorStore((state) => state.actions);
 // Selectors
+export const useFormName = () => useFormEditorStore((state) => state.name);
+export const useFormDescription = () => useFormEditorStore((state) => state.description);
+export const useFormStatus = () => useFormEditorStore((state) => state.status);
+export const useFormRedirectUrl = () => useFormEditorStore((state) => state.redirectUrl);
 export const useFormFields = () => useFormEditorStore((state) => state.fields);
 export const useFormTheme = () => useFormEditorStore((state) => state.theme);
 export const useSelectedFieldId = () => useFormEditorStore((state) => state.selectedFieldId);
@@ -125,4 +149,5 @@ export const useFutureStates = () => {
     const temporal = useTemporalStore();
     return useStore(temporal, (state: TemporalState<FormEditorTrackedState>) => state.futureStates);
 };
+
 

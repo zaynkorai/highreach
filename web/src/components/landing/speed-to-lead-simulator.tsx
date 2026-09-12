@@ -98,7 +98,7 @@ export function SpeedToLeadSimulator() {
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-primary animate-ping" />
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              Interactive Demo <Sparkles className="w-3.5 h-3.5 text-primary" />
+              Interactive Demo
             </span>
           </div>
 

@@ -6,12 +6,21 @@ import { PipelineClient } from "./pipeline-client";
 import { PipelineWithStages } from "@/types/pipeline";
 import { redirect } from "next/navigation";
 
-export default async function PipelinesPage() {
+interface PipelinesPageProps {
+    searchParams?: Promise<{
+        pipelineId?: string;
+    }>;
+}
+
+export default async function PipelinesPage({ searchParams }: PipelinesPageProps) {
     const session = await getSessionWithRole();
 
     if (!session) {
         redirect("/login");
     }
+
+    const params = searchParams ? await searchParams : undefined;
+    const requestedPipelineId = params?.pipelineId;
 
     // 1. Fetch Pipelines (and stages)
     const pipelineRes = (await getPipelines()) as any;
@@ -33,7 +42,8 @@ export default async function PipelinesPage() {
     }
 
     const pipelinesList = pipelineRes.data as PipelineWithStages[];
-    const activePipelineId = pipelinesList[0]?.id;
+    const activePipeline = (requestedPipelineId && pipelinesList.find(p => p.id === requestedPipelineId)) || pipelinesList[0];
+    const activePipelineId = activePipeline?.id;
 
     // 2. Fetch Opportunities for the active pipeline
     const opportunitiesRes = await getOpportunities(activePipelineId);
@@ -63,6 +73,7 @@ export default async function PipelinesPage() {
     return (
         <PipelineClient
             initialPipelines={pipelinesList}
+            initialActivePipelineId={activePipelineId}
             initialOpportunities={opportunities as any[]}
             contacts={formattedContacts as any[]}
         />

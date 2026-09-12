@@ -120,6 +120,16 @@ export function PublicForm({ form }: PublicFormProps) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-8">
+                    {/* Honeypot field for bot protection */}
+                    <input
+                        type="text"
+                        name="_hp_company"
+                        style={{ display: "none", position: "absolute", left: "-9999px" }}
+                        tabIndex={-1}
+                        autoComplete="off"
+                        aria-hidden="true"
+                    />
+
                     {error && (
                         <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 mb-6">
                             {error}
@@ -155,6 +165,13 @@ export function PublicForm({ form }: PublicFormProps) {
                                             id={field.id}
                                             name={field.id}
                                             required={field.required}
+                                            className="w-full border border-zinc-300 dark:border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-all"
+                                            style={{
+                                                borderRadius: `${theme.borderRadius}px`,
+                                                backgroundColor: theme.backgroundColor,
+                                                color: theme.textColor,
+                                                '--tw-ring-color': theme.primaryColor + '30'
+                                            } as any}
                                             onChange={(e) => handleFieldChange(field.id, e.target.value)}
                                         >
                                             <option value="">Select an option</option>
@@ -231,7 +248,9 @@ export function PublicForm({ form }: PublicFormProps) {
                                                             <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                                         </div>
                                                     </div>
-                                                    <span className="text-sm opacity-80" style={{ color: theme.textColor }}>Yes, I agree</span>
+                                                    <span className="text-sm opacity-80" style={{ color: theme.textColor }}>
+                                                        {field.helperText || field.label || "Yes, I agree"}
+                                                    </span>
                                                 </label>
                                             )}
                                         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Zap, Clock, MessageSquare, Mail, ArrowRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { createWorkflow, saveWorkflow } from "../actions";
 
 type StepType = "trigger" | "delay" | "action";
 
@@ -32,9 +34,11 @@ const ACTIONS = [
 ];
 
 export function CreateWorkflowModal() {
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
     const [steps, setSteps] = useState<WorkflowStep[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const addStep = (type: StepType) => {
         setSteps([...steps, { id: crypto.randomUUID(), type, config: {} }]);
@@ -58,11 +62,70 @@ export function CreateWorkflowModal() {
             return;
         }
 
-        // TODO: Call server action to save custom workflow
-        toast.success("Workflow created (mock)");
-        setOpen(false);
-        setName("");
-        setSteps([]);
+        setIsSubmitting(true);
+        try {
+            const wf = await createWorkflow(name.trim());
+            if (wf) {
+                let currentY = 50;
+                const nodes: any[] = [];
+                const edges: any[] = [];
+                let prevNodeId: string | null = null;
+
+                steps.forEach((step, idx) => {
+                    const nodeId = `step-${idx + 1}`;
+                    let nodeType = "action";
+                    let data: any = { ...step.config };
+
+                    if (step.type === "trigger") {
+                        nodeType = "trigger";
+                        data.triggerId = step.config.event;
+                        const trig = TRIGGERS.find(t => t.id === step.config.event);
+                        data.label = trig?.label || step.config.event;
+                    } else if (step.type === "delay") {
+                        nodeType = "wait";
+                        data.waitType = "time_delay";
+                        data.duration = parseInt(step.config.duration) || 1;
+                        data.unit = step.config.unit || "minutes";
+                        data.label = `Wait ${data.duration} ${data.unit}`;
+                    } else if (step.type === "action") {
+                        nodeType = "action";
+                        data.actionId = step.config.action;
+                        const act = ACTIONS.find(a => a.id === step.config.action);
+                        data.label = act?.label || step.config.action;
+                    }
+
+                    nodes.push({
+                        id: nodeId,
+                        type: nodeType,
+                        position: { x: 300, y: currentY },
+                        data,
+                    });
+
+                    if (prevNodeId) {
+                        edges.push({
+                            id: `e-${prevNodeId}-${nodeId}`,
+                            source: prevNodeId,
+                            target: nodeId,
+                            type: "smart",
+                            animated: true,
+                        });
+                    }
+                    prevNodeId = nodeId;
+                    currentY += 130;
+                });
+
+                await saveWorkflow(wf.id, { nodes, edges }, name.trim());
+                toast.success("Workflow created");
+                setOpen(false);
+                setName("");
+                setSteps([]);
+                router.push(`/dashboard/automations/${wf.id}`);
+            }
+        } catch (error) {
+            toast.error("Failed to create workflow");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (

@@ -63,10 +63,10 @@ export default function ReputationPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black tracking-tight text-foreground">
-                        Reputation <span className="text-brand-500 font-medium tracking-normal">Center</span>
+                        Reputation Center
                     </h1>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-2 font-medium flex items-center gap-2">
-                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        
                         Live monitoring from Google & Facebook
                     </p>
                 </div>

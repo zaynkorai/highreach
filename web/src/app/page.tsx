@@ -80,7 +80,7 @@ export default function HomePage() {
           
           {/* Pill Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted/80 border border-border/80 text-xs font-semibold text-foreground/90 backdrop-blur-md shadow-xs">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            
             <span>Average Response Speed: <strong className="text-primary font-bold">1.8 Seconds</strong></span>
             <span className="text-muted-foreground">&bull;</span>
             <span className="text-muted-foreground hidden sm:inline">Telnyx & OpenAI Powered</span>

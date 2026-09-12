@@ -53,10 +53,15 @@ export function SortableField({ field, isSelected, onSelect, onDelete }: Sortabl
 
                 <label
                     className="block text-sm font-semibold mb-1"
-                    style={{ color: '#000000' }} // Hardcoded black per image style, or theme?.textColor
+                    style={{ color: theme?.textColor || 'inherit' }}
                 >
                     {field.label} {field.required && <span className="text-red-500">*</span>}
                 </label>
+                {field.logic && field.logic.length > 0 && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400 border border-brand-200 dark:border-brand-500/30">
+                        Logic
+                    </span>
+                )}
             </div>
 
             {field.type === 'textarea' ? (
@@ -70,18 +75,27 @@ export function SortableField({ field, isSelected, onSelect, onDelete }: Sortabl
                     }}
                 />
             ) : field.type === 'checkbox' ? (
-                /* Checkbox / Consent Mode */
-                <div className="flex items-start gap-3">
-                    <div
-                        className="w-4 h-4 mt-1 border border-zinc-300 dark:border-white/20 rounded flex items-center justify-center shrink-0"
-                        style={{ borderRadius: '4px' }}
-                    >
-                        {/* Empty box to mimic unselected */}
+                field.options && field.options.length > 0 ? (
+                    <div className="space-y-2">
+                        {field.options.map((opt, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                                <div className="w-4 h-4 rounded border border-zinc-300 dark:border-white/20"></div>
+                                <span className="text-sm" style={{ color: theme?.textColor }}>{opt.label}</span>
+                            </div>
+                        ))}
                     </div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                        I Consent to Receive SMS Notifications, Alerts & Occasional Marketing Communication from company. Message frequency varies. Message & data rates may apply. Text HELP to (XXX) XXX-XXXX for assistance. You can reply STOP to unsubscribe at any time.
+                ) : (
+                    <div className="flex items-start gap-3">
+                        <div
+                            className="w-4 h-4 mt-0.5 border border-zinc-300 dark:border-white/20 rounded flex items-center justify-center shrink-0"
+                            style={{ borderRadius: `${Math.max(2, (theme?.borderRadius || 4) / 2)}px` }}
+                        >
+                        </div>
+                        <div className="text-xs opacity-80 leading-relaxed" style={{ color: theme?.textColor }}>
+                            {field.helperText || field.label || "I agree to the terms and conditions."}
+                        </div>
                     </div>
-                </div>
+                )
             ) : field.type === 'radio' ? (
                 <div className="space-y-2">
                     {field.options?.map((opt, i) => (

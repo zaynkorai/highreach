@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useKnowledgeStore } from "@/stores/knowledge-store";
 import { Button } from "@/components/ui/button";
-import { X, Sparkles, Layers, Info } from "lucide-react";
+import { X, Layers, Info } from "lucide-react";
 import { toast } from "sonner";
 import type { KnowledgeSourceType } from "@/lib/validations/knowledge";
 
@@ -83,7 +83,6 @@ export function AddSourceModal() {
                 <div className="p-6 border-b border-zinc-100 dark:border-white/[0.08] flex items-center justify-between">
                     <div>
                         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-primary" />
                             {editingSource ? "Edit Knowledge Source" : "Add Knowledge Source"}
                         </h2>
                         <p className="text-xs text-zinc-500 mt-0.5">

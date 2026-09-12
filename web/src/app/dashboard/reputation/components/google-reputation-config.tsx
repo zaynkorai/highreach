@@ -62,9 +62,6 @@ export function GoogleReputationConfig() {
     return (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-brand-500" />
-                </div>
                 <div>
                     <h3 className="text-sm font-bold text-foreground tracking-tight">Google Business Profile</h3>
                     <p className="text-xs text-zinc-500 font-medium">Connect your location to sync reviews live.</p>

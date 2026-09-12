@@ -49,7 +49,6 @@ export default function SocialStudioPage() {
 
     return (
         <div className="space-y-8 pb-20 animate-in fade-in duration-500">
-            {/* Streak At-Risk Alert Banner (Postiz Parity) */}
             {streak.isAtRisk && (
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="flex items-center gap-3">
@@ -84,7 +83,7 @@ export default function SocialStudioPage() {
                 <div>
                     <div className="flex items-center gap-2">
                         <h1 className="text-3xl font-black tracking-tight text-foreground">
-                            Social <span className="text-brand-500 font-medium">Studio</span>
+                            Social Studio
                         </h1>
 
                         {/* Daily Posting Streak Badge */}
@@ -102,7 +101,6 @@ export default function SocialStudioPage() {
                         </div>
                     </div>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm font-medium flex items-center gap-2">
-                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                         Multi-channel content scheduling, AI generation, and unified audience growth
                     </p>
                 </div>

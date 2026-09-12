@@ -84,6 +84,12 @@ export class ContactService {
             throw new Error(`Validation failed: ${JSON.stringify(validatedFields.error.flatten())}`);
         }
 
+        const [existing] = await db
+            .select({ tags: contacts.tags })
+            .from(contacts)
+            .where(and(eq(contacts.id, contactId), eq(contacts.tenantId, tenantId)))
+            .limit(1);
+
         const [updated] = await db
             .update(contacts)
             .set({
@@ -100,6 +106,43 @@ export class ContactService {
 
         if (!updated) {
             throw new Error("Contact not found or access denied");
+        }
+
+        if (existing && validatedFields.data.tags) {
+            const oldTags: string[] = existing.tags || [];
+            const newTags: string[] = validatedFields.data.tags || [];
+            const added = newTags.filter((t) => !oldTags.includes(t));
+            const removed = oldTags.filter((t) => !newTags.includes(t));
+
+            for (const tag of added) {
+                try {
+                    await inngest.send({
+                        name: "contact.tag_added",
+                        data: {
+                            contact_id: updated.id,
+                            tenant_id: tenantId,
+                            tag,
+                        },
+                    });
+                } catch (err) {
+                    console.warn("Inngest send error in tag_added:", err);
+                }
+            }
+
+            for (const tag of removed) {
+                try {
+                    await inngest.send({
+                        name: "contact.tag_removed",
+                        data: {
+                            contact_id: updated.id,
+                            tenant_id: tenantId,
+                            tag,
+                        },
+                    });
+                } catch (err) {
+                    console.warn("Inngest send error in tag_removed:", err);
+                }
+            }
         }
 
         return updated;
@@ -143,6 +186,23 @@ export class ContactService {
                     eq(contacts.tenantId, tenantId)
                 )
             );
+
+        for (const id of ids) {
+            for (const tag of tags) {
+                try {
+                    await inngest.send({
+                        name: "contact.tag_added",
+                        data: {
+                            contact_id: id,
+                            tenant_id: tenantId,
+                            tag,
+                        },
+                    });
+                } catch (err) {
+                    console.warn("Inngest send error in bulk tag_added:", err);
+                }
+            }
+        }
     }
 
     static async getContactActivities(tenantId: string, contactId: string) {

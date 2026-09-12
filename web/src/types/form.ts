@@ -66,3 +66,13 @@ export interface FormSubmission {
     data: Record<string, any>;
     submitted_at: string;
 }
+
+export interface FormSubmissionWithContact extends FormSubmission {
+    contact?: {
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        email?: string | null;
+        phone?: string | null;
+    } | null;
+}

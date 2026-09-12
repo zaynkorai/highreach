@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, TrendingUp, DollarSign, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { getContactOpportunities } from "@/app/dashboard/pipelines/actions";
 import {
     Sheet,
     SheetContent,
@@ -39,6 +42,8 @@ interface ContactSheetProps {
 export function ContactSheet({ isOpen, onClose, contact, onSuccess }: ContactSheetProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [tagInput, setTagInput] = useState("");
+    const [deals, setDeals] = useState<any[]>([]);
+    const [isLoadingDeals, setIsLoadingDeals] = useState(false);
 
     const form = useForm<ContactFormData>({
         resolver: zodResolver(contactSchema),
@@ -76,6 +81,26 @@ export function ContactSheet({ isOpen, onClose, contact, onSuccess }: ContactShe
             }
         }
     }, [contact, isOpen, form]);
+
+    useEffect(() => {
+        if (isOpen && contact?.id) {
+            setIsLoadingDeals(true);
+            getContactOpportunities(contact.id)
+                .then((res) => {
+                    if (res.success && res.data) {
+                        setDeals(res.data);
+                    }
+                })
+                .catch(() => {
+                    setDeals([]);
+                })
+                .finally(() => {
+                    setIsLoadingDeals(false);
+                });
+        } else {
+            setDeals([]);
+        }
+    }, [isOpen, contact?.id]);
 
     const handleAddTag = (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && tagInput.trim()) {
@@ -153,8 +178,9 @@ export function ContactSheet({ isOpen, onClose, contact, onSuccess }: ContactShe
                             </SheetDescription>
                         </SheetHeader>
 
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="profile">Profile</TabsTrigger>
+                            <TabsTrigger value="deals" disabled={!contact}>Deals</TabsTrigger>
                             <TabsTrigger value="history" disabled={!contact}>History</TabsTrigger>
                         </TabsList>
                     </div>
@@ -271,6 +297,92 @@ export function ContactSheet({ isOpen, onClose, contact, onSuccess }: ContactShe
                                     </Button>
                                 </div>
                             </form>
+                        </TabsContent>
+
+                        <TabsContent value="deals" className="h-full mt-0 focus-visible:outline-none">
+                            {contact ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Associated Deals</h4>
+                                            <p className="text-xs text-zinc-500">Pipeline progression for this contact</p>
+                                        </div>
+                                        <Link
+                                            href="/dashboard/pipelines"
+                                            onClick={onClose}
+                                            className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 flex items-center gap-1"
+                                        >
+                                            View Pipelines <ExternalLink className="w-3 h-3" />
+                                        </Link>
+                                    </div>
+
+                                    {isLoadingDeals ? (
+                                        <div className="flex flex-col items-center justify-center py-12 text-zinc-400 gap-2">
+                                            <Loader2 className="w-6 h-6 animate-spin" />
+                                            <p className="text-xs font-medium">Loading deals...</p>
+                                        </div>
+                                    ) : deals.length === 0 ? (
+                                        <div className="text-center py-12 px-4 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+                                            <TrendingUp className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+                                            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">No deals found</p>
+                                            <p className="text-xs text-zinc-500 mt-1 mb-4">No active opportunities associated with this contact.</p>
+                                            <Link
+                                                href="/dashboard/pipelines"
+                                                onClick={onClose}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 transition-opacity"
+                                            >
+                                                Open Pipelines
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2.5">
+                                            {deals.map((deal) => (
+                                                <div
+                                                    key={deal.id}
+                                                    className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-white/[0.02] flex items-center justify-between"
+                                                >
+                                                    <div className="space-y-1">
+                                                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">
+                                                            {deal.title}
+                                                        </p>
+                                                        <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+                                                            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                                                                {deal.pipeline_name}
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 font-medium">
+                                                                {deal.stage_name}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                                            ${deal.value.toLocaleString()}
+                                                        </span>
+                                                        <span
+                                                            className={cn(
+                                                                "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+                                                                deal.status === "won"
+                                                                    ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                                                                    : deal.status === "lost"
+                                                                    ? "bg-red-500/10 text-red-600 border border-red-500/20"
+                                                                    : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
+                                                            )}
+                                                        >
+                                                            {deal.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-zinc-500">
+                                    <p>Save the contact first to view deals.</p>
+                                </div>
+                            )}
                         </TabsContent>
 
                         <TabsContent value="history" className="h-full mt-0 focus-visible:outline-none">

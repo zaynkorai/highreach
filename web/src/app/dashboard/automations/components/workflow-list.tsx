@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { deleteWorkflow } from "../actions";
+import { deleteWorkflow, duplicateWorkflow } from "../actions";
 import { memo } from "react";
 
 type Workflow = {
@@ -30,7 +30,17 @@ type Workflow = {
     created_at: string;
 }
 
-const WorkflowCard = memo(({ workflow, onEdit, onDelete }: { workflow: Workflow, onEdit: (id: string) => void, onDelete: (id: string, name: string) => void }) => {
+const WorkflowCard = memo(({
+    workflow,
+    onEdit,
+    onDelete,
+    onDuplicate,
+}: {
+    workflow: Workflow;
+    onEdit: (id: string) => void;
+    onDelete: (id: string, name: string) => void;
+    onDuplicate: (id: string) => void;
+}) => {
     return (
         <div
             onClick={() => onEdit(workflow.id)}
@@ -56,7 +66,7 @@ const WorkflowCard = memo(({ workflow, onEdit, onDelete }: { workflow: Workflow,
                                     <Button variant="ghost" size="sm" className="justify-start h-8 text-xs font-normal w-full" onClick={() => onEdit(workflow.id)}>
                                         <Edit3 className="w-3.5 h-3.5 mr-2" /> Edit
                                     </Button>
-                                    <Button variant="ghost" size="sm" className="justify-start h-8 text-xs font-normal" onClick={() => toast.info("Duplicate coming soon")}>
+                                    <Button variant="ghost" size="sm" className="justify-start h-8 text-xs font-normal" onClick={(e) => { e.stopPropagation(); onDuplicate(workflow.id); }}>
                                         <Copy className="w-3.5 h-3.5 mr-2" /> Duplicate
                                     </Button>
                                     <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
@@ -142,6 +152,20 @@ export function WorkflowList({ initialWorkflows }: { initialWorkflows: Workflow[
         }
     };
 
+    const handleDuplicate = async (id: string) => {
+        try {
+            const res = await duplicateWorkflow(id);
+            if (res.success && res.workflow) {
+                setWorkflows(prev => [res.workflow, ...prev]);
+                toast.success("Workflow duplicated");
+            } else {
+                toast.error(res.error || "Failed to duplicate workflow");
+            }
+        } catch (error) {
+            toast.error("Failed to duplicate workflow");
+        }
+    };
+
     // Empty State (Total)
     if (initialWorkflows.length === 0) {
         return (
@@ -218,6 +242,7 @@ export function WorkflowList({ initialWorkflows }: { initialWorkflows: Workflow[
                         workflow={workflow}
                         onEdit={(id) => router.push(`/dashboard/automations/${id}`)}
                         onDelete={handleDelete}
+                        onDuplicate={handleDuplicate}
                     />
                 ))}
             </div>

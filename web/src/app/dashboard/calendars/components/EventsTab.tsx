@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
     Calendar as CalendarIcon, MoreHorizontal, ExternalLink,
-    Settings, Trash2, Clock, Globe, Plus, Video, Phone, MapPin
+    Settings, Trash2, Clock, Globe, Plus, Video, Phone, MapPin, Code
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -248,14 +248,11 @@ export default function EventsTab() {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 bg-white dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
-                            <Button variant="ghost" size="sm" onClick={() => toast.info("Advanced options in Phase 4")}>More options</Button>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                                <Button className="bg-brand-600 hover:bg-brand-700 rounded-full px-6" onClick={handleCreate}>
-                                    Create
-                                </Button>
-                            </div>
+                        <div className="p-4 bg-white dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800 flex justify-end items-center gap-2">
+                            <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                            <Button className="bg-brand-600 hover:bg-brand-700 rounded-full px-6" onClick={handleCreate}>
+                                Create Event Type
+                            </Button>
                         </div>
                     </SheetContent>
                 </Sheet>
@@ -306,6 +303,12 @@ export default function EventsTab() {
                                                 toast.success("Link copied!");
                                             }} className="gap-2">
                                                 <ExternalLink className="w-4 h-4" /> Copy Link
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => {
+                                                navigator.clipboard.writeText(`<iframe src="${window.location.origin}/book/${cal.slug}" width="100%" height="700" frameborder="0"></iframe>`);
+                                                toast.success("Embed iframe snippet copied!");
+                                            }} className="gap-2">
+                                                <Code className="w-4 h-4" /> Copy Embed Code
                                             </DropdownMenuItem>
                                             <DropdownMenuItem className="text-red-500 gap-2" onSelect={(e) => confirmDelete(cal.id, e)}>
                                                 <Trash2 className="w-4 h-4" /> Delete

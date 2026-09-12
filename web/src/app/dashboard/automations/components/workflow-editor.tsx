@@ -17,6 +17,7 @@ import {
     EdgeProps,
     getBezierPath,
     BaseEdge,
+    EdgeLabelRenderer,
     ReactFlowProvider,
     useReactFlow,
     ReactFlowInstance,
@@ -54,8 +55,10 @@ const HandleStyle = "w-4 h-4 !bg-white border-2 border-brand-500 shadow-md hover
 const HandleHitArea = ""; // Simplified for now to ensure connectivity works
 
 const TriggerNode = memo(({ data, selected }: NodeProps) => {
-    const trigger = TRIGGERS.find(t => t.id === data.triggerId);
+    const triggerId = (data as any)?.triggerId;
+    const trigger = TRIGGERS.find(t => t.id === triggerId);
     const Icon = trigger ? getIconComponent(trigger.icon) : Zap;
+    const label = trigger?.label || (data as any)?.label || "Select Trigger";
     return (
         <div className={cn("relative group transition-all duration-300", selected && "ring-2 ring-brand-500 ring-offset-4 rounded-xl scale-102")}>
             <div className="p-2 bg-gradient-to-br from-brand-600 via-brand-500 to-brand-600 text-white rounded-xl shadow-xl min-w-[150px] border border-white/10 text-center">
@@ -63,7 +66,7 @@ const TriggerNode = memo(({ data, selected }: NodeProps) => {
                     <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10"><Icon className="w-3.5 h-3.5" /></div>
                     <div>
                         <span className="text-[8px] uppercase tracking-widest font-black opacity-70 block leading-tight">Start</span>
-                        <p className="font-bold text-xs leading-tight mt-0.5">{trigger?.label || String(data.label) || "Select Trigger"}</p>
+                        <p className="font-bold text-xs leading-tight mt-0.5">{label}</p>
                     </div>
                 </div>
             </div>
@@ -74,8 +77,11 @@ const TriggerNode = memo(({ data, selected }: NodeProps) => {
 TriggerNode.displayName = "TriggerNode";
 
 const ActionNode = memo(({ data, selected }: NodeProps) => {
-    const action = ACTIONS.find(a => a.id === data.actionId);
+    const actionId = (data as any)?.actionId;
+    const action = ACTIONS.find(a => a.id === actionId);
     const Icon = action ? getIconComponent(action.icon) : ArrowRight;
+    const label = action?.label || (data as any)?.label || "Select Action";
+    const template = (data as any)?.template;
     return (
         <div className={cn("relative group transition-all duration-300", selected && "ring-2 ring-blue-500 ring-offset-4 rounded-xl scale-102")}>
             <Handle type="target" position={Position.Top} className={HandleStyle} />
@@ -85,8 +91,8 @@ const ActionNode = memo(({ data, selected }: NodeProps) => {
                     <div className="flex-1 min-w-0">
                         <span className="text-[8px] uppercase tracking-widest font-black text-slate-400 block leading-tight">Step</span>
                         <p className="font-bold text-xs text-slate-700 dark:text-zinc-100 leading-tight mt-0.5 truncate">
-                            {action?.label || String(data.label)}
-                            {(data.template as string) && <span className="font-normal text-slate-400 ml-1 opacity-75">"{String(data.template)}"</span>}
+                            {label}
+                            {template && <span className="font-normal text-slate-400 ml-1 opacity-75">"{String(template)}"</span>}
                         </p>
                     </div>
                 </div>
@@ -98,6 +104,7 @@ const ActionNode = memo(({ data, selected }: NodeProps) => {
 ActionNode.displayName = "ActionNode";
 
 const WaitNode = memo(({ data, selected }: NodeProps) => {
+    const label = (data as any)?.label || "Wait";
     return (
         <div className={cn("relative group transition-all duration-300", selected && "ring-2 ring-amber-500 ring-offset-4 rounded-xl scale-102")}>
             <Handle type="target" position={Position.Top} className={HandleStyle} />
@@ -106,7 +113,7 @@ const WaitNode = memo(({ data, selected }: NodeProps) => {
                     <div className="p-1.5 bg-white dark:bg-amber-900/20 rounded-lg text-amber-600 shadow-sm"><Clock className="w-3.5 h-3.5" /></div>
                     <div>
                         <span className="text-[8px] uppercase tracking-widest font-black text-amber-600/60 block leading-tight">Pause</span>
-                        <p className="font-bold text-xs text-amber-900 dark:text-amber-200 leading-tight mt-0.5">{String(data.label)}</p>
+                        <p className="font-bold text-xs text-amber-900 dark:text-amber-200 leading-tight mt-0.5">{label}</p>
                     </div>
                 </div>
             </div>
@@ -117,6 +124,7 @@ const WaitNode = memo(({ data, selected }: NodeProps) => {
 WaitNode.displayName = "WaitNode";
 
 const IfElseNode = memo(({ data, selected }: NodeProps) => {
+    const label = (data as any)?.name || (data as any)?.label || "Condition";
     return (
         <div className={cn("relative group transition-all duration-300", selected && "ring-2 ring-purple-500 ring-offset-4 rounded-xl scale-102")}>
             <Handle type="target" position={Position.Top} className={HandleStyle} />
@@ -125,7 +133,7 @@ const IfElseNode = memo(({ data, selected }: NodeProps) => {
                     <div className="p-1.5 bg-white dark:bg-purple-900/20 rounded-lg text-purple-600 shadow-sm"><GitBranch className="w-3.5 h-3.5" /></div>
                     <div>
                         <span className="text-[8px] uppercase tracking-widest font-black text-purple-600/60 block leading-tight">Logic</span>
-                        <p className="font-bold text-xs text-purple-900 dark:text-purple-200 leading-tight mt-0.5">{String(data.name || "Condition")}</p>
+                        <p className="font-bold text-xs text-purple-900 dark:text-purple-200 leading-tight mt-0.5">{label}</p>
                     </div>
                 </div>
             </div>
@@ -171,7 +179,7 @@ const EndNode = memo(({ selected }: NodeProps) => {
 EndNode.displayName = "EndNode";
 
 function SmartEdge(props: EdgeProps) {
-    const { id, selected, data, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition } = props;
+    const { id, selected, data, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd } = props;
     const [edgePath, labelX, labelY] = getBezierPath({
         sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition
     });
@@ -179,7 +187,9 @@ function SmartEdge(props: EdgeProps) {
     return (
         <>
             <BaseEdge
+                id={id}
                 path={edgePath}
+                markerEnd={markerEnd}
                 style={{
                     strokeWidth: selected ? 4 : 2.5,
                     stroke: selected ? "var(--color-brand-600)" : "#94a3b8",
@@ -194,8 +204,15 @@ function SmartEdge(props: EdgeProps) {
                 />
             )}
 
-            <foreignObject width={100} height={40} x={labelX - 50} y={labelY - 20} className="overflow-visible">
-                <div className="flex items-center justify-center h-full gap-3">
+            <EdgeLabelRenderer>
+                <div
+                    style={{
+                        position: 'absolute',
+                        transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+                        pointerEvents: 'all',
+                    }}
+                    className="nodrag nopan flex items-center justify-center gap-2"
+                >
                     <button
                         className={cn(
                             "w-8 h-8 bg-brand-600 border-2 border-white rounded-full flex items-center justify-center hover:scale-125 hover:rotate-90 transition-all shadow-xl z-20 group text-white",
@@ -215,7 +232,7 @@ function SmartEdge(props: EdgeProps) {
                         </button>
                     )}
                 </div>
-            </foreignObject>
+            </EdgeLabelRenderer>
         </>
     );
 }
@@ -245,11 +262,19 @@ const EditorCanvas = memo(({
                 if (!type) return;
 
                 const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+                let parsedData: any = {};
+                if (payload) {
+                    try {
+                        parsedData = JSON.parse(payload) || {};
+                    } catch {
+                        parsedData = {};
+                    }
+                }
                 const newNode = {
                     id: `dnd-${Date.now()}`,
                     type,
                     position,
-                    data: JSON.parse(payload)
+                    data: parsedData
                 };
                 setNodes((nds: any) => nds.concat(newNode));
             }}
@@ -284,9 +309,30 @@ interface WorkflowEditorProps {
 }
 
 export function WorkflowEditor({ workflowId, workflowName, initialDefinition }: WorkflowEditorProps) {
-    const initialNodes = initialDefinition?.nodes || [{ id: "trigger-1", type: "trigger", position: { x: 300, y: 50 }, data: { triggerId: null, label: "Click to Select Trigger" } }];
+    const initialNodes = useMemo(() => {
+        if (initialDefinition?.nodes && Array.isArray(initialDefinition.nodes) && initialDefinition.nodes.length > 0) {
+            return initialDefinition.nodes.map((n: any, idx: number) => ({
+                ...n,
+                id: n.id || `node-${idx}`,
+                data: n.data || {}
+            }));
+        }
+        return [{ id: "trigger-1", type: "trigger", position: { x: 300, y: 50 }, data: { triggerId: null, label: "Click to Select Trigger" } }];
+    }, [initialDefinition?.nodes]);
+
+    const initialEdges = useMemo(() => {
+        if (initialDefinition?.edges && Array.isArray(initialDefinition.edges)) {
+            return initialDefinition.edges.map((e: any, idx: number) => ({
+                ...e,
+                id: e.id || `e-${e.source || 'src'}-${e.target || 'tgt'}-${idx}`,
+                data: e.data || {}
+            }));
+        }
+        return [];
+    }, [initialDefinition?.edges]);
+
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialDefinition?.edges || []);
+    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
     const [name, setName] = useState(workflowName);
     const [isSaving, setIsSaving] = useState(false);
@@ -329,76 +375,142 @@ export function WorkflowEditor({ workflowId, workflowName, initialDefinition }: 
         toast.success("Connection removed");
     }, []);
 
-    const edgesWithHandler = useMemo(() => edges.map(edge => ({
+    const edgesWithHandler = useMemo(() => edges.map((edge, idx) => ({
         ...edge,
+        id: edge.id || `edge-${edge.source || 'src'}-${edge.target || 'tgt'}-${idx}`,
         animated: true,
         markerEnd: { type: MarkerType.ArrowClosed, color: edge.selected ? "var(--color-brand-600)" : "#cbd5e1" },
         data: { ...edge.data, onAddClick: handleAddClick, onDeleteClick: handleDeleteEdge }
     })), [edges, handleAddClick, handleDeleteEdge]);
 
-    // Save Config from Inspector
-    const handleConfigSave = (config: any) => {
+    // Handlers for node configuration & insertion
+    const handleTriggerSelect = (triggerId: string) => {
+        const triggerDef = TRIGGERS.find(t => t.id === triggerId);
+        const label = triggerDef?.label || triggerId;
         if (selectedNode) {
-            // Updating existing node
-            setNodes(nds => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, ...config } } : n));
-            toast.success("Updated");
-        } else if (insertEdgeId) {
-            // Inserting new node (Logic from previous step)
-            // Note: This logic path assumes handleConfigSave is only called for Actions/Logic
-            // If we are "Selecting" an action to insert:
-            // (Re-using logic from previous Action save)
-            // BUT, the ActionPanel logic is complex (Select -> Config).
-            // Simplification: We will require drag-drop for new nodes from sidebar, OR
-            // keep the +/- click logic. 
-            // For now, let's keep the existing logic:
-
-            // ... (Insert Node Logic) ...
-            // This part is tricky to unify without a full refactor of "ActionPanel".
-            // Since we are moving to Sidebar First, let's make the "+" button simpler: 
-            // It just focuses the Sidebar? No, users hate that.
-            // I'll keep generic insert logic:
-            const actionId = config.actionId || "send_sms"; // Hacky fallback
-            // ... insert logic ...
+            setNodes(nds => nds.map(n => n.id === selectedNode.id ? {
+                ...n,
+                data: { ...n.data, triggerId, label }
+            } : n));
+            toast.success(`Trigger set to ${label}`);
         }
-        // Close inspector if it was just an update
-        if (selectedNode) {
-            // keep open or close? Keep open ideally until explicit close
-        }
+        handlePaneClick();
     };
 
-    // Special handler for ActionPanel which handles both "New Selection" and "Config"
     const handleActionPanelSave = (actionId: string, config: any) => {
+        if (actionId === "wait") {
+            setInspectorView("wait");
+            return;
+        }
+        if (actionId === "if_else") {
+            setInspectorView("condition");
+            return;
+        }
+        const action = ACTIONS.find(a => a.id === actionId);
+        const label = action?.label || actionId;
+
         if (selectedNode && selectedNode.type === "action") {
-            // Editing existing
-            setNodes(nds => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, actionId, ...config } } : n));
+            setNodes(nds => nds.map(n => n.id === selectedNode.id ? {
+                ...n,
+                data: { ...n.data, actionId, label, ...config }
+            } : n));
             toast.success("Updated Action");
-            setInspectorView("none"); // Close panel on save
+            handlePaneClick();
         } else if (insertEdgeId) {
-            // Inserting NEW
-            const action = ACTIONS.find(a => a.id === actionId);
-            if (actionId === "wait") { setInspectorView("wait"); return; } // Redirect
-            // ... insert logic
             const edge = edges.find(e => e.id === insertEdgeId);
             if (edge) {
+                const sourceNode = nodes.find(n => n.id === edge.source);
+                const targetNode = nodes.find(n => n.id === edge.target);
+                const posX = sourceNode && targetNode ? Math.round((sourceNode.position.x + targetNode.position.x) / 2) : 300;
+                const posY = sourceNode && targetNode ? Math.round((sourceNode.position.y + targetNode.position.y) / 2) : 300;
                 const newNodeId = `node-${Date.now()}`;
                 const newNode: Node = {
-                    id: newNodeId, type: "action", position: { x: 300, y: 300 }, // Auto layout will fix
-                    data: { actionId, label: action?.label, ...config }
+                    id: newNodeId,
+                    type: "action",
+                    position: { x: posX, y: posY },
+                    data: { actionId, label, ...config }
                 };
                 setNodes(nds => nds.concat(newNode));
                 setEdges(eds => [
                     ...eds.filter(e => e.id !== insertEdgeId),
-                    { id: `e-${edge.source}-${newNodeId}`, source: edge.source, target: newNodeId, type: "smart", animated: true },
+                    { id: `e-${edge.source}-${newNodeId}`, source: edge.source, sourceHandle: edge.sourceHandle, target: newNodeId, type: "smart", animated: true },
                     { id: `e-${newNodeId}-${edge.target}`, source: newNodeId, target: edge.target, type: "smart", animated: true }
                 ]);
-                toast.success("Inserted node");
+                toast.success("Inserted Action");
                 setInsertEdgeId(null);
-                setInspectorView("none");
             }
-        } else {
-            // Maybe DragonDrop created a raw node without data?
-            // That logic is handled by onDrop and setNodes directly.
+            handlePaneClick();
         }
+    };
+
+    const handleWaitSave = (config: any) => {
+        const label = `Wait ${config.duration || 1} ${config.unit || 'days'}`;
+        if (selectedNode && selectedNode.type === "wait") {
+            setNodes(nds => nds.map(n => n.id === selectedNode.id ? {
+                ...n,
+                data: { ...n.data, ...config, label }
+            } : n));
+            toast.success("Updated Wait Step");
+        } else if (insertEdgeId) {
+            const edge = edges.find(e => e.id === insertEdgeId);
+            if (edge) {
+                const sourceNode = nodes.find(n => n.id === edge.source);
+                const targetNode = nodes.find(n => n.id === edge.target);
+                const posX = sourceNode && targetNode ? Math.round((sourceNode.position.x + targetNode.position.x) / 2) : 300;
+                const posY = sourceNode && targetNode ? Math.round((sourceNode.position.y + targetNode.position.y) / 2) : 300;
+                const newNodeId = `node-${Date.now()}`;
+                const newNode: Node = {
+                    id: newNodeId,
+                    type: "wait",
+                    position: { x: posX, y: posY },
+                    data: { ...config, label }
+                };
+                setNodes(nds => nds.concat(newNode));
+                setEdges(eds => [
+                    ...eds.filter(e => e.id !== insertEdgeId),
+                    { id: `e-${edge.source}-${newNodeId}`, source: edge.source, sourceHandle: edge.sourceHandle, target: newNodeId, type: "smart", animated: true },
+                    { id: `e-${newNodeId}-${edge.target}`, source: newNodeId, target: edge.target, type: "smart", animated: true }
+                ]);
+                toast.success("Inserted Wait Step");
+                setInsertEdgeId(null);
+            }
+        }
+        handlePaneClick();
+    };
+
+    const handleIfElseSave = (config: any) => {
+        const label = config.name || "Check Condition";
+        if (selectedNode && selectedNode.type === "if_else") {
+            setNodes(nds => nds.map(n => n.id === selectedNode.id ? {
+                ...n,
+                data: { ...n.data, ...config, label }
+            } : n));
+            toast.success("Updated Condition");
+        } else if (insertEdgeId) {
+            const edge = edges.find(e => e.id === insertEdgeId);
+            if (edge) {
+                const sourceNode = nodes.find(n => n.id === edge.source);
+                const targetNode = nodes.find(n => n.id === edge.target);
+                const posX = sourceNode && targetNode ? Math.round((sourceNode.position.x + targetNode.position.x) / 2) : 300;
+                const posY = sourceNode && targetNode ? Math.round((sourceNode.position.y + targetNode.position.y) / 2) : 300;
+                const newNodeId = `node-${Date.now()}`;
+                const newNode: Node = {
+                    id: newNodeId,
+                    type: "if_else",
+                    position: { x: posX, y: posY },
+                    data: { ...config, label }
+                };
+                setNodes(nds => nds.concat(newNode));
+                setEdges(eds => [
+                    ...eds.filter(e => e.id !== insertEdgeId),
+                    { id: `e-${edge.source}-${newNodeId}`, source: edge.source, sourceHandle: edge.sourceHandle, target: newNodeId, type: "smart", animated: true },
+                    { id: `e-${newNodeId}-${edge.target}-yes`, source: newNodeId, sourceHandle: "yes", target: edge.target, type: "smart", animated: true }
+                ]);
+                toast.success("Inserted Condition");
+                setInsertEdgeId(null);
+            }
+        }
+        handlePaneClick();
     };
 
     const handleDeleteNode = () => {
@@ -502,10 +614,36 @@ export function WorkflowEditor({ workflowId, workflowName, initialDefinition }: 
                                     </div>
 
                                     <div className="flex-1 overflow-y-auto">
-                                        {inspectorView === "trigger" && <TriggerPanel onSelect={(id) => { /* Update trigger logic */ handlePaneClick(); }} onClose={handlePaneClick} />}
-                                        {inspectorView === "action" && <ActionPanel onSave={handleActionPanelSave} onClose={handlePaneClick} isSmsConfigured={configStatus?.telnyx ?? true} />}
-                                        {inspectorView === "wait" && <WaitConfigPanel onSave={(config: any) => { /* Update wait */ handlePaneClick(); }} onClose={handlePaneClick} />}
-                                        {inspectorView === "condition" && <IfElseConfigPanel onSave={(config: any) => { /* Update logic */ handlePaneClick(); }} onClose={handlePaneClick} />}
+                                        {inspectorView === "trigger" && (
+                                            <TriggerPanel
+                                                initialTriggerId={(selectedNode?.data?.triggerId as string) || undefined}
+                                                onSelect={handleTriggerSelect}
+                                                onClose={handlePaneClick}
+                                            />
+                                        )}
+                                        {inspectorView === "action" && (
+                                            <ActionPanel
+                                                initialActionId={(selectedNode?.data?.actionId as string) || undefined}
+                                                initialConfig={selectedNode?.data}
+                                                onSave={handleActionPanelSave}
+                                                onClose={handlePaneClick}
+                                                isSmsConfigured={configStatus?.telnyx ?? true}
+                                            />
+                                        )}
+                                        {inspectorView === "wait" && (
+                                            <WaitConfigPanel
+                                                initialConfig={selectedNode?.data}
+                                                onSave={handleWaitSave}
+                                                onClose={handlePaneClick}
+                                            />
+                                        )}
+                                        {inspectorView === "condition" && (
+                                            <IfElseConfigPanel
+                                                initialConfig={selectedNode?.data}
+                                                onSave={handleIfElseSave}
+                                                onClose={handlePaneClick}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             )}

@@ -11,6 +11,7 @@ interface MessageThreadProps {
     isLoading: boolean;
     onSendMessage: (content: string, channel: ChannelType, isInternal: boolean, attachments: File[]) => Promise<void>;
     onStatusChange: (status: 'open' | 'closed') => void;
+    onToggleStar?: () => void;
     onBack: () => void;
     onToggleSidebar: () => void;
     activePane: 'list' | 'thread' | 'info';
@@ -24,6 +25,7 @@ export function MessageThread({
     isLoading,
     onSendMessage,
     onStatusChange,
+    onToggleStar,
     onBack,
     onToggleSidebar,
     activePane,
@@ -46,6 +48,7 @@ export function MessageThread({
                 onBack={onBack}
                 onToggleSidebar={onToggleSidebar}
                 onStatusChange={onStatusChange}
+                onToggleStar={onToggleStar}
                 sidebarOpen={sidebarOpen}
                 activePane={activePane}
             />

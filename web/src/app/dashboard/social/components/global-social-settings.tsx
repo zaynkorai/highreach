@@ -24,9 +24,6 @@ import {
     X,
     Check,
     Loader2,
-    Radio,
-    Shield,
-    Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";

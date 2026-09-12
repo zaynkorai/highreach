@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Conversation, ChannelType } from "@/types/inbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +16,14 @@ interface MessageInputProps {
 export function MessageInput({ conversation, onSendMessage }: MessageInputProps) {
     const [newMessage, setNewMessage] = useState("");
     const [isInternalNote, setIsInternalNote] = useState(false);
+    const [selectedChannel, setSelectedChannel] = useState<ChannelType>(conversation.channel || "sms");
     const [attachments, setAttachments] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Sync selected channel when conversation changes
+    useEffect(() => {
+        setSelectedChannel(conversation.channel || "sms");
+    }, [conversation.id, conversation.channel]);
 
     const CANNED_RESPONSES = [
         { title: "Review Request", content: "Hi! It was a pleasure working with you. Would you mind leaving us a quick review? Here is the link: https://g.page/r/..." },
@@ -43,11 +49,14 @@ export function MessageInput({ conversation, onSendMessage }: MessageInputProps)
     const handleSend = async () => {
         if (!newMessage.trim() && attachments.length === 0) return;
 
-        await onSendMessage(newMessage, conversation.channel, isInternalNote, attachments);
+        await onSendMessage(newMessage, selectedChannel, isInternalNote, attachments);
 
         setNewMessage("");
         setAttachments([]);
     };
+
+    const hasPhone = Boolean(conversation.contact?.phone);
+    const hasEmail = Boolean(conversation.contact?.email);
 
     return (
         <div className="p-4 md:p-6 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0">
@@ -60,10 +69,42 @@ export function MessageInput({ conversation, onSendMessage }: MessageInputProps)
                         </TabsList>
                     </Tabs>
                     <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800" />
-                    <Badge variant="outline" className="h-8 rounded-xl border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-[9px] font-black uppercase tracking-widest px-3 gap-2">
-                        {getChannelIcon(conversation.channel)}
-                        VIA {conversation.channel}
-                    </Badge>
+                    
+                    {/* Channel Selector */}
+                    {!isInternalNote && (
+                        <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-xl p-0.5 border border-zinc-200 dark:border-zinc-800">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedChannel("sms")}
+                                disabled={!hasPhone}
+                                className={cn(
+                                    "h-7 px-2.5 rounded-lg text-[9px] font-black uppercase tracking-wider gap-1.5",
+                                    selectedChannel === "sms"
+                                        ? "bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm"
+                                        : "text-zinc-500 hover:text-zinc-900"
+                                )}
+                            >
+                                <Phone className="h-3 w-3" /> SMS
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedChannel("email")}
+                                disabled={!hasEmail}
+                                className={cn(
+                                    "h-7 px-2.5 rounded-lg text-[9px] font-black uppercase tracking-wider gap-1.5",
+                                    selectedChannel === "email"
+                                        ? "bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm"
+                                        : "text-zinc-500 hover:text-zinc-900"
+                                )}
+                            >
+                                <Mail className="h-3 w-3" /> Email
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 <Popover>

@@ -1,5 +1,6 @@
 import { db, forms } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { FormService } from "@/lib/services/form.service";
 import { PublicForm } from "./public-form";
 import { notFound } from "next/navigation";
 import { Form } from "@/types/form";
@@ -30,18 +31,27 @@ async function FormContainer({ params }: { params: Promise<{ id: string }> }) {
         notFound();
     }
 
+    // Increment view count asynchronously
+    try {
+        await FormService.incrementFormViews(found.id);
+    } catch (e) {
+        console.error("Failed to increment form views:", e);
+    }
+
     const form: Form = {
         id: found.id,
         tenant_id: found.tenantId,
         name: found.name,
+        description: found.description || undefined,
         fields: found.fields as any,
         theme: found.theme as any,
         redirect_url: found.redirectUrl || undefined,
-        status: "active",
-        views: 0,
+        status: (found.status as any) || "active",
+        views: (found.views || 0) + 1,
         created_at: found.createdAt.toISOString(),
         updated_at: found.updatedAt.toISOString(),
     };
 
     return <PublicForm form={form} />;
 }
+

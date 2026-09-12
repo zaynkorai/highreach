@@ -113,7 +113,7 @@ export function NewConversationDialog({
                 toast.success("Conversation ready");
                 onConversationCreated(res.data.id);
                 onOpenChange(false);
-            } else {
+            } else if (!res.success) {
                 toast.error(res.error || "Failed to start conversation");
             }
         } catch (err: any) {

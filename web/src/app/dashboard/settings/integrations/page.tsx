@@ -12,6 +12,7 @@ export default async function IntegrationsPage() {
         : [];
 
     const accounts = rawAccounts.map((a) => ({
+        id: a.id,
         provider: a.provider,
         provider_account_id: a.providerAccountId,
         created_at: a.createdAt.toISOString(),

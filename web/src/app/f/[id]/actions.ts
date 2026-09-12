@@ -5,7 +5,14 @@ import { eq, and } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 
 export async function submitForm(formId: string, formData: FormData) {
-    // 1. Get form to verify existence and get tenantId
+    // 1. Honeypot check for bot protection
+    const honeypot = formData.get("_hp_company");
+    if (honeypot) {
+        // Silently discard bot submission
+        return { success: true };
+    }
+
+    // 2. Get form to verify existence and get tenantId
     const [form] = await db
         .select()
         .from(forms)
@@ -16,18 +23,75 @@ export async function submitForm(formId: string, formData: FormData) {
         return { error: "Form not found" };
     }
 
-    // 2. Parse data based on form fields
-    const submissionData: Record<string, any> = {};
     const fields = (form.fields as any[]) || [];
 
+    // 3. Server-side Validation
+    for (const field of fields) {
+        const val = field.type === 'checkbox' && field.options && field.options.length > 0
+            ? formData.getAll(field.id)
+            : formData.get(field.id);
+
+        if (field.required) {
+            const isEmpty = Array.isArray(val)
+                ? val.length === 0
+                : (!val || String(val).trim() === "");
+            if (isEmpty) {
+                return { error: `"${field.label}" is required.` };
+            }
+        }
+
+        if (val && typeof val === "string") {
+            if (field.type === 'number') {
+                const num = Number(val);
+                if (isNaN(num)) {
+                    return { error: `"${field.label}" must be a valid number.` };
+                }
+                if (field.validation?.min !== undefined && num < field.validation.min) {
+                    return { error: `"${field.label}" must be at least ${field.validation.min}.` };
+                }
+                if (field.validation?.max !== undefined && num > field.validation.max) {
+                    return { error: `"${field.label}" cannot exceed ${field.validation.max}.` };
+                }
+            }
+            if (field.type === 'text' || field.type === 'textarea') {
+                if (field.validation?.min !== undefined && val.length < field.validation.min) {
+                    return { error: `"${field.label}" must be at least ${field.validation.min} characters.` };
+                }
+                if (field.validation?.max !== undefined && val.length > field.validation.max) {
+                    return { error: `"${field.label}" cannot exceed ${field.validation.max} characters.` };
+                }
+                if (field.validation?.pattern) {
+                    try {
+                        const regex = new RegExp(field.validation.pattern);
+                        if (!regex.test(val)) {
+                            return { error: `"${field.label}" format is invalid.` };
+                        }
+                    } catch {
+                        // ignore malformed regex
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. Parse submission data based on form fields
+    const submissionData: Record<string, any> = {};
+
     fields.forEach((field) => {
-        const value = formData.get(field.id);
-        if (value) {
-            submissionData[field.label] = value;
+        if (field.type === 'checkbox' && field.options && field.options.length > 0) {
+            const values = formData.getAll(field.id).map(v => String(v));
+            if (values.length > 0) {
+                submissionData[field.label] = values.join(", ");
+            }
+        } else {
+            const value = formData.get(field.id);
+            if (value !== null && value !== "") {
+                submissionData[field.label] = value;
+            }
         }
     });
 
-    // 3. Identify Contact Information
+    // 5. Identify Contact Information
     const emailField = fields.find((f) => f.type === "email");
     const phoneField = fields.find((f) => f.type === "phone");
     const nameField = fields.find((f) => f.label.toLowerCase().includes("name"));
@@ -37,8 +101,16 @@ export async function submitForm(formId: string, formData: FormData) {
     const fullName = nameField ? (formData.get(nameField.id) as string) : null;
 
     let contactId: string | null = null;
+    let resolvedFirstName = "Unknown";
+    let resolvedLastName = "";
 
-    // 4. Create/Update Contact
+    if (fullName) {
+        const splitName = fullName.trim().split(/\s+/);
+        resolvedFirstName = splitName[0] || "Unknown";
+        resolvedLastName = splitName.slice(1).join(" ") || "";
+    }
+
+    // 6. Create or Update Contact in CRM
     if (email || phone) {
         let existingContact = null;
         if (email) {
@@ -59,17 +131,15 @@ export async function submitForm(formId: string, formData: FormData) {
 
         if (existingContact) {
             contactId = existingContact.id;
+            resolvedFirstName = existingContact.firstName || resolvedFirstName;
+            resolvedLastName = existingContact.lastName || resolvedLastName;
         } else {
-            const splitName = fullName ? fullName.split(" ") : ["Unknown"];
-            const firstName = splitName[0];
-            const lastName = splitName.slice(1).join(" ") || "";
-
             const [newContact] = await db
                 .insert(contacts)
                 .values({
                     tenantId: form.tenantId,
-                    firstName,
-                    lastName,
+                    firstName: resolvedFirstName,
+                    lastName: resolvedLastName,
                     email: email || null,
                     phone: phone || null,
                     source: `Form: ${form.name}`,
@@ -83,7 +153,7 @@ export async function submitForm(formId: string, formData: FormData) {
         }
     }
 
-    // 5. Save Submission
+    // 7. Save Submission Record
     const [submission] = await db
         .insert(formSubmissions)
         .values({
@@ -94,7 +164,7 @@ export async function submitForm(formId: string, formData: FormData) {
         })
         .returning();
 
-    // 6. Create/Find Conversation & Insert Inbox Message
+    // 8. Create/Find Conversation & Insert Inbox Message
     if (contactId) {
         let [conv] = await db
             .select()
@@ -141,7 +211,7 @@ export async function submitForm(formId: string, formData: FormData) {
         }
     }
 
-    // 7. Trigger Automation
+    // 9. Trigger Inngest Automation
     try {
         await inngest.send({
             name: "form.submitted",
@@ -149,6 +219,17 @@ export async function submitForm(formId: string, formData: FormData) {
                 tenant_id: form.tenantId,
                 form_id: form.id,
                 submission_id: submission?.id || "pending",
+                contact_id: contactId || undefined,
+                email: email || undefined,
+                phone: phone || undefined,
+                contact: contactId ? {
+                    id: contactId,
+                    first_name: resolvedFirstName,
+                    last_name: resolvedLastName,
+                    email,
+                    phone,
+                } : undefined,
+                fields: submissionData,
             },
         });
     } catch (err) {
@@ -157,3 +238,4 @@ export async function submitForm(formId: string, formData: FormData) {
 
     return { success: true, redirectUrl: form.redirectUrl || undefined };
 }
+

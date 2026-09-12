@@ -65,6 +65,7 @@ highreach/
 ├── docs/                        # Architectural documentation, blueprints & reviews
 │   ├── ai-native-architecture.md# AI data sources & agent architecture blueprint
 │   ├── forms.md                 # Forms & lead capture specification
+│   ├── payments-invoicing-signatures.md # Payments, Invoicing & E-Signatures specification
 │   ├── social-studio.md         # Social Studio & Postiz 2026 parity reference
 │   ├── staff-code-quality-review.md # Code quality & security audit
 │   └── task.md                  # Project task list & milestone tracking

@@ -1,9 +1,18 @@
 "use server";
 
-import { db, calendars, calendarAvailability, appointments, contacts } from "@/lib/db";
-import { eq, and, ne, gte, lte, asc } from "drizzle-orm";
+import {
+    db,
+    calendars,
+    calendarAvailability,
+    calendarOverrides,
+    externalCalendarEvents,
+    appointments,
+    contacts,
+} from "@/lib/db";
+import { eq, and, ne, gte, lte } from "drizzle-orm";
 import { addMinutes, areIntervalsOverlapping } from "date-fns";
 import { format, toZonedTime, fromZonedTime } from "date-fns-tz";
+import { inngest } from "@/lib/inngest/client";
 
 /**
  * Gets public calendar details by slug.
@@ -35,22 +44,36 @@ export async function getPublicCalendar(slug: string) {
 
 /**
  * Calculates available slots for a given date in a specific timezone.
+ * Checks weekly rules, date overrides (vacation/holidays), internal appointments,
+ * and external Google/Outlook calendar events if bi-directional sync is active.
  */
 export async function getAvailableSlots(calendarId: string, dateStr: string, userTimezone: string) {
-    // 1. Fetch Calendar Configuration & Availability Rules
+    // 1. Fetch Calendar Configuration
     const [calendar] = await db
         .select()
         .from(calendars)
         .where(eq(calendars.id, calendarId))
         .limit(1);
 
-    if (!calendar) throw new Error("Calendar not found");
+    if (!calendar || !calendar.isActive) throw new Error("Calendar not found or inactive");
 
     const duration = calendar.durationMinutes;
-    const buffer = calendar.bufferMinutes;
+    const buffer = calendar.bufferMinutes || 0;
     const calendarTimezone = calendar.timezone || "UTC";
 
-    // Step 2: Get all availability rules
+    // 2. Fetch Date Overrides (vacations, holidays, custom hours)
+    const overrides = await db
+        .select()
+        .from(calendarOverrides)
+        .where(eq(calendarOverrides.calendarId, calendarId));
+
+    // Check if the requested date is marked unavailable all day
+    const fullDayBlock = overrides.find((o) => o.date === dateStr && o.isUnavailable);
+    if (fullDayBlock) {
+        return [];
+    }
+
+    // 3. Fetch Recurring Availability Rules
     const availabilities = await db
         .select()
         .from(calendarAvailability)
@@ -58,7 +81,7 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
 
     if (!availabilities || availabilities.length === 0) return [];
 
-    // Step 3: Fetch Existing Appointments (Conflicts)
+    // 4. Fetch Existing HighReach Appointments (Conflicts)
     const queryDate = new Date(dateStr);
     const searchStart = new Date(queryDate.getTime() - 86400000);
     const searchEnd = new Date(queryDate.getTime() + 172800000);
@@ -78,6 +101,24 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
             )
         );
 
+    // 5. Fetch External Busy Events (if bi-directional sync enabled)
+    let externalBusyEvents: Array<{ startTime: Date; endTime: Date }> = [];
+    if (calendar.syncDirection === "bi_directional" && calendar.externalAccountId) {
+        externalBusyEvents = await db
+            .select({
+                startTime: externalCalendarEvents.startTime,
+                endTime: externalCalendarEvents.endTime,
+            })
+            .from(externalCalendarEvents)
+            .where(
+                and(
+                    eq(externalCalendarEvents.externalAccountId, calendar.externalAccountId),
+                    gte(externalCalendarEvents.startTime, searchStart),
+                    lte(externalCalendarEvents.endTime, searchEnd)
+                )
+            );
+    }
+
     const potentialSlots: Date[] = [];
     const daysToCheck = [-1, 0, 1];
 
@@ -87,7 +128,23 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
         const dayInCalTzStr = format(toZonedTime(refDate, calendarTimezone), "yyyy-MM-dd");
         const dayOfWeekInCalTz = toZonedTime(refDate, calendarTimezone).getDay();
 
-        const rulesForDay = availabilities.filter((a) => a.dayOfWeek === dayOfWeekInCalTz);
+        // Check if there is an override for this day
+        const dayOverride = overrides.find((o) => o.date === dayInCalTzStr);
+        if (dayOverride?.isUnavailable) {
+            continue; // Day blocked
+        }
+
+        let rulesForDay: Array<{ startTime: string; endTime: string }> = [];
+
+        if (dayOverride && dayOverride.startTime && dayOverride.endTime) {
+            // Custom hours override for this date
+            rulesForDay = [{ startTime: dayOverride.startTime, endTime: dayOverride.endTime }];
+        } else {
+            // Standard weekly availability
+            rulesForDay = availabilities
+                .filter((a) => a.dayOfWeek === dayOfWeekInCalTz)
+                .map((a) => ({ startTime: a.startTime, endTime: a.endTime }));
+        }
 
         for (const rule of rulesForDay) {
             const [startH, startM] = rule.startTime.split(":").map(Number);
@@ -106,8 +163,13 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
         }
     }
 
-    // Filter slots that fall on the requested date in user's timezone and don't collide with appointments
+    // Filter slots matching requested date in user's timezone without conflicts
     const slots: string[] = [];
+    const allBusyIntervals = [
+        ...existingAppointments.map((a) => ({ start: a.startTime, end: a.endTime })),
+        ...externalBusyEvents.map((e) => ({ start: e.startTime, end: e.endTime })),
+    ];
+
     for (const slot of potentialSlots) {
         const userZoned = toZonedTime(slot, userTimezone);
         const slotDateStr = format(userZoned, "yyyy-MM-dd");
@@ -115,10 +177,10 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
         if (slotDateStr === dateStr) {
             const slotEnd = addMinutes(slot, duration);
 
-            const hasConflict = existingAppointments.some((appt) =>
+            const hasConflict = allBusyIntervals.some((busy) =>
                 areIntervalsOverlapping(
                     { start: slot, end: slotEnd },
-                    { start: appt.startTime, end: appt.endTime }
+                    { start: busy.start, end: busy.end }
                 )
             );
 
@@ -132,7 +194,7 @@ export async function getAvailableSlots(calendarId: string, dateStr: string, use
 }
 
 /**
- * Creates a new appointment securely.
+ * Creates a new appointment securely and triggers Inngest push & notifications.
  */
 export async function createBooking(calendarId: string, payload: any) {
     if (!payload.email || !payload.start_time) {
@@ -146,8 +208,8 @@ export async function createBooking(calendarId: string, payload: any) {
             .where(eq(calendars.id, calendarId))
             .limit(1);
 
-        if (!calendar) {
-            return { success: false, error: "Calendar not found" };
+        if (!calendar || !calendar.isActive) {
+            return { success: false, error: "Calendar not found or is inactive" };
         }
 
         const tenantId = calendar.tenantId;
@@ -156,7 +218,7 @@ export async function createBooking(calendarId: string, payload: any) {
             ? new Date(payload.end_time)
             : addMinutes(requestedStart, calendar.durationMinutes);
 
-        // Conflict check to prevent double bookings
+        // 1. Conflict check against existing HighReach appointments
         const conflictingAppointments = await db
             .select({ id: appointments.id })
             .from(appointments)
@@ -169,11 +231,30 @@ export async function createBooking(calendarId: string, payload: any) {
                 )
             );
 
-        const hasConflict = conflictingAppointments.length > 0;
-        if (hasConflict) {
+        if (conflictingAppointments.length > 0) {
             return { success: false, error: "The selected time slot is no longer available. Please select another slot." };
         }
 
+        // 2. Conflict check against external calendar busy events
+        if (calendar.syncDirection === "bi_directional" && calendar.externalAccountId) {
+            const conflictingExternal = await db
+                .select({ id: externalCalendarEvents.id })
+                .from(externalCalendarEvents)
+                .where(
+                    and(
+                        eq(externalCalendarEvents.externalAccountId, calendar.externalAccountId),
+                        gte(externalCalendarEvents.endTime, requestedStart),
+                        lte(externalCalendarEvents.startTime, requestedEnd)
+                    )
+                )
+                .limit(1);
+
+            if (conflictingExternal.length > 0) {
+                return { success: false, error: "The host has a conflicting external appointment at this time." };
+            }
+        }
+
+        // 3. Find or create contact
         let contactId: string;
         const [existingContact] = await db
             .select({ id: contacts.id })
@@ -189,22 +270,23 @@ export async function createBooking(calendarId: string, payload: any) {
         if (existingContact) {
             contactId = existingContact.id;
         } else {
-            const splitName = payload.name ? payload.name.split(" ") : ["Unknown"];
+            const splitName = payload.name ? payload.name.trim().split(" ") : ["Unknown"];
             const [newContact] = await db
                 .insert(contacts)
                 .values({
                     tenantId,
-                    firstName: splitName[0],
+                    firstName: splitName[0] || "Unknown",
                     lastName: splitName.slice(1).join(" ") || "",
                     email: payload.email,
                     phone: payload.phone || null,
-                    source: "Booking: " + (payload.calendar_name || calendar.name || "Widget"),
+                    source: "Booking: " + (calendar.name || "Widget"),
                     tags: [],
                 })
                 .returning();
             contactId = newContact.id;
         }
 
+        // 4. Insert appointment
         const [data] = await db
             .insert(appointments)
             .values({
@@ -215,9 +297,25 @@ export async function createBooking(calendarId: string, payload: any) {
                 endTime: requestedEnd,
                 status: "confirmed",
                 notes: payload.notes || null,
-                location: payload.location || calendar.location || null,
+                location: payload.location || calendar.location || "Online",
             })
             .returning();
+
+        // 5. Trigger Inngest Fanout (handles push to external calendar + confirmation emails)
+        try {
+            await inngest.send({
+                name: "appointment.booked",
+                data: {
+                    appointment_id: data.id,
+                    tenant_id: tenantId,
+                    contact_id: contactId,
+                    calendar_id: calendarId,
+                    start_time: data.startTime.toISOString(),
+                },
+            });
+        } catch (inngestErr) {
+            console.warn("Inngest send error during booking:", inngestErr);
+        }
 
         return { success: true, bookingId: data.id };
     } catch (error: any) {

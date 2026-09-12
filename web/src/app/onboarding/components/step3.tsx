@@ -44,7 +44,6 @@ export function Step3({ onNext, isSubmitting }: { onNext: () => void, isSubmitti
                     </span>
                 </Button>
                 <p className="mt-4 text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center justify-center gap-2">
-                    <Sparkles className="w-3 h-3" />
                     Taking you to the command center
                 </p>
             </div>

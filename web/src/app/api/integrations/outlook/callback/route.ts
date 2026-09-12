@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTokens } from "@/lib/integrations/calendar/outlook";
+import { exchangeCodeForTokens } from "@/lib/integrations/calendar/outlook";
 import { db, externalAccounts } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { verifyOAuthState } from "@/lib/integrations/oauth-state";
@@ -20,9 +20,9 @@ export async function GET(req: NextRequest) {
 
     try {
         const { tenantId } = stateData;
-        const response = await getTokens(code);
+        const response = await exchangeCodeForTokens(code);
 
-        const providerAccountId = response.account?.username || "primary";
+        const providerAccountId = response.userEmail || "primary";
 
         const [existing] = await db
             .select({ id: externalAccounts.id })
@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
                 .update(externalAccounts)
                 .set({
                     accessToken: response.accessToken || "",
-                    expiresAt: response.expiresOn ? new Date(response.expiresOn) : null,
+                    refreshToken: response.refreshToken || null,
+                    expiresAt: response.expiresAt,
                     scopes: response.scopes || [],
                     updatedAt: new Date(),
                 })
@@ -52,7 +53,8 @@ export async function GET(req: NextRequest) {
                 provider: "outlook",
                 providerAccountId,
                 accessToken: response.accessToken || "",
-                expiresAt: response.expiresOn ? new Date(response.expiresOn) : null,
+                refreshToken: response.refreshToken || null,
+                expiresAt: response.expiresAt,
                 scopes: response.scopes || [],
             });
         }

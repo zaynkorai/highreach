@@ -179,7 +179,6 @@ export function ReviewCard({ review }: ReviewCardProps) {
                                         className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 h-8 px-3 rounded-lg text-xs font-bold uppercase tracking-wider"
                                         onClick={handleGenerateAi}
                                     >
-                                        <Sparkles className="w-3.5 h-3.5 mr-2" />
                                         AI Reply
                                     </Button>
                                     <Button

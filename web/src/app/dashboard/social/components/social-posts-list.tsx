@@ -365,7 +365,7 @@ export function SocialPostsList() {
                 </div>
             )}
 
-            {/* Safe Edge Case Protection Dialog: Editing Published Post (Postiz Parity) */}
+            {/* Safe Edge Case Protection Dialog: Editing Published Post */}
             <Dialog open={!!warningPost} onOpenChange={(open) => !open && setWarning(null)}>
                 <DialogContent className="max-w-md bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
                     <DialogHeader className="space-y-2">

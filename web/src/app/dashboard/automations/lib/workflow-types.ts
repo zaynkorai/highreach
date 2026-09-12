@@ -146,13 +146,13 @@ export const WORKFLOW_RECIPES = [
         category: "communication",
         icon: "PhoneMissed",
         nodes: [
-            { id: "1", type: "trigger", triggerId: "call.missed", position: { x: 300, y: 0 } },
-            { id: "2", type: "wait", waitType: "time_delay", duration: 30, unit: "seconds", position: { x: 300, y: 120 } },
-            { id: "3", type: "action", actionId: "send_sms", template: "Hey! Sorry I missed your call. How can I help you?", position: { x: 300, y: 240 } },
+            { id: "1", type: "trigger", position: { x: 300, y: 0 }, data: { triggerId: "call.missed", label: "Missed Call" } },
+            { id: "2", type: "wait", position: { x: 300, y: 120 }, data: { waitType: "time_delay", duration: 30, unit: "seconds", label: "Wait 30 seconds" } },
+            { id: "3", type: "action", position: { x: 300, y: 240 }, data: { actionId: "send_sms", label: "Send SMS", template: "Hey! Sorry I missed your call. How can I help you?" } },
         ],
         edges: [
-            { source: "1", target: "2" },
-            { source: "2", target: "3" },
+            { id: "e1-2", source: "1", target: "2", type: "smart" },
+            { id: "e2-3", source: "2", target: "3", type: "smart" },
         ]
     },
     {
@@ -162,15 +162,15 @@ export const WORKFLOW_RECIPES = [
         category: "marketing",
         icon: "UserPlus",
         nodes: [
-            { id: "1", type: "trigger", triggerId: "contact.created", position: { x: 300, y: 0 } },
-            { id: "2", type: "action", actionId: "send_email", template: "Welcome! Thanks for signing up...", position: { x: 300, y: 120 } },
-            { id: "3", type: "wait", waitType: "time_delay", duration: 1, unit: "days", position: { x: 300, y: 240 } },
-            { id: "4", type: "action", actionId: "send_sms", template: "Hi {{contact.name}}! Just checking in...", position: { x: 300, y: 360 } },
+            { id: "1", type: "trigger", position: { x: 300, y: 0 }, data: { triggerId: "contact.created", label: "Contact Created" } },
+            { id: "2", type: "action", position: { x: 300, y: 120 }, data: { actionId: "send_email", label: "Send Welcome Email", subject: "Welcome to HighReach", template: "Welcome {{contact.name}}! Thanks for getting in touch. We're excited to partner with you." } },
+            { id: "3", type: "wait", position: { x: 300, y: 240 }, data: { waitType: "time_delay", duration: 1, unit: "days", label: "Wait 1 day" } },
+            { id: "4", type: "action", position: { x: 300, y: 360 }, data: { actionId: "send_sms", label: "Send SMS Follow-up", template: "Hi {{contact.name}}! Just checking in to see if you have any questions." } },
         ],
         edges: [
-            { source: "1", target: "2" },
-            { source: "2", target: "3" },
-            { source: "3", target: "4" },
+            { id: "e1-2", source: "1", target: "2", type: "smart" },
+            { id: "e2-3", source: "2", target: "3", type: "smart" },
+            { id: "e3-4", source: "3", target: "4", type: "smart" },
         ]
     },
     {
@@ -180,17 +180,13 @@ export const WORKFLOW_RECIPES = [
         category: "appointments",
         icon: "CalendarCheck",
         nodes: [
-            { id: "1", type: "trigger", triggerId: "appointment.booked", position: { x: 300, y: 0 } },
-            { id: "2", type: "wait", waitType: "event_time", beforeEvent: true, duration: 1, unit: "days", position: { x: 300, y: 120 } },
-            { id: "3", type: "action", actionId: "send_sms", template: "Reminder: Your appointment is tomorrow at {{appointment.time}}", position: { x: 300, y: 240 } },
-            { id: "4", type: "wait", waitType: "time_delay", duration: 22, unit: "hours", position: { x: 300, y: 360 } },
-            { id: "5", type: "action", actionId: "send_sms", template: "Your appointment is in 2 hours. See you soon!", position: { x: 300, y: 480 } },
+            { id: "1", type: "trigger", position: { x: 300, y: 0 }, data: { triggerId: "appointment.booked", label: "Appointment Booked" } },
+            { id: "2", type: "wait", position: { x: 300, y: 120 }, data: { waitType: "time_delay", duration: 2, unit: "hours", label: "Wait 2 hours" } },
+            { id: "3", type: "action", position: { x: 300, y: 240 }, data: { actionId: "send_sms", label: "Send Confirmation", template: "Your appointment is confirmed! We look forward to seeing you." } },
         ],
         edges: [
-            { source: "1", target: "2" },
-            { source: "2", target: "3" },
-            { source: "3", target: "4" },
-            { source: "4", target: "5" },
+            { id: "e1-2", source: "1", target: "2", type: "smart" },
+            { id: "e2-3", source: "2", target: "3", type: "smart" },
         ]
     },
     {
@@ -200,15 +196,15 @@ export const WORKFLOW_RECIPES = [
         category: "forms",
         icon: "FileText",
         nodes: [
-            { id: "1", type: "trigger", triggerId: "form.submitted", position: { x: 300, y: 0 } },
-            { id: "2", type: "action", actionId: "send_email", template: "Thanks for contacting us! We'll be in touch shortly.", position: { x: 300, y: 120 } },
-            { id: "3", type: "action", actionId: "create_task", taskTitle: "Follow up with {{contact.name}}", position: { x: 300, y: 240 } },
-            { id: "4", type: "action", actionId: "internal_notification", message: "New form submission from {{contact.email}}", position: { x: 300, y: 360 } },
+            { id: "1", type: "trigger", position: { x: 300, y: 0 }, data: { triggerId: "form.submitted", label: "Form Submitted" } },
+            { id: "2", type: "action", position: { x: 300, y: 120 }, data: { actionId: "send_email", label: "Send Thank You", subject: "Thank you for your submission", template: "Thanks {{contact.name}}! We received your submission and will get back to you shortly." } },
+            { id: "3", type: "action", position: { x: 300, y: 240 }, data: { actionId: "create_task", label: "Create Follow-up Task", taskTitle: "Review submission from {{contact.name}}" } },
+            { id: "4", type: "action", position: { x: 300, y: 360 }, data: { actionId: "internal_notification", label: "Notify Team", message: "New submission received from {{contact.name}}" } },
         ],
         edges: [
-            { source: "1", target: "2" },
-            { source: "2", target: "3" },
-            { source: "3", target: "4" },
+            { id: "e1-2", source: "1", target: "2", type: "smart" },
+            { id: "e2-3", source: "2", target: "3", type: "smart" },
+            { id: "e3-4", source: "3", target: "4", type: "smart" },
         ]
     },
     {
@@ -218,15 +214,13 @@ export const WORKFLOW_RECIPES = [
         category: "opportunities",
         icon: "Trophy",
         nodes: [
-            { id: "1", type: "trigger", triggerId: "opportunity.status_changed", filter: { status: "won" }, position: { x: 300, y: 0 } },
-            { id: "2", type: "action", actionId: "send_email", template: "Thank you for choosing us! Here's what happens next...", position: { x: 300, y: 120 } },
-            { id: "3", type: "wait", waitType: "time_delay", duration: 1, unit: "hours", position: { x: 300, y: 240 } },
-            { id: "4", type: "action", actionId: "send_sms", template: "We're excited to work with you! Your dedicated account manager will reach out shortly.", position: { x: 300, y: 360 } },
+            { id: "1", type: "trigger", position: { x: 300, y: 0 }, data: { triggerId: "opportunity.status_changed", label: "Deal Won", filter: { status: "won" } } },
+            { id: "2", type: "action", position: { x: 300, y: 120 }, data: { actionId: "send_email", label: "Send Onboarding Email", subject: "Welcome to HighReach!", template: "Thank you for choosing us! Here's what happens next..." } },
+            { id: "3", type: "action", position: { x: 300, y: 240 }, data: { actionId: "add_tag", label: "Add Customer Tag", tag: "customer" } },
         ],
         edges: [
-            { source: "1", target: "2" },
-            { source: "2", target: "3" },
-            { source: "3", target: "4" },
+            { id: "e1-2", source: "1", target: "2", type: "smart" },
+            { id: "e2-3", source: "2", target: "3", type: "smart" },
         ]
     },
     {
@@ -236,70 +230,38 @@ export const WORKFLOW_RECIPES = [
         category: "marketing",
         icon: "Star",
         nodes: [
-            { id: "1", type: "trigger", triggerId: "opportunity.status_changed", filter: { status: "won" }, position: { x: 300, y: 0 } },
-            { id: "2", type: "wait", waitType: "time_delay", duration: 7, unit: "days", position: { x: 300, y: 120 } },
-            { id: "3", type: "action", actionId: "send_sms", template: "Hi {{contact.name}}! Would you mind leaving us a review? {{review_link}}", position: { x: 300, y: 240 } },
-            { id: "4", type: "wait", waitType: "trigger_link", linkId: "review_link", position: { x: 300, y: 360 } },
-            { id: "5", type: "if_else", condition: { field: "trigger_link.clicked", operator: "equals", value: true }, position: { x: 300, y: 480 } },
+            { id: "1", type: "trigger", position: { x: 300, y: 0 }, data: { triggerId: "opportunity.status_changed", label: "Opportunity Won", filter: { status: "won" } } },
+            { id: "2", type: "wait", position: { x: 300, y: 120 }, data: { waitType: "time_delay", duration: 1, unit: "days", label: "Wait 1 day" } },
+            { id: "3", type: "action", position: { x: 300, y: 240 }, data: { actionId: "send_sms", label: "Send Review Request", template: "Hi {{contact.name}}! Thank you for working with us. Would you mind leaving us a quick review?" } },
         ],
         edges: [
-            { source: "1", target: "2" },
-            { source: "2", target: "3" },
-            { source: "3", target: "4" },
-            { source: "4", target: "5" },
+            { id: "e1-2", source: "1", target: "2", type: "smart" },
+            { id: "e2-3", source: "2", target: "3", type: "smart" },
         ]
     },
     {
-        id: "email_drip_5day",
-        name: "5-Day Email Drip Campaign",
-        description: "Nurture leads with a 5-email sequence",
+        id: "email_drip_3day",
+        name: "3-Day Email Follow-up",
+        description: "Nurture new leads with follow-up emails",
         category: "marketing",
         icon: "Mail",
         nodes: [
-            { id: "1", type: "trigger", triggerId: "contact.tag_added", filter: { tag: "newsletter" }, position: { x: 300, y: 0 } },
-            { id: "2", type: "action", actionId: "send_email", template: "Day 1: Welcome to our community!", position: { x: 300, y: 100 } },
-            { id: "3", type: "wait", waitType: "time_delay", duration: 1, unit: "days", position: { x: 300, y: 200 } },
-            { id: "4", type: "action", actionId: "send_email", template: "Day 2: Here's what you need to know...", position: { x: 300, y: 300 } },
-            { id: "5", type: "wait", waitType: "time_delay", duration: 1, unit: "days", position: { x: 300, y: 400 } },
-            { id: "6", type: "action", actionId: "send_email", template: "Day 3: Tips and tricks...", position: { x: 300, y: 500 } },
-            { id: "7", type: "wait", waitType: "time_delay", duration: 1, unit: "days", position: { x: 300, y: 600 } },
-            { id: "8", type: "action", actionId: "send_email", template: "Day 4: Success stories...", position: { x: 300, y: 700 } },
-            { id: "9", type: "wait", waitType: "time_delay", duration: 1, unit: "days", position: { x: 300, y: 800 } },
-            { id: "10", type: "action", actionId: "send_email", template: "Day 5: Special offer just for you!", position: { x: 300, y: 900 } },
+            { id: "1", type: "trigger", position: { x: 300, y: 0 }, data: { triggerId: "contact.created", label: "Contact Created" } },
+            { id: "2", type: "action", position: { x: 300, y: 100 }, data: { actionId: "send_email", label: "Day 1 Email", subject: "Welcome to HighReach", template: "Day 1: Welcome! Thanks for joining us." } },
+            { id: "3", type: "wait", position: { x: 300, y: 200 }, data: { waitType: "time_delay", duration: 1, unit: "days", label: "Wait 1 day" } },
+            { id: "4", type: "action", position: { x: 300, y: 300 }, data: { actionId: "send_email", label: "Day 2 Email", subject: "Tips & Best Practices", template: "Day 2: Here are some tips to get the most out of our service." } },
+            { id: "5", type: "wait", position: { x: 300, y: 400 }, data: { waitType: "time_delay", duration: 1, unit: "days", label: "Wait 1 day" } },
+            { id: "6", type: "action", position: { x: 300, y: 500 }, data: { actionId: "send_email", label: "Day 3 Email", subject: "Special Offer", template: "Day 3: Exclusive offer for you this week!" } },
         ],
         edges: [
-            { source: "1", target: "2" },
-            { source: "2", target: "3" },
-            { source: "3", target: "4" },
-            { source: "4", target: "5" },
-            { source: "5", target: "6" },
-            { source: "6", target: "7" },
-            { source: "7", target: "8" },
-            { source: "8", target: "9" },
-            { source: "9", target: "10" },
+            { id: "e1-2", source: "1", target: "2", type: "smart" },
+            { id: "e2-3", source: "2", target: "3", type: "smart" },
+            { id: "e3-4", source: "3", target: "4", type: "smart" },
+            { id: "e4-5", source: "4", target: "5", type: "smart" },
+            { id: "e5-6", source: "5", target: "6", type: "smart" },
         ]
-    },
-    {
-        id: "no_show_followup",
-        name: "Appointment No-Show Follow-up",
-        description: "Re-engage customers who missed appointments",
-        category: "appointments",
-        icon: "UserX",
-        nodes: [
-            { id: "1", type: "trigger", triggerId: "appointment.no_show", position: { x: 300, y: 0 } },
-            { id: "2", type: "wait", waitType: "time_delay", duration: 1, unit: "hours", position: { x: 300, y: 120 } },
-            { id: "3", type: "action", actionId: "send_sms", template: "We missed you today! Would you like to reschedule? Reply YES to book a new time.", position: { x: 300, y: 240 } },
-            { id: "4", type: "wait", waitType: "contact_reply", position: { x: 300, y: 360 } },
-            { id: "5", type: "if_else", condition: { field: "response.type", operator: "equals", value: "positive" }, position: { x: 300, y: 480 } },
-        ],
-        edges: [
-            { source: "1", target: "2" },
-            { source: "2", target: "3" },
-            { source: "3", target: "4" },
-            { source: "4", target: "5" },
-        ]
-    },
-] as const;
+    }
+];
 
 // ============ TYPESCRIPT TYPES ============
 

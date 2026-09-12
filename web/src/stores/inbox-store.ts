@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Conversation, Message } from '@/types/inbox';
+import type { Conversation, Message } from '../types/inbox';
 
 interface InboxState {
     conversations: Conversation[];

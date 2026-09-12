@@ -14,7 +14,6 @@ import {
     Layers,
     Sparkles,
     ShieldCheck,
-    HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,14 +37,11 @@ export default function KnowledgeBasePage() {
                 <div>
                     <div className="flex items-center gap-2">
                         <h1 className="text-3xl font-black tracking-tight text-foreground">
-                            Knowledge <span className="text-primary font-medium">Base</span>
+                            Knowledge Base
                         </h1>
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-                            pgvector Grounding
-                        </span>
                     </div>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-1 font-medium text-xs">
-                        Ingest FAQs, services, and company docs into multi-tenant 1536-dimensional vector embeddings to ground autonomous agents.
+                        Ingest FAQs, services, and company docs
                     </p>
                 </div>
 
@@ -69,49 +65,6 @@ export default function KnowledgeBasePage() {
                             {stats?.totalSources ?? 0}
                         </div>
                         <span className="text-[10px] text-zinc-400">Tenant documentation files</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                        <Database className="w-5 h-5" />
-                    </div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/[0.08] shadow-xs flex items-center justify-between">
-                    <div className="space-y-1">
-                        <span className="text-xs font-semibold text-zinc-500">Vector Chunks</span>
-                        <div className="text-2xl font-black text-foreground">
-                            {stats?.totalChunks ?? 0}
-                        </div>
-                        <span className="text-[10px] text-zinc-400">Cosine index chunks</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                        <Layers className="w-5 h-5" />
-                    </div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/[0.08] shadow-xs flex items-center justify-between">
-                    <div className="space-y-1">
-                        <span className="text-xs font-semibold text-zinc-500">Embeddings Model</span>
-                        <div className="text-2xl font-black text-foreground">
-                            1536-dim
-                        </div>
-                        <span className="text-[10px] text-zinc-400">text-embedding-3-small</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                        <Brain className="w-5 h-5" />
-                    </div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/[0.08] shadow-xs flex items-center justify-between">
-                    <div className="space-y-1">
-                        <span className="text-xs font-semibold text-zinc-500">Tenant Boundary</span>
-                        <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                            <ShieldCheck className="w-5 h-5" />
-                            RLS Isolated
-                        </div>
-                        <span className="text-[10px] text-zinc-400">Zero cross-tenant leakage</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5" />
                     </div>
                 </div>
             </div>
@@ -140,7 +93,6 @@ export default function KnowledgeBasePage() {
                             : "border-transparent text-zinc-500 hover:text-foreground"
                     )}
                 >
-                    <Sparkles className="w-4 h-4" />
                     <span>Interactive Semantic Test Bench</span>
                 </button>
             </div>

@@ -31,7 +31,6 @@ test("Social Studio (Postiz Engine) unit tests", async (t) => {
         assert.ok(PLATFORM_SPECS.threads, "Threads spec defined");
         assert.ok(PLATFORM_SPECS.youtube, "YouTube Community spec defined");
 
-        // Twitch & Kick (Postiz parity additions)
         assert.ok(PLATFORM_SPECS.twitch, "Twitch spec defined");
         assert.equal(PLATFORM_SPECS.twitch.maxCharacters, 500);
         assert.equal(PLATFORM_SPECS.twitch.brandColor, "#9146FF");

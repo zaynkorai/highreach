@@ -7,8 +7,8 @@ export async function handleAddTag(
     triggerData: Record<string, any>,
     tenantId: string
 ) {
-    const contactId = triggerData.contact?.id || triggerData.id;
-    const newTag = config.tag;
+    const contactId = triggerData.contact?.id || triggerData.contact_id || triggerData.id;
+    const newTag = config.tag || config.tag_name;
 
     if (!contactId || !newTag) return;
 
@@ -26,6 +26,34 @@ export async function handleAddTag(
         await db
             .update(contacts)
             .set({ tags: [...currentTags, newTag] })
+            .where(and(eq(contacts.id, contactId), eq(contacts.tenantId, tenantId)));
+    }
+}
+
+export async function handleRemoveTag(
+    config: Record<string, any>,
+    triggerData: Record<string, any>,
+    tenantId: string
+) {
+    const contactId = triggerData.contact?.id || triggerData.contact_id || triggerData.id;
+    const tagToRemove = config.tag || config.tag_name;
+
+    if (!contactId || !tagToRemove) return;
+
+    const [contact] = await db
+        .select({ tags: contacts.tags })
+        .from(contacts)
+        .where(and(eq(contacts.id, contactId), eq(contacts.tenantId, tenantId)))
+        .limit(1);
+
+    if (!contact) return;
+
+    const currentTags = Array.isArray(contact.tags) ? contact.tags : [];
+
+    if (currentTags.includes(tagToRemove)) {
+        await db
+            .update(contacts)
+            .set({ tags: currentTags.filter((t) => t !== tagToRemove) })
             .where(and(eq(contacts.id, contactId), eq(contacts.tenantId, tenantId)));
     }
 }

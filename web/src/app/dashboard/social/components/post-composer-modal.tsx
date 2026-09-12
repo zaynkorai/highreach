@@ -147,7 +147,7 @@ export function PostComposerModal() {
         togglePlatform(platform);
     };
 
-    // Interactive Tag Management (Postiz Parity)
+    // Interactive Tag Management 
     const handleAddTag = () => {
         const clean = tagInput.trim().replace(/^#/, "");
         if (!clean) return;
@@ -360,9 +360,6 @@ export function PostComposerModal() {
                     <DialogTitle className="text-xl font-bold flex items-center justify-between">
                         <span className="flex items-center gap-2">
                             <span>Social Studio Composer</span>
-                            <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/40">
-                                Postiz Parity
-                            </span>
                         </span>
                         <div className="flex items-center gap-2">
                             <Button
@@ -415,12 +412,9 @@ export function PostComposerModal() {
                             </div>
                         </div>
 
-                        {/* 2. Platform-Specific Customizer Tabs (Postiz Parity) */}
+                        {/* 2. Platform-Specific Customizer Tabs  */}
                         {composer.selectedPlatforms.length > 1 && (
                             <div className="p-2 rounded-xl bg-zinc-100/70 dark:bg-zinc-900/70 flex items-center gap-1.5 overflow-x-auto">
-                                <span className="text-[11px] font-bold text-zinc-400 px-2 flex items-center gap-1 shrink-0">
-                                    <Layers className="w-3.5 h-3.5" /> Customize:
-                                </span>
                                 <button
                                     type="button"
                                     onClick={() => setCustomizingPlatform("all")}
@@ -458,68 +452,7 @@ export function PostComposerModal() {
                             </div>
                         )}
 
-                        {/* 3. AI Content Generator Box */}
-                        <div className="rounded-xl p-3.5 bg-gradient-to-br from-brand-50/50 to-indigo-50/30 dark:from-brand-950/20 dark:to-indigo-950/10 border border-brand-200/60 dark:border-brand-900/40 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5 text-xs font-bold text-brand-700 dark:text-brand-300">
-                                    <Sparkles className="w-3.5 h-3.5 text-brand-500" />
-                                    <span>AI Caption Copilot</span>
-                                </div>
-                                <div className="flex items-center gap-1 text-[11px]">
-                                    {(["engaging", "viral_hook", "professional", "storyteller", "concise"] as AiTone[]).map((t) => (
-                                        <button
-                                            key={t}
-                                            type="button"
-                                            onClick={() => setAiTone(t)}
-                                            className={cn(
-                                                "px-2 py-0.5 rounded-md capitalize transition-colors",
-                                                aiTone === t
-                                                    ? "bg-brand-600 text-white font-medium shadow-xs"
-                                                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-                                            )}
-                                        >
-                                            {t.replace("_", " ")}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <Input
-                                    value={aiTopic}
-                                    onChange={(e) => setAiTopic(e.target.value)}
-                                    placeholder="Enter topic: e.g. Speed to lead, 5-star customer review, promo..."
-                                    className="h-8 text-xs bg-white dark:bg-zinc-900"
-                                    onKeyDown={(e) => e.key === "Enter" && handleGenerateAi()}
-                                />
-                                <Button
-                                    size="sm"
-                                    type="button"
-                                    disabled={isGeneratingAi || !aiTopic.trim()}
-                                    onClick={handleGenerateAi}
-                                    className="h-8 px-3 text-xs bg-brand-600 hover:bg-brand-700 font-semibold shrink-0 gap-1.5"
-                                >
-                                    {isGeneratingAi ? (
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                    ) : (
-                                        <Sparkles className="w-3.5 h-3.5" />
-                                    )}
-                                    Generate
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    type="button"
-                                    onClick={handleAppendHashtags}
-                                    className="h-8 px-2.5 text-xs shrink-0 gap-1"
-                                    title="Suggest relevant hashtags"
-                                >
-                                    <Hash className="w-3.5 h-3.5 text-zinc-500" />
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* 4. Text Area & Character Counter */}
+                        {/* 3. Text Area & Integrated AI Caption Copilot */}
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs text-zinc-500">
                                 <Label htmlFor="post-content" className="font-semibold flex items-center gap-1.5">
@@ -545,17 +478,79 @@ export function PostComposerModal() {
                                     )}
                                 </div>
                             </div>
-                            <Textarea
-                                id="post-content"
-                                value={activeText}
-                                onChange={(e) => handleTextChange(e.target.value)}
-                                placeholder="What would you like to share with your audience?"
-                                rows={5}
+
+                            {/* Unified Card: Textarea on top, AI Copilot toolbar docked at bottom */}
+                            <div
                                 className={cn(
-                                    "resize-none text-sm leading-relaxed",
-                                    isOverLimit && "border-rose-400 focus-visible:ring-rose-400"
+                                    "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 overflow-hidden shadow-xs focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500 transition-all",
+                                    isOverLimit && "border-rose-400 focus-within:border-rose-400 focus-within:ring-rose-400/20"
                                 )}
-                            />
+                            >
+                                <Textarea
+                                    id="post-content"
+                                    value={activeText}
+                                    onChange={(e) => handleTextChange(e.target.value)}
+                                    placeholder="What would you like to share with your audience?"
+                                    rows={8}
+                                    className="min-h-[180px] resize-y text-sm leading-relaxed border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none bg-transparent"
+                                />
+
+                                {/* Docked AI Caption Copilot Bar */}
+                                <div className="p-2.5 bg-zinc-50/80 dark:bg-zinc-900/90 border-t border-zinc-100 dark:border-zinc-800/80 space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-brand-600 dark:text-brand-400 shrink-0">
+                                            <span>AI Caption Copilot</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-[11px] overflow-x-auto no-scrollbar">
+                                            {(["engaging", "viral_hook", "professional", "storyteller", "concise"] as AiTone[]).map((t) => (
+                                                <button
+                                                    key={t}
+                                                    type="button"
+                                                    onClick={() => setAiTone(t)}
+                                                    className={cn(
+                                                        "px-2 py-0.5 rounded-md capitalize transition-colors whitespace-nowrap text-[11px]",
+                                                        aiTone === t
+                                                            ? "bg-brand-600 text-white font-medium shadow-xs"
+                                                            : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                                                    )}
+                                                >
+                                                    {t.replace("_", " ")}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <Input
+                                            value={aiTopic}
+                                            onChange={(e) => setAiTopic(e.target.value)}
+                                            placeholder="Enter prompt or topic: e.g. Speed to lead, 5-star customer review, promo..."
+                                            className="h-8 text-xs bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                                            onKeyDown={(e) => e.key === "Enter" && handleGenerateAi()}
+                                        />
+                                        <Button
+                                            size="sm"
+                                            type="button"
+                                            disabled={isGeneratingAi || !aiTopic.trim()}
+                                            onClick={handleGenerateAi}
+                                            className="h-8 px-3 text-xs bg-brand-600 hover:bg-brand-700 text-white font-semibold shrink-0 gap-1.5"
+                                        >
+                                            Generate
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            type="button"
+                                            disabled={isGeneratingAi}
+                                            onClick={handleAppendHashtags}
+                                            className="h-8 px-2.5 text-xs shrink-0 gap-1 bg-white dark:bg-zinc-800"
+                                            title="Suggest relevant hashtags"
+                                        >
+                                            <Hash className="w-3.5 h-3.5 text-zinc-500" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* 5. Thread Builder (for X/Twitter & Threads) */}
@@ -710,7 +705,7 @@ export function PostComposerModal() {
                             )}
                         </div>
 
-                        {/* 8. Interactive Post Tags Manager (Postiz Parity) */}
+                        {/* 8. Interactive Post Tags Manager  */}
                         <div className="space-y-2">
                             <Label className="text-xs font-semibold text-zinc-500 flex items-center gap-1.5">
                                 <Hash className="w-3.5 h-3.5" />

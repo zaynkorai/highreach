@@ -181,6 +181,9 @@ export const forms = pgTable("forms", {
     id: uuid("id").primaryKey().defaultRandom(),
     tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }).notNull(),
     name: text("name").notNull(),
+    description: text("description"),
+    status: text("status").default("draft").notNull(),
+    views: integer("views").default(0).notNull(),
     fields: jsonb("fields").default([]),
     theme: jsonb("theme").default({}),
     redirectUrl: text("redirect_url"),
@@ -310,6 +313,23 @@ export const calendarOverrides = pgTable("calendar_overrides", {
     endTime: time("end_time"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const externalCalendarEvents = pgTable("external_calendar_events", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }).notNull(),
+    externalAccountId: uuid("external_account_id").references(() => externalAccounts.id, { onDelete: "cascade" }).notNull(),
+    externalCalendarId: text("external_calendar_id").notNull(),
+    externalEventId: text("external_event_id").notNull(),
+    title: text("title"),
+    startTime: timestamp("start_time", { withTimezone: true }).notNull(),
+    endTime: timestamp("end_time", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+    uniqueIndex("uniq_ext_event").on(table.externalAccountId, table.externalCalendarId, table.externalEventId),
+    index("idx_ext_events_time").on(table.externalAccountId, table.startTime, table.endTime),
+    index("idx_ext_events_tenant").on(table.tenantId),
+]);
 
 // ── Reputation / Reviews ──────────────────────────────────────
 export const reviews = pgTable("reviews", {

@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { Conversation } from "@/types/inbox";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Phone, Calendar, Plus, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, Phone, Calendar, Plus, ChevronRight, Check } from "lucide-react";
+import { addContactTag } from "@/app/dashboard/inbox/actions";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ContactSidebarProps {
@@ -10,6 +15,7 @@ interface ContactSidebarProps {
     activePane: 'list' | 'thread' | 'info';
     sidebarOpen: boolean;
     onCloseMobile: () => void;
+    onTagAdded?: (tag: string) => void;
     className?: string;
 }
 
@@ -18,13 +24,55 @@ export function ContactSidebar({
     activePane,
     sidebarOpen,
     onCloseMobile,
+    onTagAdded,
     className
 }: ContactSidebarProps) {
-    // Helpers
+    const [newTag, setNewTag] = useState("");
+    const [isAddingTag, setIsAddingTag] = useState(false);
+    const [isTagPopoverOpen, setIsTagPopoverOpen] = useState(false);
+    const [localTags, setLocalTags] = useState<string[]>(conversation.contact?.tags || []);
+
+    // Sync tags if conversation changes
+    const currentTags = localTags.length > 0 ? localTags : (conversation.contact?.tags || []);
+
     const getInitials = (contact: any) => {
         if (!contact) return "?";
         return (contact.first_name[0] + (contact.last_name?.[0] || "")).toUpperCase();
     };
+
+    const handleAddTag = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const tag = newTag.trim().toUpperCase().replace(/\s+/g, "_");
+        if (!tag) return;
+
+        if (currentTags.includes(tag)) {
+            toast.info("Tag already exists on contact");
+            setNewTag("");
+            setIsTagPopoverOpen(false);
+            return;
+        }
+
+        setIsAddingTag(true);
+        try {
+            const res = await addContactTag(conversation.contact_id, tag);
+            if (res.success) {
+                const next = [...currentTags, tag];
+                setLocalTags(next);
+                onTagAdded?.(tag);
+                toast.success(`Tag "${tag}" added`);
+                setNewTag("");
+                setIsTagPopoverOpen(false);
+            } else {
+                toast.error(res.error || "Failed to add tag");
+            }
+        } catch {
+            toast.error("Failed to add tag");
+        } finally {
+            setIsAddingTag(false);
+        }
+    };
+
+    const phoneNumber = conversation.contact?.phone;
 
     return (
         <div className={cn(
@@ -49,14 +97,27 @@ export function ContactSidebar({
                     <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
                         {conversation.contact?.first_name} {conversation.contact?.last_name}
                     </h2>
-                    <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-2 px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full">Lead Status: Prospecting</p>
+                    <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-2 px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full">
+                        {conversation.status === 'open' ? 'Conversation: Active' : 'Conversation: Resolved'}
+                    </p>
 
                     <div className="flex gap-2.5 mt-8 w-full">
-                        <Button size="sm" variant="outline" className="h-10 flex-1 rounded-2xl border-zinc-200 dark:border-zinc-800 gap-2 font-bold text-[10px] uppercase transition-all hover:bg-zinc-100">
-                            <Phone className="h-3.5 w-3.5" /> Call
-                        </Button>
-                        <Button size="sm" className="h-10 flex-1 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white gap-2 font-bold text-[10px] uppercase shadow-lg shadow-brand-500/20">
-                            <Calendar className="h-3.5 w-3.5" /> Book
+                        {phoneNumber ? (
+                            <Button asChild size="sm" variant="outline" className="h-10 flex-1 rounded-2xl border-zinc-200 dark:border-zinc-800 gap-2 font-bold text-[10px] uppercase transition-all hover:bg-zinc-100">
+                                <a href={`tel:${phoneNumber}`}>
+                                    <Phone className="h-3.5 w-3.5" /> Call
+                                </a>
+                            </Button>
+                        ) : (
+                            <Button size="sm" variant="outline" disabled className="h-10 flex-1 rounded-2xl border-zinc-200 dark:border-zinc-800 gap-2 font-bold text-[10px] uppercase opacity-40 cursor-not-allowed">
+                                <Phone className="h-3.5 w-3.5" /> Call
+                            </Button>
+                        )}
+
+                        <Button asChild size="sm" className="h-10 flex-1 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white gap-2 font-bold text-[10px] uppercase shadow-lg shadow-brand-500/20">
+                            <Link href={`/dashboard/calendars`}>
+                                <Calendar className="h-3.5 w-3.5" /> Book
+                            </Link>
                         </Button>
                     </div>
                 </div>
@@ -64,16 +125,16 @@ export function ContactSidebar({
                 <div className="p-6 space-y-8">
                     <div className="space-y-4">
                         <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 flex items-center gap-2">
-                            Lead Metadata
+                            Contact Details
                         </h4>
                         <div className="space-y-2">
                             <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 flex flex-col gap-1 border border-zinc-100 dark:border-white/5">
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Email Address</span>
-                                <span className="text-xs text-zinc-900 dark:text-zinc-200 font-bold truncate">{conversation.contact?.email || 'N/A'}</span>
+                                <span className="text-xs text-zinc-900 dark:text-zinc-200 font-bold truncate">{conversation.contact?.email || 'None on record'}</span>
                             </div>
                             <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 flex flex-col gap-1 border border-zinc-100 dark:border-white/5">
                                 <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Phone Number</span>
-                                <span className="text-xs text-zinc-900 dark:text-zinc-200 font-bold">{conversation.contact?.phone || 'N/A'}</span>
+                                <span className="text-xs text-zinc-900 dark:text-zinc-200 font-bold">{conversation.contact?.phone || 'None on record'}</span>
                             </div>
                         </div>
                     </div>
@@ -81,16 +142,41 @@ export function ContactSidebar({
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
                             <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Segmentation Tags</h4>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-lg text-brand-500 hover:bg-brand-50">
-                                <Plus className="h-3.5 w-3.5" />
-                            </Button>
+                            <Popover open={isTagPopoverOpen} onOpenChange={setIsTagPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-lg text-brand-500 hover:bg-brand-50">
+                                        <Plus className="h-3.5 w-3.5" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="p-3 w-60 rounded-xl" align="end">
+                                    <form onSubmit={handleAddTag} className="space-y-2">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Add Tag</p>
+                                        <div className="flex gap-1.5">
+                                            <Input
+                                                placeholder="TAG_NAME"
+                                                value={newTag}
+                                                onChange={(e) => setNewTag(e.target.value)}
+                                                className="h-8 text-xs uppercase"
+                                                autoFocus
+                                            />
+                                            <Button type="submit" size="sm" className="h-8 px-2.5 rounded-lg text-xs" disabled={isAddingTag || !newTag.trim()}>
+                                                <Check className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            {(conversation.contact?.tags || ['NEW_LEAD', 'FB_CAMPAIGN']).map(tag => (
-                                <Badge key={tag} variant="secondary" className="bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border-none px-3 py-1.5 text-[9px] font-black rounded-xl uppercase tracking-wider">
-                                    {tag}
-                                </Badge>
-                            ))}
+                            {currentTags.length === 0 ? (
+                                <p className="text-[11px] text-zinc-400 italic">No tags assigned</p>
+                            ) : (
+                                currentTags.map((tag) => (
+                                    <Badge key={tag} variant="secondary" className="bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border-none px-3 py-1.5 text-[9px] font-black rounded-xl uppercase tracking-wider">
+                                        {tag}
+                                    </Badge>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>
@@ -98,7 +184,7 @@ export function ContactSidebar({
 
             <div className="p-6 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/30">
                 <Button asChild variant="ghost" className="w-full text-[10px] font-black uppercase tracking-[0.15em] justify-between text-zinc-500 group h-12 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
-                    <Link href={`/dashboard/contacts?q=${encodeURIComponent(conversation.contact?.email || conversation.contact?.first_name || "")}`}>
+                    <Link href={`/dashboard/contacts?search=${encodeURIComponent(conversation.contact?.email || conversation.contact?.first_name || "")}`}>
                         View Full CRM Record
                         <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Link>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Conversation, Message, ChannelType } from "@/types/inbox";
-import { getConversations, getMessages, sendMessage, updateConversationStatus } from "./actions";
+import { getConversations, getMessages, sendMessage, updateConversationStatus, toggleStar, markAsRead as markAsReadAction } from "./actions";
 import { toast } from "sonner";
 import { useInboxStore, useInboxActions } from "@/stores/inbox-store";
 import { ConversationList } from "@/components/inbox/conversation-list";
@@ -30,6 +30,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
         setMessages,
         addMessage,
         updateConversation,
+        markAsRead: markStoreAsRead,
         setIsLoadingMessages
     } = useInboxActions();
 
@@ -126,9 +127,10 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
         };
     }, [selectedId, setConversations, setMessages]);
 
-    // Message Fetch
+    // Message Fetch & Mark as read
     useEffect(() => {
         if (!selectedId) return;
+        markStoreAsRead(selectedId);
         setIsLoadingMessages(true);
         getMessages(selectedId)
             .then(result => {
@@ -140,7 +142,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
             })
             .catch(() => toast.error("An unexpected error occurred while loading messages"))
             .finally(() => setIsLoadingMessages(false));
-    }, [selectedId, setMessages, setIsLoadingMessages]);
+    }, [selectedId, setMessages, markStoreAsRead, setIsLoadingMessages]);
 
 
     const handleSendMessage = async (content: string, channel: ChannelType, isInternal: boolean, attachments: File[]) => {
@@ -152,7 +154,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
             finalContent = finalContent ? `${finalContent}\n${fileNames}` : fileNames;
         }
 
-        // Optimistic
+        // Optimistic Message
         const optimisticMsg: Message = {
             id: "temp-" + Date.now(),
             tenant_id: selectedConversation.tenant_id,
@@ -168,6 +170,15 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
 
         addMessage(optimisticMsg, selectedId);
 
+        // Optimistic Conversation Update
+        const preview = isInternal ? `[Note] ${finalContent}` : finalContent;
+        updateConversation({
+            id: selectedId,
+            last_message_preview: preview.slice(0, 100),
+            last_message_at: new Date().toISOString(),
+            unread_count: 0
+        });
+
         try {
             const result = await sendMessage(selectedId, finalContent, channel, isInternal);
             if (!result.success) {
@@ -179,11 +190,28 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
         }
     };
 
+    const handleToggleStar = async () => {
+        if (!selectedId || !selectedConversation) return;
+        const next = !selectedConversation.is_starred;
+        updateConversation({ id: selectedId, is_starred: next });
+
+        try {
+            const res = await toggleStar(selectedId);
+            if (!res.success) {
+                updateConversation({ id: selectedId, is_starred: !next });
+                toast.error(res.error || "Failed to update star");
+            }
+        } catch {
+            updateConversation({ id: selectedId, is_starred: !next });
+            toast.error("Failed to update star");
+        }
+    };
+
     const handleStatusChange = async (newStatus: 'open' | 'closed') => {
         if (!selectedId || !selectedConversation) return;
 
         // Optimistic Update
-        updateConversation({ ...selectedConversation, status: newStatus });
+        updateConversation({ id: selectedId, status: newStatus });
 
         if (newStatus === 'closed') {
             toast.success("Conversation resolved");
@@ -215,6 +243,7 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                 isLoading={isLoadingMessages}
                 onSendMessage={handleSendMessage}
                 onStatusChange={handleStatusChange}
+                onToggleStar={handleToggleStar}
                 onBack={() => setActivePane('list')}
                 onToggleSidebar={() => {
                     if (window.innerWidth < 1280) {
@@ -233,6 +262,17 @@ export function InboxClient({ initialConversations, tenantId }: InboxClientProps
                     activePane={activePane}
                     sidebarOpen={sidebarOpen}
                     onCloseMobile={() => setActivePane('thread')}
+                    onTagAdded={(newTag) => {
+                        if (selectedConversation && selectedConversation.contact) {
+                            updateConversation({
+                                id: selectedConversation.id,
+                                contact: {
+                                    ...selectedConversation.contact,
+                                    tags: [...(selectedConversation.contact.tags || []), newTag]
+                                }
+                            });
+                        }
+                    }}
                 />
             )}
         </div>
