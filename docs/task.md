@@ -199,10 +199,10 @@
 **Goal:** Shift from traditional static CRM features to **Data Sources $\leftrightarrow$ Autonomous Agents $\leftrightarrow$ Typed Tools** architecture.  
 *Architecture Blueprint:* [docs/ai-native-architecture.md](file:///Users/zayn/ground/highreach/docs/ai-native-architecture.md)
 
-- [ ] **Data Sources & Grounding Engine**
-    - [ ] **Vector Storage Foundation**: PostgreSQL `pgvector` setup with Drizzle ORM schemas for semantic retrieval (`tenant_knowledge_sources`, `knowledge_chunks`).
-    - [ ] **Knowledge Base Management**: Multi-tenant UI/API to ingest business hours, FAQs, pricing, service catalogs.
-    - [ ] **Context Assembler**: Engine to dynamically construct working memory ($\text{Tenant Knowledge} + \text{Contact History} + \text{Active Thread}$).
+- [x] **Data Sources & Grounding Engine**
+    - [x] **Vector Storage Foundation**: PostgreSQL `pgvector` setup with Drizzle ORM schemas for semantic retrieval (`tenant_knowledge_sources`, `knowledge_chunks`).
+    - [x] **Knowledge Base Management**: Multi-tenant UI/API to ingest business hours, FAQs, pricing, service catalogs.
+    - [x] **Context Assembler**: Engine to dynamically construct working memory ($\text{Tenant Knowledge} + \text{Contact History} + \text{Active Thread}$).
 
 - [ ] **Typed Tool Registry (Action Capabilities)**
     - [ ] **AI SDK Foundation**: Core integration with Vercel AI SDK (`ai`).
@@ -212,14 +212,14 @@
     - [ ] **Escalation Tool**: `escalate_to_human` with urgency level and context reasoning.
 
 - [ ] **Autonomous Agents (Durable Inngest Execution)**
-    - [ ] **Speed-to-Lead Agent**: Replaces static missed-call and new-lead auto-responders with context-aware lead qualification.
+    - [x] **Speed-to-Lead Super Agent**: Replaces static missed-call and new-lead auto-responders with context-aware lead qualification and grounded text-back.
     - [ ] **Booking Concierge Agent**: Autonomous conversational negotiation of open calendar slots.
     - [ ] **Review Guardian Pro**: True LLM-powered sentiment analysis and context-grounded public review replies (replacing mock functions in `reputation-store.ts`).
 
-- [ ] **Supervision, Guardrails & Unified Inbox Copilot**
-    - [ ] **Tenant Autonomy Policy**: Configurable `draft_only` vs `auto_pilot` modes with confidence score thresholds.
-    - [ ] **Inbox AI Drafts**: Generates suggested replies directly in the Unified Inbox with 1-click human approval.
-    - [ ] **Agent Run Traces**: Audit logs capturing perception context, reasoning thoughts, and actions taken.
+- [x] **Supervision, Guardrails & Unified Inbox Copilot**
+    - [x] **Tenant Autonomy Policy**: Configurable `draft_only` vs `auto_pilot` modes with confidence score thresholds (`agentConfigs`).
+    - [x] **Inbox AI Drafts**: Generates suggested replies directly in the Unified Inbox with reasoning and confidence.
+    - [x] **Agent Run Traces**: Audit logs capturing perception context, reasoning thoughts, and actions taken (`agentRuns`).
 
 ---
 

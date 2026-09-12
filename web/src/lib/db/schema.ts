@@ -11,6 +11,7 @@ import {
     date,
     uniqueIndex,
     index,
+    vector,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -121,6 +122,7 @@ export const contactActivities = pgTable("contact_activities", {
 }, (table) => [
     index("idx_contact_activities_contact_id").on(table.contactId),
     index("idx_contact_activities_tenant").on(table.tenantId),
+    index("idx_contact_activities_tenant_contact").on(table.tenantId, table.contactId, table.createdAt),
 ]);
 
 // ── Contact Views (Saved Filters) ─────────────────────────────
@@ -143,11 +145,17 @@ export const conversations = pgTable("conversations", {
     channel: text("channel").default("sms"), // 'sms' | 'email' | 'facebook' | 'instagram'
     status: text("status").default("open"), // 'open' | 'closed'
     lastMessageAt: timestamp("last_message_at", { withTimezone: true }).defaultNow(),
+    lastMessagePreview: text("last_message_preview"),
+    unreadCount: integer("unread_count").default(0),
+    isStarred: boolean("is_starred").default(false),
+    assignedTo: uuid("assigned_to").references(() => users.id),
+    metadata: jsonb("metadata").default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
     index("idx_conversations_tenant").on(table.tenantId),
     index("idx_conversations_contact").on(table.contactId),
+    index("idx_conversations_tenant_contact").on(table.tenantId, table.contactId, table.lastMessageAt),
 ]);
 
 // ── Messages ──────────────────────────────────────────────────
@@ -158,12 +166,14 @@ export const messages = pgTable("messages", {
     direction: text("direction").notNull(), // 'inbound' | 'outbound'
     channel: text("channel").default("sms"), // 'sms' | 'email'
     content: text("content").notNull(),
+    isInternal: boolean("is_internal").default(false),
     metadata: jsonb("metadata").default({}),
     sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
     index("idx_messages_conversation").on(table.conversationId),
     index("idx_messages_tenant").on(table.tenantId),
+    index("idx_messages_tenant_conversation").on(table.tenantId, table.conversationId, table.createdAt),
 ]);
 
 // ── Forms ─────────────────────────────────────────────────────
@@ -188,7 +198,9 @@ export const formSubmissions = pgTable("form_submissions", {
     contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
     data: jsonb("data").notNull(),
     submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow(),
-});
+}, (table) => [
+    index("idx_form_submissions_tenant_contact").on(table.tenantId, table.contactId, table.submittedAt),
+]);
 
 // ── Pipelines & Kanban ────────────────────────────────────────
 export const pipelines = pgTable("pipelines", {
@@ -219,7 +231,9 @@ export const opportunities = pgTable("opportunities", {
     orderIndex: integer("order_index").default(0).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     createdBy: uuid("created_by").references(() => users.id),
-});
+}, (table) => [
+    index("idx_opportunities_tenant_contact").on(table.tenantId, table.contactId, table.createdAt),
+]);
 
 // ── External Accounts (Calendar Sync: Google / Outlook) ───────
 export const externalAccounts = pgTable("external_accounts", {
@@ -284,6 +298,7 @@ export const appointments = pgTable("appointments", {
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
     index("idx_appointments_external_id").on(table.externalEventId),
+    index("idx_appointments_tenant_contact").on(table.tenantId, table.contactId, table.startTime),
 ]);
 
 export const calendarOverrides = pgTable("calendar_overrides", {
@@ -458,3 +473,75 @@ export const socialPostChannels = pgTable("social_post_channels", {
     index("idx_social_post_channels_tenant").on(table.tenantId),
     index("idx_social_post_channels_post").on(table.postId),
 ]);
+
+// ── AI-Native Knowledge & Agent Engine ────────────────────────
+export const tenantKnowledgeSources = pgTable("tenant_knowledge_sources", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }).notNull(),
+    title: text("title").notNull(),
+    sourceType: text("source_type").notNull(), // 'faq' | 'document' | 'url' | 'service_catalog'
+    rawContent: text("raw_content").notNull(),
+    metadata: jsonb("metadata").default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+    index("idx_knowledge_sources_tenant").on(table.tenantId),
+]);
+
+export const knowledgeChunks = pgTable("knowledge_chunks", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceId: uuid("source_id").references(() => tenantKnowledgeSources.id, { onDelete: "cascade" }).notNull(),
+    tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }).notNull(),
+    content: text("content").notNull(),
+    embedding: vector("embedding", { dimensions: 1536 }).notNull(), // OpenAI / text-embedding-3-small
+    tokenCount: integer("token_count"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+    index("idx_knowledge_chunks_tenant").on(table.tenantId),
+    index("idx_knowledge_chunks_source").on(table.sourceId),
+    index("idx_knowledge_chunks_hnsw").using("hnsw", table.embedding.op("vector_cosine_ops")),
+]);
+
+export const agentConfigs = pgTable("agent_configs", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }).notNull(),
+    agentType: text("agent_type").notNull(), // 'lead_qualifier' | 'booking_concierge' | 'review_guardian'
+    isActive: boolean("is_active").default(false).notNull(),
+    autonomyMode: text("autonomy_mode").default("draft_only").notNull(), // 'draft_only' | 'auto_pilot'
+    systemPromptOverride: text("system_prompt_override"),
+    confidenceThreshold: numeric("confidence_threshold").default("0.85").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+    index("idx_agent_configs_tenant").on(table.tenantId),
+    uniqueIndex("uniq_agent_configs_tenant_type").on(table.tenantId, table.agentType),
+]);
+
+export const agentRuns = pgTable("agent_runs", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }).notNull(),
+    agentType: text("agent_type").notNull(),
+    contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
+    triggerEvent: text("trigger_event").notNull(),
+    status: text("status").notNull(), // 'running' | 'completed' | 'draft_pending' | 'failed' | 'escalated'
+    inputContext: jsonb("input_context").notNull(),
+    reasoningSteps: jsonb("reasoning_steps").default([]),
+    actionsTaken: jsonb("actions_taken").default([]),
+    draftOutput: text("draft_output"),
+    humanApproved: boolean("human_approved"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+    index("idx_agent_runs_tenant").on(table.tenantId),
+    index("idx_agent_runs_contact").on(table.contactId),
+]);
+
+export type TenantKnowledgeSource = typeof tenantKnowledgeSources.$inferSelect;
+export type NewTenantKnowledgeSource = typeof tenantKnowledgeSources.$inferInsert;
+export type KnowledgeChunk = typeof knowledgeChunks.$inferSelect;
+export type NewKnowledgeChunk = typeof knowledgeChunks.$inferInsert;
+export type AgentConfig = typeof agentConfigs.$inferSelect;
+export type NewAgentConfig = typeof agentConfigs.$inferInsert;
+export type AgentRun = typeof agentRuns.$inferSelect;
+export type NewAgentRun = typeof agentRuns.$inferInsert;
+
+

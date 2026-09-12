@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { inngest } from "@/lib/inngest/client";
 import { db, tenants, contacts, conversations, messages } from "@/lib/db";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, sql } from "drizzle-orm";
 
 export async function POST(req: Request) {
     try {
@@ -108,6 +108,9 @@ export async function POST(req: Request) {
                 .update(conversations)
                 .set({
                     lastMessageAt: new Date(),
+                    lastMessagePreview: text ? text.slice(0, 120) : "New SMS",
+                    unreadCount: sql`COALESCE(${conversations.unreadCount}, 0) + 1`,
+                    status: "open",
                     updatedAt: new Date(),
                 })
                 .where(eq(conversations.id, conversationId));

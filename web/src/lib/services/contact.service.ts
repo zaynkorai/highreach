@@ -211,6 +211,10 @@ export class ContactService {
             conditions.push(sql`${options.tag.trim()} = ANY(${contacts.tags})`);
         }
 
+        if (options?.source && options.source.trim() && options.source !== "all") {
+            conditions.push(eq(contacts.source, options.source.trim()));
+        }
+
         const whereClause = and(...conditions);
 
         const [countResult] = await db
@@ -229,6 +233,10 @@ export class ContactService {
                 ? options.sortOrder === "desc"
                     ? desc(contacts.email)
                     : asc(contacts.email)
+                : options?.sortBy === "source"
+                ? options.sortOrder === "desc"
+                    ? desc(contacts.source)
+                    : asc(contacts.source)
                 : options?.sortOrder === "asc"
                 ? asc(contacts.createdAt)
                 : desc(contacts.createdAt);
@@ -278,13 +286,21 @@ export class ContactService {
         }));
     }
 
-    static async saveContactView(tenantId: string, userId: string, name: string, filters: unknown) {
-        await db.insert(contactViews).values({
+    static async saveContactView(tenantId: string, userId: string, name: string, filters: unknown): Promise<ContactView> {
+        const [inserted] = await db.insert(contactViews).values({
             tenantId,
             name,
-            filters,
+            filters: (filters || {}) as Record<string, unknown>,
             createdBy: userId,
-        });
+        }).returning();
+
+        return {
+            id: inserted.id,
+            tenant_id: inserted.tenantId,
+            name: inserted.name,
+            filters: (inserted.filters || {}) as ContactView["filters"],
+            created_at: inserted.createdAt.toISOString(),
+        };
     }
 
     static async deleteContactView(tenantId: string, id: string) {

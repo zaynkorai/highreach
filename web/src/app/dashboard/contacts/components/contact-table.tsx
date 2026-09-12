@@ -68,8 +68,19 @@ export function ContactTable({
                                     />
                                 </div>
                             </th>
-                            <th className="px-6 py-4 font-semibold text-zinc-700 dark:text-zinc-200">
-                                Contact Info
+                            <th
+                                className="px-6 py-4 font-semibold text-zinc-700 dark:text-zinc-200 cursor-pointer hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                                onClick={() => onSort("email")}
+                            >
+                                <div className="flex items-center gap-2">
+                                    Contact Info
+                                    <ArrowUpDown
+                                        className={cn(
+                                            "w-4 h-4 text-zinc-400",
+                                            sortConfig.key === "email" && "text-brand-600"
+                                        )}
+                                    />
+                                </div>
                             </th>
                             <th className="px-6 py-4 font-semibold text-zinc-700 dark:text-zinc-200">
                                 Tags
@@ -96,7 +107,7 @@ export function ContactTable({
                     <tbody className="divide-y divide-zinc-100 dark:divide-white/[0.08]">
                         {contacts.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-16 text-center">
+                                <td colSpan={6} className="px-6 py-16 text-center">
                                     <div className="flex flex-col items-center justify-center">
                                         <div className="text-zinc-400 mb-4">
                                             <Search className="w-10 h-10 stroke-[1.5]" />

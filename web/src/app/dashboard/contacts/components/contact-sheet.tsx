@@ -33,9 +33,10 @@ interface ContactSheetProps {
     isOpen: boolean;
     onClose: () => void;
     contact?: Contact | null;
+    onSuccess?: () => void;
 }
 
-export function ContactSheet({ isOpen, onClose, contact }: ContactSheetProps) {
+export function ContactSheet({ isOpen, onClose, contact, onSuccess }: ContactSheetProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [tagInput, setTagInput] = useState("");
 
@@ -112,6 +113,7 @@ export function ContactSheet({ isOpen, onClose, contact }: ContactSheetProps) {
                 const result = await updateContact(contact.id, payload);
                 if (result.success) {
                     toast.success("Contact updated");
+                    if (onSuccess) onSuccess();
                     onClose();
                 } else {
                     toast.error(result.error || "Failed to update contact");
@@ -120,6 +122,7 @@ export function ContactSheet({ isOpen, onClose, contact }: ContactSheetProps) {
                 const result = await createContact(payload);
                 if (result.success) {
                     toast.success("Contact created");
+                    if (onSuccess) onSuccess();
                     onClose();
                 } else {
                     toast.error(result.error || "Failed to create contact");

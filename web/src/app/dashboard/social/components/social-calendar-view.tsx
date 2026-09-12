@@ -19,7 +19,7 @@ import {
     useSocialPosts,
     useSocialActions,
 } from "@/stores/social-store";
-import { PLATFORM_SPECS } from "@/lib/services/social.service";
+import { PLATFORM_SPECS } from "@/lib/services/social-utils";
 import type { SocialPost } from "@/lib/types/database";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

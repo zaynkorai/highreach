@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useSocialAnalytics, useSocialActions } from "@/stores/social-store";
-import { PLATFORM_SPECS } from "@/lib/services/social.service";
+import { PLATFORM_SPECS } from "@/lib/services/social-utils";
 import { triggerCommentToLeadSimulationAction } from "@/app/dashboard/social/actions";
 import {
     Dialog,

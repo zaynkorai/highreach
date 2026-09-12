@@ -3,8 +3,9 @@ import { Conversation, ChannelType } from "@/types/inbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Mail, MessageSquare, Phone } from "lucide-react";
+import { Search, Plus, Mail, MessageSquare, Phone, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NewConversationDialog } from "./new-conversation-dialog";
 
 interface ConversationListProps {
     conversations: Conversation[];
@@ -24,6 +25,7 @@ export function ConversationList({
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<'open' | 'closed' | 'all'>('open');
     const [activeFilter, setActiveFilter] = useState("all");
+    const [isNewConvOpen, setIsNewConvOpen] = useState(false);
 
     // Local helpers
     const getInitials = (contact: any) => {
@@ -63,7 +65,13 @@ export function ConversationList({
             <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 space-y-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Inbox</h1>
-                    <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full h-8 w-8 hover:bg-brand-50 dark:hover:bg-brand-500/10"
+                        onClick={() => setIsNewConvOpen(true)}
+                        title="Start New Conversation"
+                    >
                         <Plus className="h-4 w-4 text-brand-500" />
                     </Button>
                 </div>
@@ -127,12 +135,17 @@ export function ConversationList({
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-start mb-0.5">
-                                    <h3 className={cn(
-                                        "text-sm font-semibold truncate",
-                                        conv.unread_count > 0 ? "text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400"
-                                    )}>
-                                        {conv.contact?.first_name} {conv.contact?.last_name}
-                                    </h3>
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                        <h3 className={cn(
+                                            "text-sm font-semibold truncate",
+                                            conv.unread_count > 0 ? "text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400"
+                                        )}>
+                                            {conv.contact?.first_name} {conv.contact?.last_name}
+                                        </h3>
+                                        {conv.is_starred && (
+                                            <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />
+                                        )}
+                                    </div>
                                     <span className="text-[10px] uppercase font-bold text-zinc-400 whitespace-nowrap ml-2">
                                         {formatTime(conv.last_message_at)}
                                     </span>
@@ -145,14 +158,25 @@ export function ConversationList({
                                 </p>
                             </div>
                             {conv.unread_count > 0 && (
-                                <div className="self-center ml-2">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-brand-500 shadow-sm shadow-brand-500/50" />
+                                <div className="self-center ml-2 shrink-0">
+                                    <span className="flex items-center justify-center px-1.5 py-0.5 text-[9px] font-black rounded-full bg-brand-500 text-white min-w-[18px] shadow-sm shadow-brand-500/30">
+                                        {conv.unread_count}
+                                    </span>
                                 </div>
                             )}
                         </div>
                     ))
                 )}
             </div>
+
+            <NewConversationDialog
+                open={isNewConvOpen}
+                onOpenChange={setIsNewConvOpen}
+                onConversationCreated={(id) => {
+                    onSelect(id);
+                    setIsNewConvOpen(false);
+                }}
+            />
         </div>
     );
 }

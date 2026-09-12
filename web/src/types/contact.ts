@@ -47,9 +47,10 @@ export interface ContactView {
 export interface GetContactsOptions {
     search?: string;
     tag?: string;
+    source?: string;
     page?: number;
     limit?: number;
-    sortBy?: "name" | "email" | "created_at";
+    sortBy?: "name" | "email" | "source" | "created_at";
     sortOrder?: "asc" | "desc";
 }
 

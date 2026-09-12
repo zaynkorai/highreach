@@ -29,7 +29,9 @@ export type AppPermission =
     // Billing
     | 'billing.read' | 'billing.write'
     // Social Studio
-    | 'social.read' | 'social.write' | 'social.delete';
+    | 'social.read' | 'social.write' | 'social.delete'
+    // Knowledge Base & AI
+    | 'knowledge.read' | 'knowledge.write' | 'ai.manage';
 
 // =============================================================
 // Core Entities
@@ -289,4 +291,31 @@ export interface SocialPostChannel {
     metrics?: Record<string, unknown>;
     created_at: string;
     updated_at: string;
+}
+
+// =============================================================
+// AI Knowledge Base & Semantic Retrieval
+// =============================================================
+
+export type KnowledgeSourceType = 'faq' | 'document' | 'url' | 'service_catalog';
+
+export interface TenantKnowledgeSource {
+    id: string;
+    tenant_id: string;
+    title: string;
+    source_type: KnowledgeSourceType;
+    raw_content: string;
+    metadata: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface KnowledgeChunk {
+    id: string;
+    source_id: string;
+    tenant_id: string;
+    content: string;
+    embedding: number[];
+    token_count?: number | null;
+    created_at: string;
 }

@@ -8,6 +8,8 @@ export interface Conversation {
     channel: ChannelType;
     status: 'open' | 'closed';
     assigned_to?: string | null;
+    is_starred?: boolean;
+    metadata?: Record<string, any>;
     last_message_at: string;
     last_message_preview?: string;
     unread_count: number;

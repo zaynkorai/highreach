@@ -35,6 +35,7 @@ export function useContactFilters({ initialViews, paginatedContacts }: UseContac
     // Initial search and tag from URL searchParams
     const urlQuery = searchParams.get("q") || "";
     const urlTag = searchParams.get("tag") || "";
+    const urlSource = searchParams.get("source") || "all";
     const urlSortBy = (searchParams.get("sortBy") as SortConfig["key"]) || "created_at";
     const urlSortOrder = (searchParams.get("sortOrder") as "asc" | "desc") || "desc";
 
@@ -45,7 +46,7 @@ export function useContactFilters({ initialViews, paginatedContacts }: UseContac
     });
 
     const contactsRaw = useContacts();
-    const { setFilterSource, setFilterTags } = useContactActions();
+    const { setFilterSource: setStoreFilterSource, setFilterTags } = useContactActions();
     const filterSource = useFilterSource();
     const filterTags = useFilterTags();
 
@@ -67,6 +68,11 @@ export function useContactFilters({ initialViews, paginatedContacts }: UseContac
         [pathname, router, searchParams]
     );
 
+    // Sync filterSource store with URL
+    useEffect(() => {
+        setStoreFilterSource(urlSource);
+    }, [urlSource, setStoreFilterSource]);
+
     // Debounced search sync with URL
     const debouncedSearch = useMemo(
         () =>
@@ -87,10 +93,15 @@ export function useContactFilters({ initialViews, paginatedContacts }: UseContac
         debouncedSearch(query);
     };
 
+    const handleSourceChange = (source: string) => {
+        setStoreFilterSource(source);
+        updateUrl({ source: source === "all" ? null : source, page: "1" });
+    };
+
     const handleSort = (key: keyof Contact | "name") => {
         const nextDirection = sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
         setSortConfig({ key, direction: nextDirection });
-        const sortBy = key === "name" ? "name" : key === "email" ? "email" : "created_at";
+        const sortBy = key === "name" ? "name" : key === "email" ? "email" : key === "source" ? "source" : "created_at";
         updateUrl({ sortBy, sortOrder: nextDirection, page: "1" });
     };
 
@@ -119,13 +130,7 @@ export function useContactFilters({ initialViews, paginatedContacts }: UseContac
                 router.refresh();
                 setSavedViews((prev) => [
                     ...prev,
-                    {
-                        id: crypto.randomUUID(),
-                        tenant_id: "",
-                        name,
-                        filters,
-                        created_at: new Date().toISOString(),
-                    },
+                    result.data,
                 ]);
             } else {
                 toast.error(result.error || "Failed to save view");
@@ -139,9 +144,9 @@ export function useContactFilters({ initialViews, paginatedContacts }: UseContac
         if (!view) {
             setActiveViewId(null);
             setSearchQueryState("");
-            setFilterSource("all");
+            setStoreFilterSource("all");
             setFilterTags([]);
-            updateUrl({ q: null, tag: null, page: "1" });
+            updateUrl({ q: null, tag: null, source: null, sortBy: null, sortOrder: null, page: "1" });
             return;
         }
 
@@ -149,13 +154,17 @@ export function useContactFilters({ initialViews, paginatedContacts }: UseContac
         if (view.filters.searchQuery) {
             setSearchQueryState(view.filters.searchQuery);
         }
-        if (view.filters.source) setFilterSource(view.filters.source);
+        const viewSource = view.filters.source || "all";
+        setStoreFilterSource(viewSource);
         if (view.filters.tags) setFilterTags(view.filters.tags);
         if (view.filters.sort) setSortConfig(view.filters.sort as SortConfig);
 
         updateUrl({
             q: view.filters.searchQuery || null,
             tag: view.filters.tags?.[0] || null,
+            source: viewSource === "all" ? null : viewSource,
+            sortBy: view.filters.sort?.key || null,
+            sortOrder: view.filters.sort?.direction || null,
             page: "1",
         });
     };
@@ -189,7 +198,7 @@ export function useContactFilters({ initialViews, paginatedContacts }: UseContac
 
     const resetFilters = () => {
         setSearchQueryState("");
-        setFilterSource("all");
+        setStoreFilterSource("all");
         setFilterTags([]);
         router.push(pathname);
     };
@@ -226,7 +235,7 @@ export function useContactFilters({ initialViews, paginatedContacts }: UseContac
         searchQuery,
         setSearchQuery,
         filterSource,
-        setFilterSource,
+        setFilterSource: handleSourceChange,
         filterTags: urlTag ? [urlTag] : filterTags,
         setFilterTags,
         onTagToggle,

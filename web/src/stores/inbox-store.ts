@@ -9,7 +9,8 @@ interface InboxState {
 
     actions: {
         setConversations: (conversations: Conversation[]) => void;
-        updateConversation: (conversation: Conversation) => void;
+        updateConversation: (conversation: Partial<Conversation> & { id: string }) => void;
+        markAsRead: (conversationId: string) => void;
         setSelectedId: (id: string | null) => void;
         setMessages: (messages: Message[]) => void;
         addMessage: (message: Message, conversationId: string) => void; // conversationId check for safety
@@ -29,8 +30,16 @@ export const useInboxStore = create<InboxState>((set) => ({
 
         updateConversation: (updatedConv) => set((state) => ({
             conversations: state.conversations.map((c) =>
-                c.id === updatedConv.id ? { ...c, ...updatedConv, contact: c.contact } : c
+                c.id === updatedConv.id
+                    ? { ...c, ...updatedConv, contact: updatedConv.contact !== undefined ? updatedConv.contact : c.contact }
+                    : c
             ).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
+        })),
+
+        markAsRead: (conversationId) => set((state) => ({
+            conversations: state.conversations.map((c) =>
+                c.id === conversationId ? { ...c, unread_count: 0 } : c
+            )
         })),
 
         setSelectedId: (id) => set({ selectedId: id }),

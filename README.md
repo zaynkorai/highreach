@@ -34,20 +34,27 @@ Convert inbound inquiries and social engagement into paying customers in **secon
 * **LinkedIn Carousel Builder**: Native multi-page document generator with slide editors, custom branding, and interactive card swipers.
 * **Global Social Settings**: Tenant-wide preferences for short-linking (`Always`, `Never`, `Ask`), automated time slot presets, and default tags.
 
+### 4. Grounding & Semantic Memory (AI-Native Core)
+* **Semantic Retrieval & Knowledge Base**: Multi-tenant business context ingestion (FAQs, Service Catalogs, Pricing Sheets, Documents, URLs) stored in PostgreSQL `pgvector` (`vector(1536)`) with HNSW cosine distance indexing.
+* **Hierarchical Semantic Chunking**: Smart boundary splitter preserving headings, paragraphs, and sentences with token budget calculations and sliding overlaps.
+* **Hybrid Search (Reciprocal Rank Fusion)**: Combines dense vector similarity with sparse keyword matching for optimal recall and accuracy.
+* **Interactive Semantic Test Bench**: Natural language query playground with live similarity threshold sliders, latency metrics, and chunk match scoring.
+* **3-Pillar Context Assembler**: Foundational perception engine combining Tenant Knowledge, CRM History, and Live Omnichannel Thread to ground all autonomous agents.
+
 ---
 
 ## 🛠️ Tech Stack & Architecture
 
 - **Web Application**: Next.js 16 (App Router) + React Server Components + Server Actions
 - **Language**: TypeScript (Strict Mode)
-- **Database**: PostgreSQL with Drizzle ORM (Multi-tenant application-level scoping)
+- **Database**: PostgreSQL with `pgvector` & Drizzle ORM (Multi-tenant RLS + HNSW vector indexing)
 - **State Management**: Zustand with persistent client storage
 - **Styling & UI**: Tailwind CSS v4, Lucide Icons, Shadcn UI primitives
 - **Background Jobs & Workflows**: Inngest (Durable event-driven execution)
 - **Telephony & SMS**: Telnyx SDK (Inbound/Outbound SMS, webhooks)
 - **Email Delivery**: Resend SDK
 - **Validation**: Zod (Shared schemas across client, server actions, and API routes)
-- **Testing**: Node.js Test Runner (`node:test`) + Native Type Stripping (35 passing unit tests)
+- **Testing**: Node.js Test Runner (`node:test`) + Native Type Stripping (58 passing unit tests)
 
 ---
 
@@ -68,17 +75,20 @@ highreach/
 │   │   │   │   ├── calendars/   # Booking & calendar management
 │   │   │   │   ├── contacts/    # CRM contacts & Smart Lists
 │   │   │   │   ├── inbox/       # Unified Omnichannel Inbox
+│   │   │   │   ├── knowledge/   # Knowledge Base & Semantic Test Bench
 │   │   │   │   ├── pipelines/   # Kanban deal pipelines
 │   │   │   │   ├── reputation/  # Review monitoring & AI responses
 │   │   │   │   ├── social/      # Social Studio & Postiz engine
-│   │   │   │   └── workflows/   # Inngest automation flow builder
+│   │   │   │   └── automations/ # Inngest automation flow builder
 │   │   ├── lib/
+│   │   │   ├── ai/              # Chunking, Embeddings, Context Assembler, Semantic Search
 │   │   │   ├── auth/            # JWT session handling & RBAC
-│   │   │   ├── db/              # Drizzle ORM schemas & client
-│   │   │   ├── services/        # Domain services & pure utilities
-│   │   │   └── types/           # Core database & domain TypeScript types
+│   │   │   ├── db/              # Drizzle ORM schemas & client (pgvector HNSW)
+│   │   │   ├── services/        # Domain services (Knowledge, Contacts, Social)
+│   │   │   ├── types/           # Core database & domain TypeScript types
+│   │   │   └── validations/     # Zod validation schemas
 │   │   ├── stores/              # Zustand global client stores
-│   │   └── __tests__/           # Unit tests (CRM, actions, Social Studio)
+│   │   └── __tests__/           # Unit tests (CRM, Context Assembler, Social, Knowledge)
 │   └── package.json
 └── README.md
 ```
@@ -166,9 +176,10 @@ pnpm tsc --noEmit
   - LinkedIn Carousel & Slide Deck Generator.
   - Posting Streak consistency engine & single-post analytics.
 - [ ] **P2: AI-Native Core & Autonomous Agents**
-  - PostgreSQL `pgvector` knowledge grounding engine.
-  - Autonomous conversational booking agent.
-  - Unified Inbox Copilot (AI drafts with 1-click human approvals).
+  - [x] PostgreSQL `pgvector` knowledge grounding engine (`tenant_knowledge_sources`, `knowledge_chunks`).
+  - [x] Multi-pillar Context Assembler (`assembleAgentContext` combining Tenant Knowledge + Contact History + Active Thread).
+  - [ ] Autonomous conversational booking concierge.
+  - [ ] Unified Inbox Copilot (AI drafts with 1-click human approvals).
 
 ---
 

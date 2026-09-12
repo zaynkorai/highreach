@@ -86,9 +86,6 @@ export default function SocialStudioPage() {
                         <h1 className="text-3xl font-black tracking-tight text-foreground">
                             Social <span className="text-brand-500 font-medium">Studio</span>
                         </h1>
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/40">
-                            Postiz Engine
-                        </span>
 
                         {/* Daily Posting Streak Badge */}
                         <div

@@ -8,7 +8,7 @@ import {
     useSocialFilters,
     useSocialLightbox,
 } from "@/stores/social-store";
-import { PLATFORM_SPECS, buildUtmUrl, type AiTone } from "@/lib/services/social.service";
+import { PLATFORM_SPECS, buildUtmUrl, type AiTone } from "@/lib/services/social-utils";
 import { generateAiSocialDraftAction } from "@/app/dashboard/social/actions";
 import { PlatformPreview } from "./platform-preview";
 import type { SocialPlatform } from "@/lib/types/database";
@@ -355,7 +355,7 @@ export function PostComposerModal() {
 
     return (
         <Dialog open={composer.isOpen} onOpenChange={(open) => !open && closeComposer()}>
-            <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto p-0 gap-0 rounded-2xl border-zinc-200 dark:border-zinc-800">
+            <DialogContent className="sm:max-w-[1500px] w-[96vw] max-h-[92vh] overflow-y-auto p-0 gap-0 rounded-2xl border-zinc-200 dark:border-zinc-800">
                 <DialogHeader className="p-6 pb-4 border-b border-zinc-100 dark:border-zinc-800/80 sticky top-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md z-10">
                     <DialogTitle className="text-xl font-bold flex items-center justify-between">
                         <span className="flex items-center gap-2">

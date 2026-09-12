@@ -19,18 +19,35 @@ import {
     Share2,
     Settings,
     X,
+    Brain,
 } from "lucide-react";
 
-const navItems = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
-    { href: "/dashboard/inbox", icon: Inbox, label: "Inbox" },
-    { href: "/dashboard/contacts", icon: Users, label: "Contacts" },
-    { href: "/dashboard/pipelines", icon: Folders, label: "Pipelines" },
-    { href: "/dashboard/forms", icon: FileText, label: "Forms" },
-    { href: "/dashboard/social", icon: Share2, label: "Social Studio" },
-    { href: "/dashboard/automations", icon: Zap, label: "Automations" },
-    { href: "/dashboard/calendars", icon: Calendar, label: "Calendars" },
-    { href: "/dashboard/reputation", icon: Star, label: "Reputation" },
+interface NavItem {
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+}
+
+const navGroups: NavItem[][] = [
+    // Top Anchor
+    [
+        { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
+    ],
+    // Operations & Communication
+    [
+        { href: "/dashboard/inbox", icon: Inbox, label: "Inbox" },
+        { href: "/dashboard/calendars", icon: Calendar, label: "Calendars" },
+        { href: "/dashboard/contacts", icon: Users, label: "Contacts" },
+    ],
+    // Platform & Growth Tools
+    [
+        { href: "/dashboard/pipelines", icon: Folders, label: "Pipelines" },
+        { href: "/dashboard/forms", icon: FileText, label: "Forms" },
+        { href: "/dashboard/social", icon: Share2, label: "Social Studio" },
+        { href: "/dashboard/knowledge", icon: Brain, label: "Knowledge Base" },
+        { href: "/dashboard/automations", icon: Zap, label: "Automations" },
+        { href: "/dashboard/reputation", icon: Star, label: "Reputation" },
+    ],
 ];
 
 export function DashboardSidebar() {
@@ -73,31 +90,38 @@ export function DashboardSidebar() {
 
                 {/* Navigation Body */}
                 <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname === item.href ||
-                            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                    {navGroups.map((group, groupIdx) => (
+                        <div key={groupIdx} className="space-y-1">
+                            {groupIdx > 0 && (
+                                <div className="my-2 border-t border-zinc-200/60 dark:border-white/[0.06]" />
+                            )}
+                            {group.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = pathname === item.href ||
+                                    (item.href !== "/dashboard" && pathname.startsWith(item.href));
 
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={() => setSidebarOpen(false)}
-                                className={cn(
-                                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
-                                    isActive
-                                        ? "bg-primary/10 text-primary"
-                                        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
-                                )}
-                            >
-                                <Icon className={cn(
-                                    "w-5 h-5 transition-colors",
-                                    isActive ? "text-primary" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
-                                )} />
-                                <span>{item.label}</span>
-                            </Link>
-                        );
-                    })}
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        onClick={() => setSidebarOpen(false)}
+                                        className={cn(
+                                            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                                            isActive
+                                                ? "bg-primary/10 text-primary"
+                                                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
+                                        )}
+                                    >
+                                        <Icon className={cn(
+                                            "w-5 h-5 transition-colors",
+                                            isActive ? "text-primary" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                                        )} />
+                                        <span>{item.label}</span>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    ))}
                 </nav>
 
                 {/* Footer Controls */}

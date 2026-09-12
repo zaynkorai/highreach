@@ -83,9 +83,9 @@ export function ContactList({ initialPaginatedContacts, initialViews }: ContactL
 
     const handleBulkAddTag = async (tag: string) => {
         let tagToAdd = tag;
-        if (tag === "Create Tag") {
+        if (tag === "CREATE_NEW_TAG" || tag === "Create Tag" || tag.toLowerCase() === "create tag") {
             const input = prompt("Enter new tag name:");
-            if (!input) return;
+            if (!input || !input.trim()) return;
             tagToAdd = input.trim();
         }
 
@@ -164,6 +164,7 @@ export function ContactList({ initialPaginatedContacts, initialViews }: ContactL
                 isOpen={isSheetOpen}
                 onClose={() => setIsSheetOpen(false)}
                 contact={selectedContact}
+                onSuccess={handleRefresh}
             />
 
             <DeleteContactModal

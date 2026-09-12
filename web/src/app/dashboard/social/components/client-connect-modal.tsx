@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useSocialClientConnect, useSocialActions } from "@/stores/social-store";
 import { connectChannelViaClientTokenAction } from "@/app/dashboard/social/actions";
-import { PLATFORM_SPECS } from "@/lib/services/social.service";
+import { PLATFORM_SPECS } from "@/lib/services/social-utils";
 import type { SocialPlatform } from "@/lib/types/database";
 import {
     Dialog,

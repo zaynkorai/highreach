@@ -111,9 +111,9 @@ export async function getContactViews() {
 
 export async function saveContactView(name: string, filters: unknown) {
     return await withPermission("contacts.write", async (session) => {
-        await ContactService.saveContactView(session.tenantId, session.user.id, name, filters);
+        const savedView = await ContactService.saveContactView(session.tenantId, session.user.id, name, filters);
         revalidatePath("/dashboard/contacts");
-        return { success: true };
+        return savedView;
     });
 }
 

@@ -91,7 +91,7 @@ export function ContactBulkBar({
                             </CommandGroup>
                             <CommandSeparator />
                             <CommandGroup heading="Create New">
-                                <CommandItem onSelect={(val) => onBulkAddTag(val)}>
+                                <CommandItem onSelect={() => onBulkAddTag("CREATE_NEW_TAG")}>
                                     <Plus className="mr-2 h-4 w-4" />
                                     Create Tag
                                 </CommandItem>

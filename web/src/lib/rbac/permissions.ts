@@ -20,6 +20,7 @@ const ALL_PERMISSIONS: AppPermission[] = [
     'team.read', 'team.invite', 'team.remove', 'team.change_role',
     'billing.read', 'billing.write',
     'social.read', 'social.write', 'social.delete',
+    'knowledge.read', 'knowledge.write', 'ai.manage',
 ];
 
 // Admin gets everything except billing.write
@@ -36,6 +37,7 @@ const MEMBER_PERMISSIONS: AppPermission[] = [
     'settings.read',
     'team.read',
     'social.read', 'social.write',
+    'knowledge.read', 'knowledge.write',
 ];
 
 export const ROLE_PERMISSIONS: Record<AppRole, ReadonlySet<AppPermission>> = {

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import type {
     SocialAccount,
     SocialPost,
@@ -497,35 +498,45 @@ export const useSocialComposer = () => useSocialStore((s) => s.composer);
 export const useSocialSettings = () => useSocialStore((s) => s.socialSettings);
 export const useSocialStreak = () => useSocialStore((s) => s.streak);
 export const useSocialLightbox = () =>
-    useSocialStore((s) => ({
-        activeUrl: s.activeLightboxUrl,
-        open: s.actions.openLightbox,
-        close: s.actions.closeLightbox,
-    }));
+    useSocialStore(
+        useShallow((s) => ({
+            activeUrl: s.activeLightboxUrl,
+            open: s.actions.openLightbox,
+            close: s.actions.closeLightbox,
+        }))
+    );
 export const useSocialAnalytics = () =>
-    useSocialStore((s) => ({
-        activePost: s.activeAnalyticsPost,
-        open: s.actions.openAnalytics,
-        close: s.actions.closeAnalytics,
-    }));
+    useSocialStore(
+        useShallow((s) => ({
+            activePost: s.activeAnalyticsPost,
+            open: s.actions.openAnalytics,
+            close: s.actions.closeAnalytics,
+        }))
+    );
 export const useSocialPublishedWarning = () =>
-    useSocialStore((s) => ({
-        post: s.publishedPostWarning,
-        setWarning: s.actions.setPublishedPostWarning,
-    }));
+    useSocialStore(
+        useShallow((s) => ({
+            post: s.publishedPostWarning,
+            setWarning: s.actions.setPublishedPostWarning,
+        }))
+    );
 export const useSocialClientConnect = () =>
-    useSocialStore((s) => ({
-        isOpen: s.isClientConnectOpen,
-        tokenData: s.clientConnectToken,
-        open: s.actions.openClientConnect,
-        close: s.actions.closeClientConnect,
-        generate: s.actions.generateClientConnectLink,
-    }));
+    useSocialStore(
+        useShallow((s) => ({
+            isOpen: s.isClientConnectOpen,
+            tokenData: s.clientConnectToken,
+            open: s.actions.openClientConnect,
+            close: s.actions.closeClientConnect,
+            generate: s.actions.generateClientConnectLink,
+        }))
+    );
 export const useSocialFilters = () =>
-    useSocialStore((s) => ({
-        statusFilter: s.statusFilter,
-        platformFilter: s.platformFilter,
-        searchQuery: s.searchQuery,
-        isLoading: s.isLoading,
-        isSaving: s.isSaving,
-    }));
+    useSocialStore(
+        useShallow((s) => ({
+            statusFilter: s.statusFilter,
+            platformFilter: s.platformFilter,
+            searchQuery: s.searchQuery,
+            isLoading: s.isLoading,
+            isSaving: s.isSaving,
+        }))
+    );

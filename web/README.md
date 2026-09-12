@@ -74,6 +74,11 @@ RESEND_API_KEY="re_..."
 INNGEST_EVENT_KEY=""
 INNGEST_SIGNING_KEY=""
 
+# ── AI Reasoning & Vector Search ──
+OPENROUTER_API_KEY=""                # Primary: OpenRouter API key for DeepSeek V4 reasoning
+OPENROUTER_MODEL="deepseek/deepseek-v4" # Model slug (default: deepseek/deepseek-v4)
+OPENAI_API_KEY=""                    # Fallback reasoning & text-embedding-3-small vectors
+
 # ── Social Studio & OAuth Integrations (Optional) ──
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""

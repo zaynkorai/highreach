@@ -1,5 +1,5 @@
 import { db, conversations, messages, contacts, tenants } from "@/lib/db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, inArray } from "drizzle-orm";
 import type { Conversation, Message, ChannelType } from "@/types/inbox";
 import { telnyx } from "@/lib/telnyx";
 import { resend } from "@/lib/resend";
@@ -16,6 +16,29 @@ export class InboxService {
             .where(eq(conversations.tenantId, tenantId))
             .orderBy(desc(conversations.lastMessageAt));
 
+        // For any conversation missing lastMessagePreview, fallback to latest message content
+        const missingPreviewIds = rows
+            .filter((r) => !r.conversation.lastMessagePreview)
+            .map((r) => r.conversation.id);
+
+        const previews: Record<string, string> = {};
+        if (missingPreviewIds.length > 0) {
+            const latestMsgs = await db
+                .select({
+                    conversationId: messages.conversationId,
+                    content: messages.content,
+                })
+                .from(messages)
+                .where(inArray(messages.conversationId, missingPreviewIds))
+                .orderBy(desc(messages.createdAt));
+
+            for (const msg of latestMsgs) {
+                if (!previews[msg.conversationId]) {
+                    previews[msg.conversationId] = msg.content.slice(0, 100);
+                }
+            }
+        }
+
         return rows.map(({ conversation: c, contact: ct }) => ({
             id: c.id,
             tenant_id: c.tenantId,
@@ -23,7 +46,10 @@ export class InboxService {
             channel: (c.channel || "sms") as ChannelType,
             status: (c.status || "open") as "open" | "closed",
             last_message_at: c.lastMessageAt ? c.lastMessageAt.toISOString() : c.createdAt.toISOString(),
-            unread_count: 0,
+            last_message_preview: c.lastMessagePreview || previews[c.id] || undefined,
+            unread_count: c.unreadCount ?? 0,
+            is_starred: c.isStarred ?? false,
+            metadata: (c.metadata || {}) as Record<string, unknown>,
             created_at: c.createdAt.toISOString(),
             updated_at: c.updatedAt.toISOString(),
             contact: {
@@ -49,17 +75,22 @@ export class InboxService {
             )
             .orderBy(asc(messages.createdAt));
 
-        return rows.map((m) => ({
-            id: m.id,
-            tenant_id: m.tenantId,
-            conversation_id: m.conversationId,
-            direction: (m.direction || "inbound") as "inbound" | "outbound",
-            channel: (m.channel || "sms") as ChannelType,
-            content: m.content,
-            metadata: (m.metadata || {}) as Record<string, unknown>,
-            sent_at: m.sentAt ? m.sentAt.toISOString() : m.createdAt.toISOString(),
-            created_at: m.createdAt.toISOString(),
-        }));
+        return rows.map((m) => {
+            const metadata = (m.metadata || {}) as Record<string, any>;
+            const isInternal = Boolean(m.isInternal || metadata.is_internal);
+            return {
+                id: m.id,
+                tenant_id: m.tenantId,
+                conversation_id: m.conversationId,
+                direction: (m.direction || "inbound") as "inbound" | "outbound",
+                channel: (m.channel || "sms") as ChannelType,
+                content: m.content,
+                is_internal: isInternal,
+                metadata,
+                sent_at: m.sentAt ? m.sentAt.toISOString() : m.createdAt.toISOString(),
+                created_at: m.createdAt.toISOString(),
+            };
+        });
     }
 
     static async sendMessage(
@@ -158,14 +189,19 @@ export class InboxService {
                 direction: "outbound",
                 content,
                 channel,
+                isInternal,
                 metadata,
             })
             .returning();
+
+        const previewText = isInternal ? `[Note] ${content}` : content;
 
         await db
             .update(conversations)
             .set({
                 lastMessageAt: new Date(),
+                lastMessagePreview: previewText.slice(0, 120),
+                unreadCount: 0,
                 status: "open",
                 updatedAt: new Date(),
             })
@@ -190,7 +226,54 @@ export class InboxService {
         };
     }
 
-    static async createConversation(tenantId: string, contactId: string) {
+    static async markConversationAsRead(tenantId: string, conversationId: string): Promise<void> {
+        await db
+            .update(conversations)
+            .set({ unreadCount: 0, updatedAt: new Date() })
+            .where(
+                and(
+                    eq(conversations.id, conversationId),
+                    eq(conversations.tenantId, tenantId)
+                )
+            );
+    }
+
+    static async toggleStarConversation(tenantId: string, conversationId: string): Promise<boolean> {
+        const [conv] = await db
+            .select({ isStarred: conversations.isStarred })
+            .from(conversations)
+            .where(
+                and(
+                    eq(conversations.id, conversationId),
+                    eq(conversations.tenantId, tenantId)
+                )
+            )
+            .limit(1);
+
+        if (!conv) {
+            throw new Error("Conversation not found or access denied");
+        }
+
+        const nextStarred = !conv.isStarred;
+        await db
+            .update(conversations)
+            .set({ isStarred: nextStarred, updatedAt: new Date() })
+            .where(
+                and(
+                    eq(conversations.id, conversationId),
+                    eq(conversations.tenantId, tenantId)
+                )
+            );
+
+        return nextStarred;
+    }
+
+    static async createConversation(
+        tenantId: string,
+        contactId: string,
+        channel: ChannelType = "sms",
+        initialMessage?: string
+    ) {
         // Verify contact belongs to tenant
         const [contact] = await db
             .select({ id: contacts.id })
@@ -202,7 +285,7 @@ export class InboxService {
             throw new Error("Contact not found or access denied");
         }
 
-        const [existing] = await db
+        let [existing] = await db
             .select()
             .from(conversations)
             .where(
@@ -213,35 +296,34 @@ export class InboxService {
             )
             .limit(1);
 
-        if (existing) {
-            return {
-                id: existing.id,
-                tenant_id: existing.tenantId,
-                contact_id: existing.contactId,
-                status: existing.status,
-                last_message_at: existing.lastMessageAt ? existing.lastMessageAt.toISOString() : existing.createdAt.toISOString(),
-                created_at: existing.createdAt.toISOString(),
-                updated_at: existing.updatedAt.toISOString(),
-            };
+        let conv = existing;
+
+        if (!conv) {
+            const [created] = await db
+                .insert(conversations)
+                .values({
+                    tenantId,
+                    contactId,
+                    channel,
+                    status: "open",
+                })
+                .returning();
+            conv = created;
         }
 
-        const [created] = await db
-            .insert(conversations)
-            .values({
-                tenantId,
-                contactId,
-                status: "open",
-            })
-            .returning();
+        if (initialMessage && initialMessage.trim() && conv) {
+            await this.sendMessage(tenantId, conv.id, initialMessage.trim(), channel);
+        }
 
         return {
-            id: created.id,
-            tenant_id: created.tenantId,
-            contact_id: created.contactId,
-            status: created.status,
-            last_message_at: created.lastMessageAt ? created.lastMessageAt.toISOString() : created.createdAt.toISOString(),
-            created_at: created.createdAt.toISOString(),
-            updated_at: created.updatedAt.toISOString(),
+            id: conv.id,
+            tenant_id: conv.tenantId,
+            contact_id: conv.contactId,
+            channel: (conv.channel || channel) as ChannelType,
+            status: conv.status,
+            last_message_at: conv.lastMessageAt ? conv.lastMessageAt.toISOString() : conv.createdAt.toISOString(),
+            created_at: conv.createdAt.toISOString(),
+            updated_at: conv.updatedAt.toISOString(),
         };
     }
 

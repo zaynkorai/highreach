@@ -171,6 +171,7 @@ export const knowledgeChunks = pgTable("knowledge_chunks", {
 }, (table) => [
     index("idx_knowledge_chunks_tenant").on(table.tenantId),
     index("idx_knowledge_chunks_source").on(table.sourceId),
+    index("knowledge_chunks_embedding_idx").using("hnsw", table.embedding.op("vector_cosine_ops")),
 ]);
 
 // 3. Agent Configurations & Policies
@@ -273,9 +274,215 @@ CREATE TABLE agent_runs (
 );
 ```
 
+### 3.1 Knowledge Ingestion & Hybrid Semantic Retrieval Engine
+
+```mermaid
+flowchart LR
+    subgraph Ingestion["Knowledge Ingestion Pipeline"]
+        Raw["Raw Document / FAQ / Catalog"]
+        Splitter["Hierarchical Chunk Splitter (500 chars, 60 overlap)"]
+        Embedder["1536-dim Embedding Generator (OpenAI / Local Norm)"]
+        Batch["Batch PostgreSQL Insert"]
+        Raw --> Splitter --> Embedder --> Batch
+    end
+
+    subgraph Storage["Vector Storage"]
+        Batch --> PG[("knowledge_chunks (HNSW Vector Cosine Ops)")]
+    end
+
+    subgraph Retrieval["Hybrid Semantic Retrieval (RRF)"]
+        Query["Query / Inbound Message"]
+        Q_Embed["Query Embedding (1536-dim)"]
+        DenseSearch["Dense Cosine Search: 1 - (embedding <=> q)"]
+        SparseSearch["Sparse Keyword Search: ILIKE / Tokens"]
+        RRF["Reciprocal Rank Fusion: sum(1 / (60 + rank))"]
+        TopChunks["Top Ranked Grounded Chunks"]
+
+        Query --> Q_Embed --> DenseSearch
+        Query --> SparseSearch
+        DenseSearch & SparseSearch --> RRF --> TopChunks
+    end
+```
+
+1. **Hierarchical Document Chunking** (`web/src/lib/ai/chunking.ts`):
+   - Breaks unstructured text on natural boundaries (markdown headings, paragraphs `\n\n`, single newlines, sentences).
+   - Enforces configurable chunk bounds (~500 chars / ~125 tokens) with 60-char sliding overlap to preserve cross-chunk context.
+2. **Unified Embedding Generation** (`web/src/lib/ai/embedding.ts`):
+   - Standardized on 1536 dimensions (matching OpenAI `text-embedding-3-small`).
+   - Supports live OpenAI API embeddings with graceful fallback to a deterministic unit-normalized ($\|v\|_2 = 1.0$) pseudo-semantic vector generator for offline execution and tests.
+3. **Hybrid Search & Reciprocal Rank Fusion (RRF)** (`web/src/lib/ai/semantic-retrieval.ts`):
+   - Blends dense vector cosine similarity with sparse lexical token matching using Reciprocal Rank Fusion:
+     $$\text{RRF Score}(d) = \sum_{m \in M} \frac{1}{60 + r_m(d)}$$
+   - Guarantees high precision for exact terms/catalogs while preserving semantic understanding for natural customer questions.
+4. **Interactive Test Bench & Management UI** (`web/src/app/dashboard/knowledge/`):
+   - Full CRUD catalog with live vector chunk and token budget estimator.
+   - Interactive testing playground allowing operators to simulate queries, tweak similarity thresholds, and inspect latency and match scores.
+
 ---
 
-## 4. Durable Agent Execution via Inngest
+## 4. Context Assembler Architecture (Perception & Grounding Engine)
+
+The **Context Assembler** (`web/src/lib/ai/`) serves as the foundational perception layer for all autonomous agents and unified inbox copilot features. It dynamically constructs bounded working memory by concurrently aggregating three core pillars:
+1. **Tenant Knowledge**: Multi-tenant business identity, operating hours, and grounded factual chunks (retrieved via PostgreSQL `pgvector` cosine similarity with text search fallback).
+2. **Contact History**: CRM operational state including contact profile, active deal stages (`opportunities`), calendar bookings (`appointments`), interaction timeline activities (`contact_activities`), and web form submissions (`form_submissions`).
+3. **Active Thread**: Live omnichannel conversation history (`conversations`, `messages`), role-mapped (`user`, `assistant`, `system`), and constrained by a sliding-window token budget.
+
+### 4.1 The Three-Pillars Context Assembly Pipeline
+
+```mermaid
+flowchart TD
+    subgraph DataSources["Data Sources (Multi-Tenant Isolation)"]
+        direction TB
+        subgraph Pillar1["Pillar 1: Tenant Knowledge"]
+            TK_DB[("PostgreSQL pgvector")]
+            TK_Meta["Business Hours & Settings"]
+            TK_Chunks["FAQ & Service Chunks (1536-dim)"]
+        end
+        subgraph Pillar2["Pillar 2: Contact History"]
+            CRM_Contact["Contact Profile & Tags"]
+            CRM_Deals["Deals & Pipeline Stages"]
+            CRM_Cal["Appointments & Booking"]
+            CRM_Timeline["Activities & Form Submissions"]
+        end
+        subgraph Pillar3["Pillar 3: Active Thread"]
+            Msg_Log["Omnichannel Messages (SMS / Email)"]
+            Msg_Roles["Role Mapping (User / Assistant / System)"]
+            Msg_Pending["Pending Reply Detection"]
+        end
+    end
+
+    subgraph AssemblerEngine["Context Assembler Engine (web/src/lib/ai)"]
+        direction TB
+        Task_TK["assembleTenantKnowledge()"]
+        Task_CH["assembleContactHistory()"]
+        Task_AT["assembleActiveThread()"]
+        
+        P_All["Promise.all (Concurrent Aggregation)"]
+        
+        PromptBuilder["Prompt Builder & Token Estimator"]
+        WindowTrim["Sliding-Window Message Trimmer"]
+    end
+
+    subgraph AssembledOutput["Assembled Context (Perception Plane)"]
+        direction TB
+        AAC["AssembledAgentContext"]
+        SysSnippet["Markdown System Prompt Snippet"]
+        ChatArr["Chat Completion Message Objects"]
+        Metrics["Metadata: ExecutionTime & TokenBudget"]
+    end
+
+    TK_DB & TK_Meta & TK_Chunks --> Task_TK
+    CRM_Contact & CRM_Deals & CRM_Cal & CRM_Timeline --> Task_CH
+    Msg_Log & Msg_Roles & Msg_Pending --> Task_AT
+
+    Task_TK & Task_CH & Task_AT --> P_All
+    P_All --> PromptBuilder
+    PromptBuilder --> WindowTrim
+    WindowTrim --> AAC
+    AAC --> SysSnippet
+    AAC --> ChatArr
+    AAC --> Metrics
+```
+
+### 4.2 Grounding & Retrieval Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Event as Trigger Event (e.g. Inbound SMS)
+    participant Inngest as Inngest Durable Runtime
+    participant Assembler as Context Assembler (assembleAgentContext)
+    participant PGVector as PostgreSQL (pgvector + IVFFlat)
+    participant CRM as CRM DB (Contacts / Deals / Appointments)
+    participant ThreadDB as Messages DB (Conversations / Threads)
+    participant Reasoner as LLM Reasoner (OpenRouter DeepSeek V4)
+
+    Event->>Inngest: dispatch message.received
+    Inngest->>Assembler: assembleAgentContext(tenantId, contactId, queryText)
+    
+    par Concurrent Perception
+        Assembler->>PGVector: 1 - (embedding <=> queryEmbedding) [WHERE tenant_id = :id]
+        PGVector-->>Assembler: Top K Grounded Knowledge Chunks
+    and
+        Assembler->>CRM: Query Contact, Opportunities, Appointments, Activities
+        CRM-->>Assembler: CRM Operational History
+    and
+        Assembler->>ThreadDB: Query Active Messages (ASC order)
+        ThreadDB-->>Assembler: Chronological Message History
+    end
+
+    Assembler->>Assembler: Map Roles (inbound->user, outbound->assistant, internal->system)
+    Assembler->>Assembler: Apply Sliding Window & Token Budgeting (maxTokens <= 4000)
+    Assembler->>Assembler: Render Structured Markdown System Prompt
+    Assembler-->>Inngest: Return AssembledAgentContext
+    Inngest->>Reasoner: runAgentDeliberation(context, policy)
+    Reasoner-->>Inngest: Decision Plan / Draft / Autonomous Tool Execution
+```
+
+### 4.3 Token Budgeting & Sliding Window Memory Management
+
+To prevent context window overflow while preserving critical operational constraints, memory is allocated in strictly prioritized tiers:
+
+```mermaid
+flowchart LR
+    subgraph Budget["Total Token Budget (e.g. 4,000 Tokens)"]
+        direction TB
+        T1["Tier 1: Business Identity & Safety Rules (~300 Tokens)"]
+        T2["Tier 2: Grounded Facts & Knowledge Chunks (~500-1,000 Tokens)"]
+        T3["Tier 3: Contact Profile & CRM History (~300-500 Tokens)"]
+        T4["Tier 4: Immediate Turn (Last Customer Message ~100 Tokens)"]
+        T5["Tier 5: Historical Conversation Window (~1,500-2,500 Tokens)"]
+    end
+
+    subgraph WindowStrategy["Dynamic Windowing Strategy"]
+        direction TB
+        ActiveBuffer["Preserve Most Recent N Turns"]
+        OverflowCheck{"Total Tokens > Budget?"}
+        DropOldest["Prune Oldest Dialogue Turns First"]
+        GuaranteedContext["Preserve Grounded Facts + Core Contact Profile"]
+    end
+
+    T1 & T2 & T3 & T4 & T5 --> ActiveBuffer
+    ActiveBuffer --> OverflowCheck
+    OverflowCheck -- "Yes" --> DropOldest
+    DropOldest --> GuaranteedContext
+    OverflowCheck -- "No" --> GuaranteedContext
+```
+
+### 4.4 Multi-Tenant RLS & Vector Boundary Isolation
+
+Data from one tenant must never leak into another tenant's agent context or vector search results. Isolation is enforced at the database row-level security (RLS) boundary and at the query construction layer:
+
+```mermaid
+flowchart TD
+    subgraph TenantA["Tenant A Environment (Tenant ID: 001)"]
+        AgentA["Agent Runtime A"]
+        ContextA["Context Assembler A"]
+        RLSA["RLS Query: WHERE tenant_id = '001'"]
+    end
+
+    subgraph TenantB["Tenant B Environment (Tenant ID: 002)"]
+        AgentB["Agent Runtime B"]
+        ContextB["Context Assembler B"]
+        RLSB["RLS Query: WHERE tenant_id = '002'"]
+    end
+
+    subgraph StorageEngine["Shared Multi-Tenant PostgreSQL + pgvector Engine"]
+        TKS[("tenant_knowledge_sources")]
+        KC[("knowledge_chunks (IVFFlat Vector Index)")]
+        CRM_T[("contacts / opportunities / appointments")]
+        MSG_T[("conversations / messages")]
+        
+        Boundary{"Strict Tenant Isolation Boundary"}
+    end
+
+    AgentA --> ContextA --> RLSA --> Boundary --> TKS & KC & CRM_T & MSG_T
+    AgentB --> ContextB --> RLSB --> Boundary --> TKS & KC & CRM_T & MSG_T
+```
+
+---
+
+## 5. Durable Agent Execution via Inngest
 
 Instead of ephemeral edge timeouts or unmonitored background promises, agent execution is hosted as a **durable, multi-step Inngest workflow**:
 
@@ -342,7 +549,7 @@ export const handleInboundMessageAgent = inngest.createFunction(
 
 ---
 
-## 5. Human-in-the-Loop & Safety Boundaries
+## 6. Human-in-the-Loop & Safety Boundaries
 
 1. **Default Draft Mode**: Every new tenant begins with `autonomy_mode = 'draft_only'`. The agent suggests replies and actions inside the Unified Inbox as pre-filled drafts with an "Approve & Send" button.
 2. **Confidence Thresholding**: Even in `auto_pilot` mode, any response scoring below the tenant's threshold (e.g., $0.85$) or encountering ambiguous intent defaults to human escalation.

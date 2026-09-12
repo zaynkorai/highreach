@@ -87,4 +87,17 @@ test("contactSchema validation tests", async (t) => {
             assert.equal(result.success, true, `Expected phone ${phone} to be valid`);
         }
     });
+
+    await t.test("accepts contacts with custom source and tags", () => {
+        const result = contactSchema.safeParse({
+            firstName: "Alex",
+            source: "referral",
+            tags: ["VIP", "Enterprise", "Q3"],
+        });
+        assert.equal(result.success, true);
+        if (result.success) {
+            assert.equal(result.data.source, "referral");
+            assert.equal(result.data.tags?.length, 3);
+        }
+    });
 });

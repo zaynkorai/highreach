@@ -7,9 +7,10 @@ interface ContactsPageProps {
     searchParams: Promise<{
         q?: string;
         tag?: string;
+        source?: string;
         page?: string;
         limit?: string;
-        sortBy?: "name" | "email" | "created_at";
+        sortBy?: "name" | "email" | "source" | "created_at";
         sortOrder?: "asc" | "desc";
     }>;
 }
@@ -24,6 +25,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
     const params = await searchParams;
     const search = typeof params?.q === "string" ? params.q : undefined;
     const tag = typeof params?.tag === "string" ? params.tag : undefined;
+    const source = typeof params?.source === "string" ? params.source : undefined;
     const pageNum = params?.page ? parseInt(params.page, 10) : 1;
     const limitNum = params?.limit ? parseInt(params.limit, 10) : 25;
     const sortBy = params?.sortBy;
@@ -32,6 +34,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
     const paginatedContacts = await ContactService.getContacts(session.tenantId, {
         search,
         tag,
+        source,
         page: isNaN(pageNum) ? 1 : pageNum,
         limit: isNaN(limitNum) ? 25 : limitNum,
         sortBy,

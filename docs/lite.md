@@ -154,6 +154,34 @@ Not just static "Snapshots" — AI pre-configures your business logic:
 
 **Strategy:** Unlike traditional CRMs built solely around static relational database tables, HighReach is designed around **Data Sources** (Grounding & Memory) and **Autonomous Agents** (Reasoners & Typed Tools).
 
+```mermaid
+flowchart LR
+    subgraph Memory["Grounded Perception & Memory"]
+        KB[("Knowledge Base (pgvector)")]
+        CRM[("CRM Operational State")]
+        Thread[("Active Omnichannel Thread")]
+    end
+
+    subgraph Assembler["Context Assembler"]
+        CA["assembleAgentContext()"]
+        Prompt["Formatted Working Memory"]
+    end
+
+    subgraph Agents["Autonomous Reasoners"]
+        S2L["Speed-to-Lead Agent"]
+        BC["Booking Concierge"]
+        RG["Review Guardian"]
+    end
+
+    subgraph Exec["Execution & Supervision"]
+        Tools["Typed Tools (SMS / Email / Calendar)"]
+        Drafts["Unified Inbox Copilot (AI Drafts)"]
+    end
+
+    KB & CRM & Thread --> CA --> Prompt --> S2L & BC & RG
+    S2L & BC & RG --> Tools & Drafts
+```
+
 | Capability | Architecture Primitives | Why |
 | :--- | :--- | :--- |
 | **Speed-to-Lead Agent** | Inbound Webhooks + Live CRM Context + `send_sms` Tool | Engages leads in <60s, qualifies intent, replaces canned templates |
