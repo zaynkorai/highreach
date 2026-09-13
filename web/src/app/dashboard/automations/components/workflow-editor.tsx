@@ -65,7 +65,7 @@ const TriggerNode = memo(({ data, selected }: NodeProps) => {
                 <div className="flex flex-col items-center gap-1.5">
                     <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm border border-white/10"><Icon className="w-3.5 h-3.5" /></div>
                     <div>
-                        <span className="text-[8px] uppercase tracking-widest font-black opacity-70 block leading-tight">Start</span>
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold opacity-90 block leading-tight">Start</span>
                         <p className="font-bold text-xs leading-tight mt-0.5">{label}</p>
                     </div>
                 </div>
@@ -89,7 +89,7 @@ const ActionNode = memo(({ data, selected }: NodeProps) => {
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform"><Icon className="w-3.5 h-3.5" /></div>
                     <div className="flex-1 min-w-0">
-                        <span className="text-[8px] uppercase tracking-widest font-black text-slate-400 block leading-tight">Step</span>
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-500 dark:text-zinc-400 block leading-tight">Step</span>
                         <p className="font-bold text-xs text-slate-700 dark:text-zinc-100 leading-tight mt-0.5 truncate">
                             {label}
                             {template && <span className="font-normal text-slate-400 ml-1 opacity-75">"{String(template)}"</span>}
@@ -112,7 +112,7 @@ const WaitNode = memo(({ data, selected }: NodeProps) => {
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-white dark:bg-amber-900/20 rounded-lg text-amber-600 shadow-sm"><Clock className="w-3.5 h-3.5" /></div>
                     <div>
-                        <span className="text-[8px] uppercase tracking-widest font-black text-amber-600/60 block leading-tight">Pause</span>
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-700 dark:text-amber-400 block leading-tight">Pause</span>
                         <p className="font-bold text-xs text-amber-900 dark:text-amber-200 leading-tight mt-0.5">{label}</p>
                     </div>
                 </div>
@@ -132,7 +132,7 @@ const IfElseNode = memo(({ data, selected }: NodeProps) => {
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-white dark:bg-purple-900/20 rounded-lg text-purple-600 shadow-sm"><GitBranch className="w-3.5 h-3.5" /></div>
                     <div>
-                        <span className="text-[8px] uppercase tracking-widest font-black text-purple-600/60 block leading-tight">Logic</span>
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-purple-700 dark:text-purple-400 block leading-tight">Logic</span>
                         <p className="font-bold text-xs text-purple-900 dark:text-purple-200 leading-tight mt-0.5">{label}</p>
                     </div>
                 </div>
@@ -140,7 +140,7 @@ const IfElseNode = memo(({ data, selected }: NodeProps) => {
 
             {/* YES BRANCH */}
             <div className="absolute -bottom-6 left-1/4 -translate-x-1/2 flex flex-col items-center">
-                <span className="text-[8px] font-black text-emerald-600 uppercase mb-1">Yes</span>
+                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase mb-1">Yes</span>
                 <Handle
                     type="source"
                     id="yes"
@@ -152,7 +152,7 @@ const IfElseNode = memo(({ data, selected }: NodeProps) => {
 
             {/* NO BRANCH */}
             <div className="absolute -bottom-6 right-1/4 translate-x-1/2 flex flex-col items-center">
-                <span className="text-[8px] font-black text-red-500 uppercase mb-1">No</span>
+                <span className="text-[10px] font-black text-red-500 uppercase mb-1">No</span>
                 <Handle
                     type="source"
                     id="no"

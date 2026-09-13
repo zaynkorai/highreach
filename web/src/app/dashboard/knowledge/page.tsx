@@ -36,11 +36,11 @@ export default function KnowledgeBasePage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <div className="flex items-center gap-2">
-                        <h1 className="text-3xl font-black tracking-tight text-foreground">
+                        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
                             Knowledge Base
                         </h1>
                     </div>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-1 font-medium text-xs">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Ingest FAQs, services, and company docs
                     </p>
                 </div>
@@ -60,11 +60,11 @@ export default function KnowledgeBasePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/[0.08] shadow-xs flex items-center justify-between">
                     <div className="space-y-1">
-                        <span className="text-xs font-semibold text-zinc-500">Knowledge Sources</span>
-                        <div className="text-2xl font-black text-foreground">
+                        <span className="text-xs font-semibold text-muted-foreground">Knowledge Sources</span>
+                        <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
                             {stats?.totalSources ?? 0}
                         </div>
-                        <span className="text-[10px] text-zinc-400">Tenant documentation files</span>
+                        <span className="text-[11px] text-muted-foreground">Tenant documentation files</span>
                     </div>
                 </div>
             </div>

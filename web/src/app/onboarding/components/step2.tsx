@@ -45,7 +45,7 @@ export function Step2({ onNext, isSubmitting }: { onNext: (data: Step2Data) => v
             </div>
 
             <div className="space-y-4">
-                <Label className="text-sm font-bold uppercase tracking-widest text-zinc-400">Industry</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Industry</Label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {industries.map((industry) => (
                         <button
@@ -63,11 +63,11 @@ export function Step2({ onNext, isSubmitting }: { onNext: (data: Step2Data) => v
                         </button>
                     ))}
                 </div>
-                {errors.industry && <p className="text-[10px] text-red-500 font-bold uppercase">{errors.industry.message}</p>}
+                {errors.industry && <p className="text-xs text-red-600 dark:text-red-400 font-medium">{errors.industry.message}</p>}
             </div>
 
             <div className="space-y-4">
-                <Label className="text-sm font-bold uppercase tracking-widest text-zinc-400">Your Role</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Your Role</Label>
                 <div className="space-y-3">
                     {roles.map((role) => {
                         const Icon = role.icon;
@@ -94,10 +94,10 @@ export function Step2({ onNext, isSubmitting }: { onNext: (data: Step2Data) => v
                         );
                     })}
                 </div>
-                {errors.role && <p className="text-[10px] text-red-500 font-bold uppercase">{errors.role.message}</p>}
+                {errors.role && <p className="text-xs text-red-600 dark:text-red-400 font-medium">{errors.role.message}</p>}
             </div>
 
-            <Button type="submit" className="w-full h-12 bg-brand-600 hover:bg-brand-700 rounded-xl font-bold gap-2 text-sm uppercase tracking-widest" disabled={isSubmitting}>
+            <Button type="submit" className="w-full h-12 bg-brand-600 hover:bg-brand-700 rounded-xl font-bold gap-2 text-sm tracking-wide" disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : "Finalize Setup"}
                 <ChevronRight className="w-4 h-4" />
             </Button>

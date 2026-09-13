@@ -110,13 +110,13 @@ export function SignupForm() {
                     placeholder="••••••••"
                     className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
-                <p className="text-zinc-500 text-xs">Minimum 8 characters</p>
+                <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters</p>
             </div>
 
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2.5 rounded-lg transition-colors text-sm shadow-sm shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2.5 rounded-xl transition-all text-sm shadow-sm shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoading ? "Creating account..." : "Start Free Trial"}
             </button>

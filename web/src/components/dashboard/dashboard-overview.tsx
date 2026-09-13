@@ -376,7 +376,7 @@ export function DashboardOverview({
                           {act.title}
                         </span>
                       </div>
-                      <span className="text-[9px] uppercase font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
                         {act.type}
                       </span>
                     </div>

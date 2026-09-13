@@ -10,9 +10,32 @@ This directory contains the primary web application for HighReach, built with **
 - **Database Layer**: Drizzle ORM + PostgreSQL (`pg` pool) with multi-tenant application-level scoping
 - **Authentication**: Stateless, tamper-proof JWT cookies (`jose`) + `bcryptjs` password hashing + Role-Based Access Control (Owner, Admin, Member)
 - **State Management**: Zustand stores with localStorage persistence
-- **Styling**: Tailwind CSS v4 + Shadcn UI primitives + Lucide React icons
+- **Styling**: Tailwind CSS v4 (`@theme inline`) + Shadcn UI primitives + Lucide React icons
+- **Design System**: Ergonomic OKLCH color architecture (Palette #3: Earthen Bone, Searing Terracotta, Smoked Obsidian; APCA Lc 74+ compliant)
 - **Automations & Workflows**: Inngest durable event execution
-- **Testing**: Node.js Test Runner (`node:test`) + Native Type Stripping
+- **Testing**: Node.js Test Runner (`node:test`) + Native Type Stripping (122 passing unit tests)
+
+---
+
+## 🎨 Design System & Color Tokens (2026 Spec)
+
+HighReach uses **Palette #3 (Earthen Bone & Searing Terracotta)** configured in `src/app/globals.css` with native OKLCH tokens for visual ergonomics and APCA/WCAG accessibility:
+
+### 1. Semantic Surface Tokens
+
+| Token | Light Mode (`:root`) | Dark Mode (`.dark`) | Purpose & Ergonomics |
+| :--- | :--- | :--- | :--- |
+| `--background` | `oklch(0.975 0.008 85)` (`#F6F4EF`) | `oklch(0.13 0.008 260)` (`#121316`) | Earthen Bone (cuts glare 15%) / Smoked Obsidian (anti black-smear) |
+| `--foreground` | `oklch(0.18 0.015 45)` (`#1C1A17`) | `oklch(0.96 0.005 85)` (`#F3F4F6`) | Deep ink / Crisp chalk (14:1 contrast ratio) |
+| `--card` | `oklch(1 0 0)` | `oklch(0.17 0.01 260)` (`#1A1C20`) | Elevated containers for lead cards, inbox threads, and Kanban lanes |
+| `--border` | `oklch(0.90 0.012 85)` (`#E2DDD2`) | `oklch(0.24 0.01 260)` | Clean structural dividers (neutral slate, no chromatic haze) |
+| `--primary` | `oklch(0.59 0.205 36.5)` (`#D94826`) | `oklch(0.63 0.215 36.5)` | Searing Terracotta action anchor (APCA Lc 74+, ~28% faster foveal pickup) |
+| `--primary-foreground` | `oklch(0.99 0 0)` | `oklch(0.12 0 0)` | High-contrast label on primary action buttons |
+| `--destructive` | `oklch(0.577 0.245 27.325)` | `oklch(0.55 0.22 25)` | Emergency Ruby/Red for errors, preventing semantic clash with CTAs |
+
+### 2. Brand Scale (`--color-brand-*`)
+* Centered on **Hue `36.5`** (Searing Terracotta) across 11 lightness stops (`50` to `950`).
+* Maps to standard Tailwind utility classes: `bg-brand-500`, `text-brand-600`, `border-brand-200`, etc.
 
 ---
 

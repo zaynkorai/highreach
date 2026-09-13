@@ -34,7 +34,7 @@ export function Step3({ onNext, isSubmitting }: { onNext: () => void, isSubmitti
             <div className="pt-4">
                 <Button
                     onClick={onNext}
-                    className="w-full h-14 bg-brand-600 hover:bg-brand-700 rounded-2xl font-black gap-3 text-base uppercase tracking-widest shadow-xl shadow-brand-500/30 group relative overflow-hidden"
+                    className="w-full h-14 bg-brand-600 hover:bg-brand-700 rounded-2xl font-extrabold gap-3 text-base tracking-wide shadow-xl shadow-brand-500/30 group relative overflow-hidden"
                     disabled={isSubmitting}
                 >
                     <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 slant" />
@@ -43,7 +43,7 @@ export function Step3({ onNext, isSubmitting }: { onNext: () => void, isSubmitti
                         Go to My Dashboard
                     </span>
                 </Button>
-                <p className="mt-4 text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center justify-center gap-2">
+                <p className="mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-2">
                     Taking you to the command center
                 </p>
             </div>

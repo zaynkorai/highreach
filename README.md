@@ -49,12 +49,12 @@ Convert inbound inquiries and social engagement into paying customers in **secon
 - **Language**: TypeScript (Strict Mode)
 - **Database**: PostgreSQL with `pgvector` & Drizzle ORM (Multi-tenant RLS + HNSW vector indexing)
 - **State Management**: Zustand with persistent client storage
-- **Styling & UI**: Tailwind CSS v4, Lucide Icons, Shadcn UI primitives
+- **Styling & UI**: Tailwind CSS v4, Lucide Icons, Shadcn UI primitives, Ergonomic OKLCH Design System (Earthen Bone `#F6F4EF`, Searing Terracotta `#D94826`, Smoked Obsidian `#121316`)
 - **Background Jobs & Workflows**: Inngest (Durable event-driven execution)
 - **Telephony & SMS**: Telnyx SDK (Inbound/Outbound SMS, webhooks)
 - **Email Delivery**: Resend SDK
 - **Validation**: Zod (Shared schemas across client, server actions, and API routes)
-- **Testing**: Node.js Test Runner (`node:test`) + Native Type Stripping (58 passing unit tests)
+- **Testing**: Node.js Test Runner (`node:test`) + Native Type Stripping (122 passing unit tests)
 
 ---
 

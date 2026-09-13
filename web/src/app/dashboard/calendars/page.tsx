@@ -14,12 +14,12 @@ export default function CalendarsPage() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen">
+        <div className="space-y-8">
             <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-6 dark:border-zinc-800">
                 <div className="flex flex-col gap-4 w-full md:w-auto">
                     <div>
-                        <h1 className="text-3xl font-black tracking-tight">Calendars</h1>
-                        <p className="text-muted-foreground">Manage appointments and booking configurations.</p>
+                        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Calendars</h1>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage appointments and booking configurations.</p>
                     </div>
 
                     <Tabs value={view} onValueChange={setView} className="w-full md:w-auto mt-2">

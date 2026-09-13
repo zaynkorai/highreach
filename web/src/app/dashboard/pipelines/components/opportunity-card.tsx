@@ -75,13 +75,13 @@ export function OpportunityCard({
 
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             {isWon && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                                    <CheckCircle2 className="w-2.5 h-2.5" /> Won
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    <CheckCircle2 className="w-3 h-3" /> Won
                                 </span>
                             )}
                             {isLost && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-500/10 text-red-600 border border-red-500/20">
-                                    <XCircle className="w-2.5 h-2.5" /> Lost
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                                    <XCircle className="w-3 h-3" /> Lost
                                 </span>
                             )}
 
@@ -140,7 +140,7 @@ export function OpportunityCard({
 
                     <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-white/[0.05]">
                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">Value</span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Value</span>
                             <div className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-black text-sm tabular-nums">
                                 <span className="text-[10px]">$</span>
                                 {Number(opportunity.value || 0).toLocaleString()}
@@ -152,10 +152,10 @@ export function OpportunityCard({
                                 <div
                                     key={tag}
                                     className={cn(
-                                        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border ring-2 ring-white dark:ring-zinc-900",
+                                        "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-normal border ring-2 ring-white dark:ring-zinc-900",
                                         i === 0
-                                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                            : "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                            : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
                                     )}
                                 >
                                     {tag}

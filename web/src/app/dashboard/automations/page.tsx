@@ -30,11 +30,11 @@ export default async function AutomationsPage() {
     }));
 
     return (
-        <div className="space-y-6 container mx-auto max-w-6xl py-8">
+        <div className="space-y-6 container mx-auto max-w-6xl">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Workflows</h1>
-                    <p className="text-muted-foreground mt-1">Manage your automated triggers and actions.</p>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Automations</h1>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage your automated workflows, triggers, and speed-to-lead recipes.</p>
                 </div>
                 <RecipeModal
                     trigger={

@@ -29,7 +29,7 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
             ) : (
                 <div className="flex flex-col gap-4">
                     <div className="flex justify-center my-4">
-                        <span className="px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] border border-zinc-200/50 dark:border-white/5">Session History Start</span>
+                        <span className="px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border border-zinc-200/50 dark:border-white/5">Session History Start</span>
                     </div>
 
                     {messages.length === 0 ? (
@@ -37,7 +37,7 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
                             <div className="w-16 h-16 rounded-[2rem] bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
                                 <MessageSquare className="h-6 w-6 opacity-20" />
                             </div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 font-sans">Wait mode: Expecting inbound...</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-sans">Wait mode: Expecting inbound...</p>
                         </div>
                     ) : (
                         messages.map((msg) => (
@@ -57,17 +57,17 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
                                             : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-bl-none shadow-sm"
                                 )}>
                                     {msg.is_internal && (
-                                        <div className="flex items-center gap-2 mb-2 border-b border-amber-200/30 pb-1.5 opacity-70">
+                                        <div className="flex items-center gap-2 mb-2 border-b border-amber-200/30 pb-1.5 opacity-80">
                                             <StickyNote className="h-3 w-3" />
-                                            <span className="text-[9px] font-black uppercase tracking-wider">TEAM INTERNAL NOTE</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">TEAM INTERNAL NOTE</span>
                                         </div>
                                     )}
                                     <p className="leading-relaxed font-medium whitespace-pre-wrap">{msg.content}</p>
                                     <div className={cn(
-                                        "flex items-center gap-2 mt-2 flex-row-reverse opacity-50",
-                                        msg.direction === "outbound" ? "text-brand-100" : "text-zinc-400"
+                                        "flex items-center gap-2 mt-2 flex-row-reverse opacity-70",
+                                        msg.direction === "outbound" ? "text-brand-100" : "text-zinc-400 dark:text-zinc-400"
                                     )}>
-                                        <span className="text-[9px] font-bold">{formatTime(msg.created_at)}</span>
+                                        <span className="text-[11px] font-medium">{formatTime(msg.created_at)}</span>
                                         {msg.direction === "outbound" && !msg.is_internal && <CheckCheck className="h-3.5 w-3.5" />}
                                     </div>
                                 </div>

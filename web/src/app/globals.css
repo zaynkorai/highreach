@@ -4,80 +4,82 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* HighReach Light: Earthen Bone & Searing Terracotta */
+  --background: oklch(0.975 0.008 85);
+  --foreground: oklch(0.18 0.015 45);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.18 0.015 45);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.637 0.237 25.331);
-  /* Brand Red/Pink - Extracted from Logo */
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.18 0.015 45);
+  --primary: oklch(0.59 0.205 36.5);
+  /* Searing Terracotta (#D94826) */
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.94 0.01 85);
+  --secondary-foreground: oklch(0.22 0.015 45);
+  --muted: oklch(0.935 0.01 85);
+  --muted-foreground: oklch(0.48 0.02 55);
+  --accent: oklch(0.94 0.01 85);
+  --accent-foreground: oklch(0.22 0.015 45);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.637 0.237 25.331);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.90 0.012 85);
+  --input: oklch(0.90 0.012 85);
+  --ring: oklch(0.59 0.205 36.5);
   --radius: 0.625rem;
 
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.637 0.237 25.331);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --chart-1: oklch(0.59 0.205 36.5);
+  --chart-2: oklch(0.72 0.16 55);
+  --chart-3: oklch(0.65 0.15 160);
+  --chart-4: oklch(0.55 0.12 250);
+  --chart-5: oklch(0.78 0.14 75);
 
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.637 0.237 25.331);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.637 0.237 25.331);
+  --sidebar: oklch(0.96 0.01 85);
+  --sidebar-foreground: oklch(0.18 0.015 45);
+  --sidebar-primary: oklch(0.59 0.205 36.5);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.92 0.012 85);
+  --sidebar-accent-foreground: oklch(0.18 0.015 45);
+  --sidebar-border: oklch(0.89 0.012 85);
+  --sidebar-ring: oklch(0.59 0.205 36.5);
 }
 
 .dark {
-  --background: oklch(0.12 0.02 25.331);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.16 0.02 25.331);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.16 0.02 25.331);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.637 0.237 25.331);
-  /* Luminous Brand Accent */
-  --primary-foreground: oklch(0.12 0.02 25.331);
-  --secondary: oklch(0.22 0.02 25.331);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.22 0.02 25.331);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.22 0.02 25.331);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.22 0.02 25.331);
-  --input: oklch(0.22 0.02 25.331);
-  --ring: oklch(0.637 0.237 25.331);
+  /* HighReach Dark: Smoked Obsidian & Radiant Ember */
+  --background: oklch(0.13 0.008 260);
+  --foreground: oklch(0.96 0.005 85);
+  --card: oklch(0.17 0.01 260);
+  --card-foreground: oklch(0.96 0.005 85);
+  --popover: oklch(0.17 0.01 260);
+  --popover-foreground: oklch(0.96 0.005 85);
+  --primary: oklch(0.63 0.215 36.5);
+  /* Luminous Terracotta / Ember Accent */
+  --primary-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.22 0.01 260);
+  --secondary-foreground: oklch(0.96 0.005 85);
+  --muted: oklch(0.20 0.01 260);
+  --muted-foreground: oklch(0.65 0.015 85);
+  --accent: oklch(0.22 0.01 260);
+  --accent-foreground: oklch(0.96 0.005 85);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.24 0.01 260);
+  --input: oklch(0.24 0.01 260);
+  --ring: oklch(0.63 0.215 36.5);
 
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.637 0.237 25.331);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --chart-1: oklch(0.63 0.215 36.5);
+  --chart-2: oklch(0.72 0.16 55);
+  --chart-3: oklch(0.65 0.15 160);
+  --chart-4: oklch(0.55 0.12 250);
+  --chart-5: oklch(0.78 0.14 75);
 
-  --sidebar: oklch(0.14 0.02 25.331);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.637 0.237 25.331);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.22 0.02 25.331);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.22 0.02 25.331);
-  --sidebar-ring: oklch(0.637 0.237 25.331);
+  --sidebar: oklch(0.145 0.008 260);
+  --sidebar-foreground: oklch(0.96 0.005 85);
+  --sidebar-primary: oklch(0.63 0.215 36.5);
+  --sidebar-primary-foreground: oklch(0.12 0 0);
+  --sidebar-accent: oklch(0.21 0.01 260);
+  --sidebar-accent-foreground: oklch(0.96 0.005 85);
+  --sidebar-border: oklch(0.22 0.01 260);
+  --sidebar-ring: oklch(0.63 0.215 36.5);
 }
 
 @theme inline {
@@ -119,20 +121,21 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Brand Color Scale - Hue 25.331 (Vibrant Red/Pink) */
-  --color-brand-50: oklch(0.97 0.02 25.331);
-  --color-brand-100: oklch(0.92 0.04 25.331);
-  --color-brand-200: oklch(0.85 0.08 25.331);
-  --color-brand-300: oklch(0.78 0.12 25.331);
-  --color-brand-400: oklch(0.70 0.16 25.331);
-  --color-brand-500: oklch(0.637 0.237 25.331);
-  --color-brand-600: oklch(0.55 0.22 25.331);
-  --color-brand-700: oklch(0.45 0.18 25.331);
-  --color-brand-800: oklch(0.35 0.14 25.331);
-  --color-brand-900: oklch(0.25 0.10 25.331);
-  --color-brand-950: oklch(0.18 0.06 25.331);
+  /* Brand Color Scale - Searing Terracotta (Hue 36.5) */
+  --color-brand-50: oklch(0.97 0.02 36.5);
+  --color-brand-100: oklch(0.93 0.045 36.5);
+  --color-brand-200: oklch(0.86 0.085 36.5);
+  --color-brand-300: oklch(0.78 0.135 36.5);
+  --color-brand-400: oklch(0.68 0.18 36.5);
+  --color-brand-500: oklch(0.59 0.205 36.5);
+  --color-brand-600: oklch(0.51 0.19 36.5);
+  --color-brand-700: oklch(0.42 0.16 36.5);
+  --color-brand-800: oklch(0.33 0.12 36.5);
+  --color-brand-900: oklch(0.24 0.08 36.5);
+  --color-brand-950: oklch(0.16 0.05 36.5);
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-serif: "Playfair Display", Georgia, Cambria, "Times New Roman", serif;
 }
 
 /* Base transitions & typography */
@@ -243,13 +246,13 @@ textarea {
   width: 100%;
   max-width: 1200px;
   height: 550px;
-  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(255, 45, 85, 0.12), rgba(255, 45, 85, 0.02) 60%, transparent 80%);
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(217, 72, 38, 0.12), rgba(217, 72, 38, 0.02) 60%, transparent 80%);
   pointer-events: none;
   z-index: 0;
 }
 
 .dark .ambient-spotlight {
-  background: radial-gradient(ellipse 65% 55% at 50% 0%, rgba(255, 45, 85, 0.22), rgba(255, 45, 85, 0.04) 65%, transparent 85%);
+  background: radial-gradient(ellipse 65% 55% at 50% 0%, rgba(217, 72, 38, 0.20), rgba(217, 72, 38, 0.03) 65%, transparent 85%);
 }
 
 /* Glassmorphism Panels */
@@ -261,7 +264,7 @@ textarea {
 }
 
 .dark .glass-panel {
-  background-color: rgba(20, 14, 16, 0.72);
+  background-color: rgba(22, 23, 27, 0.75);
   border-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -306,7 +309,7 @@ textarea {
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 45, 85, 0.4), rgba(255, 45, 85, 0.05));
+  background: linear-gradient(135deg, rgba(217, 72, 38, 0.35), rgba(217, 72, 38, 0.05));
   z-index: -1;
   filter: blur(10px);
   opacity: 0.65;
@@ -314,7 +317,7 @@ textarea {
 
 /* Gradient Text Utilities */
 .gradient-brand-text {
-  background: linear-gradient(135deg, oklch(0.637 0.237 25.331) 0%, #ff5277 50%, #ffa07a 100%);
+  background: linear-gradient(135deg, oklch(0.59 0.205 36.5) 0%, #E05A36 50%, #F59E0B 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

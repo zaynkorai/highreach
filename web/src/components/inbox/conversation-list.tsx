@@ -146,7 +146,7 @@ export function ConversationList({
                                             <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />
                                         )}
                                     </div>
-                                    <span className="text-[10px] uppercase font-bold text-zinc-400 whitespace-nowrap ml-2">
+                                    <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap ml-2">
                                         {formatTime(conv.last_message_at)}
                                     </span>
                                 </div>
@@ -159,7 +159,7 @@ export function ConversationList({
                             </div>
                             {conv.unread_count > 0 && (
                                 <div className="self-center ml-2 shrink-0">
-                                    <span className="flex items-center justify-center px-1.5 py-0.5 text-[9px] font-black rounded-full bg-brand-500 text-white min-w-[18px] shadow-sm shadow-brand-500/30">
+                                    <span className="flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-brand-500 text-white min-w-[18px] shadow-sm shadow-brand-500/30">
                                         {conv.unread_count}
                                     </span>
                                 </div>

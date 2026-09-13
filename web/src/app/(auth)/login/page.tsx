@@ -10,7 +10,7 @@ export default function LoginPage() {
                     <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm shadow-primary/20 bg-background flex items-center justify-center p-0.5 border border-border">
                         <Image src="/icon.svg" alt="HighReach Logo" width={36} height={36} className="group-hover/logo:scale-110 transition-transform object-contain" />
                     </div>
-                    <span className="text-2xl font-semibold text-foreground tracking-tight">
+                    <span className="text-2xl font-extrabold text-foreground tracking-tight">
                         HighReach
                     </span>
                 </Link>

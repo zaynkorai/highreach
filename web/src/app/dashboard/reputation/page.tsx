@@ -62,17 +62,16 @@ export default function ReputationPage() {
             {/* Header section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tight text-foreground">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
                         Reputation Center
                     </h1>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-2 font-medium flex items-center gap-2">
-                        
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm font-medium flex items-center gap-2">
                         Live monitoring from Google & Facebook
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button
-                        className="h-12 px-6 bg-brand-600 hover:bg-brand-700 rounded-2xl font-bold uppercase tracking-widest text-[10px] gap-2 shadow-xl shadow-brand-500/20 transition-all hover:scale-105 active:scale-95"
+                        className="h-11 px-5 bg-brand-600 hover:bg-brand-700 rounded-2xl font-bold text-xs gap-2 shadow-xl shadow-brand-500/20 transition-all hover:scale-105 active:scale-95"
                         onClick={() => setIsRequestModalOpen(true)}
                     >
                         <MessageSquare className="w-4 h-4" />
@@ -149,7 +148,7 @@ export default function ReputationPage() {
                                         <Search className="w-8 h-8 text-zinc-400" />
                                     </div>
                                     <h3 className="text-xl font-bold">No results found</h3>
-                                    <p className="text-zinc-500 max-w-sm mx-auto mt-2">
+                                    <p className="text-muted-foreground text-sm max-w-sm mx-auto mt-2">
                                         Try adjusting your filters or search terms to find what you&apos;re looking for.
                                     </p>
                                 </div>

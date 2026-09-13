@@ -62,7 +62,7 @@ export default function SocialStudioPage() {
                                     {streak.currentStreak} Days
                                 </span>
                             </p>
-                            <p className="text-[11px] text-zinc-500 mt-0.5">
+                            <p className="text-xs text-muted-foreground mt-0.5">
                                 You haven't scheduled or published a post today. Keep your momentum going and protect your streak!
                             </p>
                         </div>
@@ -82,7 +82,7 @@ export default function SocialStudioPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <div className="flex items-center gap-2">
-                        <h1 className="text-3xl font-black tracking-tight text-foreground">
+                        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
                             Social Studio
                         </h1>
 

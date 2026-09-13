@@ -115,8 +115,8 @@ export function OnboardingClient({ userEmail }: { userEmail: string }) {
                                         {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
                                     </div>
                                     <span className={cn(
-                                        "text-[10px] font-bold uppercase tracking-[0.2em]",
-                                        isActive ? "text-brand-600" : isCompleted ? "text-emerald-500" : "text-zinc-500"
+                                        "text-[11px] font-bold uppercase tracking-wider",
+                                        isActive ? "text-brand-600" : isCompleted ? "text-emerald-500" : "text-muted-foreground"
                                     )}>
                                         {s.title}
                                     </span>
@@ -134,8 +134,8 @@ export function OnboardingClient({ userEmail }: { userEmail: string }) {
                 </div>
 
                 {/* Footer simple link */}
-                <div className="mt-8 text-center text-xs text-zinc-400 font-medium">
-                    Need help? <button className="text-zinc-500 hover:text-brand-500 underline">Contact support</button>
+                <div className="mt-8 text-center text-xs text-muted-foreground font-medium">
+                    Need help? <button className="text-foreground hover:text-brand-600 underline">Contact support</button>
                     <span className="mx-2">•</span>
                     Skip for now
                 </div>

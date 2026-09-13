@@ -41,7 +41,7 @@ export function Step1({ onNext, defaultEmail, isSubmitting }: {
                         {...register("firstName")}
                         className={errors.firstName ? "border-red-500" : ""}
                     />
-                    {errors.firstName && <p className="text-[10px] text-red-500 font-bold uppercase">{errors.firstName.message}</p>}
+                    {errors.firstName && <p className="text-xs text-red-600 dark:text-red-400 font-medium">{errors.firstName.message}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
@@ -51,14 +51,14 @@ export function Step1({ onNext, defaultEmail, isSubmitting }: {
                         {...register("lastName")}
                         className={errors.lastName ? "border-red-500" : ""}
                     />
-                    {errors.lastName && <p className="text-[10px] text-red-500 font-bold uppercase">{errors.lastName.message}</p>}
+                    {errors.lastName && <p className="text-xs text-red-600 dark:text-red-400 font-medium">{errors.lastName.message}</p>}
                 </div>
             </div>
 
             <div className="space-y-2">
                 <Label htmlFor="email">Work Email</Label>
                 <Input id="email" value={defaultEmail} disabled className="bg-zinc-100 dark:bg-white/5 opacity-50" />
-                <p className="text-[10px] text-zinc-400 font-medium">This email is verified and connected to your tenant.</p>
+                <p className="text-xs text-muted-foreground">This email is verified and connected to your tenant.</p>
             </div>
 
             <div className="space-y-2">
@@ -68,10 +68,10 @@ export function Step1({ onNext, defaultEmail, isSubmitting }: {
                     placeholder="+1 (555) 000-0000"
                     {...register("phone")}
                 />
-                <p className="text-[10px] text-zinc-400 font-medium italic">We use this for important system notifications only.</p>
+                <p className="text-xs text-muted-foreground">We use this for important system notifications only.</p>
             </div>
 
-            <Button type="submit" className="w-full h-12 bg-brand-600 hover:bg-brand-700 rounded-xl font-bold gap-2 text-sm uppercase tracking-widest" disabled={isSubmitting}>
+            <Button type="submit" className="w-full h-12 bg-brand-600 hover:bg-brand-700 rounded-xl font-bold gap-2 text-sm tracking-wide" disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : "Continue to Company Info"}
                 <ChevronRight className="w-4 h-4" />
             </Button>

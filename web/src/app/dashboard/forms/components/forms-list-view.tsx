@@ -100,8 +100,8 @@ export function FormsListView({ initialForms }: FormsListViewProps) {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Forms</h1>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Forms</h1>
+                    <p className="text-muted-foreground text-xs sm:text-sm mt-1">
                         Create and manage forms to capture leads and drive customer conversions.
                     </p>
                 </div>
@@ -121,7 +121,7 @@ export function FormsListView({ initialForms }: FormsListViewProps) {
                         <span className="text-xs font-medium uppercase tracking-wider">Total Forms</span>
                         <FileText className="w-4 h-4 text-brand-500" />
                     </div>
-                    <div className="text-2xl font-bold text-foreground">{forms.length}</div>
+                    <div className="text-2xl font-black font-mono text-foreground">{forms.length}</div>
                 </div>
 
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-xl p-4 shadow-sm">
@@ -129,7 +129,7 @@ export function FormsListView({ initialForms }: FormsListViewProps) {
                         <span className="text-xs font-medium uppercase tracking-wider">Total Views</span>
                         <Eye className="w-4 h-4 text-sky-500" />
                     </div>
-                    <div className="text-2xl font-bold text-foreground">{totalViews.toLocaleString()}</div>
+                    <div className="text-2xl font-black font-mono text-foreground">{totalViews.toLocaleString()}</div>
                 </div>
 
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-xl p-4 shadow-sm">
@@ -137,7 +137,7 @@ export function FormsListView({ initialForms }: FormsListViewProps) {
                         <span className="text-xs font-medium uppercase tracking-wider">Submissions</span>
                         <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     </div>
-                    <div className="text-2xl font-bold text-foreground">{totalSubmissions.toLocaleString()}</div>
+                    <div className="text-2xl font-black font-mono text-foreground">{totalSubmissions.toLocaleString()}</div>
                 </div>
 
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.08] rounded-xl p-4 shadow-sm">
@@ -145,7 +145,7 @@ export function FormsListView({ initialForms }: FormsListViewProps) {
                         <span className="text-xs font-medium uppercase tracking-wider">Avg. Conversion</span>
                         <TrendingUp className="w-4 h-4 text-violet-500" />
                     </div>
-                    <div className="text-2xl font-bold text-foreground">{avgConversion}</div>
+                    <div className="text-2xl font-black font-mono text-foreground">{avgConversion}</div>
                 </div>
             </div>
 
