@@ -359,7 +359,7 @@ export function PostComposerModal() {
                 <DialogHeader className="p-6 pb-4 border-b border-zinc-100 dark:border-zinc-800/80 sticky top-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md z-10">
                     <DialogTitle className="text-xl font-bold flex items-center justify-between">
                         <span className="flex items-center gap-2">
-                            <span>Social Studio Composer</span>
+                            <span>{composer.editingPostId ? "Edit Social Post" : "Social Studio Composer"}</span>
                         </span>
                         <div className="flex items-center gap-2">
                             <Button
@@ -1327,6 +1327,23 @@ export function PostComposerModal() {
                                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
                                         Processing...
                                     </>
+                                ) : composer.editingPostId ? (
+                                    scheduleMode === "now" ? (
+                                        <>
+                                            <Send className="w-3.5 h-3.5 mr-1.5" />
+                                            Update & Publish Now
+                                        </>
+                                    ) : scheduleMode === "schedule" ? (
+                                        <>
+                                            <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                                            Update Schedule
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="w-3.5 h-3.5 mr-1.5" />
+                                            Update Draft
+                                        </>
+                                    )
                                 ) : scheduleMode === "now" ? (
                                     <>
                                         <Send className="w-3.5 h-3.5 mr-1.5" />

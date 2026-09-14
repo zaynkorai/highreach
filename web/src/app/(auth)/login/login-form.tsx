@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { loginAction } from "@/lib/auth/actions";
 
 // Map error messages to user-friendly messages
@@ -44,8 +45,8 @@ export function LoginForm() {
             return;
         }
 
-        router.push("/dashboard");
-        router.refresh();
+        // Success - hard redirect to ensure cookies and fresh session state are recognized
+        window.location.href = "/dashboard";
     }
 
     return (
@@ -71,9 +72,17 @@ export function LoginForm() {
             </div>
 
             <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Password
-                </label>
+                <div className="flex items-center justify-between">
+                    <label htmlFor="password" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Password
+                    </label>
+                    <Link
+                        href="/forgot-password"
+                        className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                    >
+                        Forgot password?
+                    </Link>
+                </div>
                 <input
                     id="password"
                     name="password"

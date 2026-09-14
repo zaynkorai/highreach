@@ -9,7 +9,6 @@ import { reviewRequest } from "@/inngest/functions/review-request";
 import { pushToExternalCalendar } from "@/inngest/functions/calendar-sync";
 import { syncExternalEvents } from "@/inngest/functions/calendar-pull";
 import { syncAllGoogleReviews } from "@/inngest/functions/reputation-sync";
-import { publishScheduledSocialPost, sweepDueSocialPosts } from "@/inngest/functions/social-publish";
 import { processEvent, executeWorkflow } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -23,8 +22,6 @@ export const { GET, POST, PUT } = serve({
         pushToExternalCalendar,
         syncExternalEvents,
         syncAllGoogleReviews,
-        publishScheduledSocialPost,
-        sweepDueSocialPosts,
         processEvent,
         executeWorkflow,
     ],

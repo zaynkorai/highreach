@@ -14,6 +14,7 @@ import {
     getSocialPostsAction,
     getSocialStatsAction,
     createSocialPostAction,
+    updateSocialPostAction,
     deleteSocialPostAction,
     publishSocialPostNowAction,
     duplicateSocialPostAction,
@@ -327,6 +328,33 @@ export const useSocialStore = create<SocialState>((set, get) => ({
 
             set({ isSaving: true });
             try {
+                if (composer.editingPostId) {
+                    const res = await updateSocialPostAction(composer.editingPostId, {
+                        content: composer.content,
+                        platforms: composer.selectedPlatforms,
+                        mediaUrls: composer.mediaUrls,
+                        scheduledAt: publishNow ? null : composer.scheduledAt,
+                        settings: composer.settings,
+                        publishNow,
+                    });
+
+                    if (res.success) {
+                        toast.success(
+                            publishNow
+                                ? "Post published successfully!"
+                                : composer.scheduledAt
+                                ? "Post schedule updated successfully!"
+                                : "Draft updated successfully!"
+                        );
+                        actions.closeComposer();
+                        await actions.refreshAll();
+                        return true;
+                    } else {
+                        toast.error(res.error || "Failed to update post");
+                        return false;
+                    }
+                }
+
                 const res = await createSocialPostAction({
                     content: composer.content,
                     platforms: composer.selectedPlatforms,

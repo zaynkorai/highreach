@@ -14,6 +14,8 @@ import {
     calculateEvergreenNextDate,
     generateAiHookVariation,
     CAROUSEL_THEMES,
+    generateClientConnectToken,
+    parseClientConnectToken,
 } from "../lib/services/social-utils.ts";
 
 test("Social Studio (Postiz Engine) unit tests", async (t) => {
@@ -238,6 +240,35 @@ test("Social Studio (Postiz Engine) unit tests", async (t) => {
         assert.ok(themeIds.includes("crimson"));
         assert.ok(themeIds.includes("emerald"));
     });
+
+    await t.test("generateClientConnectToken and parseClientConnectToken encode and decode correctly", () => {
+        const tenantId = "123e4567-e89b-12d3-a456-426614174000";
+        const clientName = "Acme Growth Corp";
+        const tokenData = generateClientConnectToken(tenantId, clientName);
+
+        assert.ok(tokenData.token.startsWith("cct_"));
+        assert.equal(tokenData.tenantId, tenantId);
+        assert.equal(tokenData.clientName, clientName);
+
+        const parsed = parseClientConnectToken(tokenData.token);
+        assert.ok(parsed);
+        assert.equal(parsed.tenantId, tenantId);
+        assert.equal(parsed.clientName, clientName);
+    });
+
+    await t.test("parseClientConnectToken rejects expired and malformed tokens", () => {
+        const tenantId = "123e4567-e89b-12d3-a456-426614174000";
+        const clientName = "Expired Client";
+        // 8 days ago in milliseconds
+        const oldTimestamp = Date.now() - 8 * 24 * 60 * 60 * 1000;
+        const expiredPayload = `${tenantId}:${encodeURIComponent(clientName)}:${oldTimestamp}`;
+        const expiredToken = `cct_${Buffer.from(expiredPayload).toString("base64url")}`;
+
+        assert.equal(parseClientConnectToken(expiredToken), null, "Expired token should return null");
+        assert.equal(parseClientConnectToken("invalid_token_format"), null, "Malformed token should return null");
+        assert.equal(parseClientConnectToken(""), null, "Empty token should return null");
+    });
 });
+
 
 

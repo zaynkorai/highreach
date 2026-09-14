@@ -247,12 +247,15 @@ export function KanbanBoard({ contacts }: KanbanBoardProps) {
     return (
         <div className="flex flex-col h-full w-full min-w-0">
             {/* Header / Pipeline Switcher */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8 pb-6 border-b border-zinc-100 dark:border-white/[0.05] shrink-0 w-full min-w-0">
-                <div className="flex flex-col gap-1 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Pipelines</h1>
-                    </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Manage and track your deals across custom stages.</p>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-4 border-b border-zinc-100 dark:border-white/[0.05] shrink-0 w-full min-w-0">
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-mono">
+                        Pipeline
+                    </span>
+                    <span className="text-xs text-muted-foreground">•</span>
+                    <span className="text-xs font-semibold text-foreground">
+                        {activePipeline.name}
+                    </span>
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-end gap-3 w-full lg:w-auto min-w-0">

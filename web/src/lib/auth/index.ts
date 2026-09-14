@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
 import type { AppRole } from "@/lib/types/database";
 
 export interface SessionPayload {
@@ -9,6 +8,7 @@ export interface SessionPayload {
     tenantId: string;
     role: AppRole;
     fullName?: string | null;
+    tokenVersion?: number;
 }
 
 export const AUTH_COOKIE_NAME = "highreach_session";
@@ -42,7 +42,10 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  * Sign a new JWT session token valid for 7 days.
  */
 export async function signSessionToken(payload: SessionPayload): Promise<string> {
-    return await new SignJWT({ ...payload })
+    return await new SignJWT({
+        ...payload,
+        tokenVersion: payload.tokenVersion ?? 1,
+    })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
         .setExpirationTime("7d")
@@ -64,17 +67,23 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
             tenantId: payload.tenantId as string,
             role: payload.role as AppRole,
             fullName: (payload.fullName as string) || null,
+            tokenVersion: typeof payload.tokenVersion === "number" ? payload.tokenVersion : 1,
         };
     } catch {
         return null;
     }
 }
 
+async function getCookieStore() {
+    const nextHeaders = await import("next/headers");
+    return await nextHeaders.cookies();
+}
+
 /**
  * Set the authentication cookie in server context.
  */
 export async function setSessionCookie(token: string) {
-    const cookieStore = await cookies();
+    const cookieStore = await getCookieStore();
     cookieStore.set(AUTH_COOKIE_NAME, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -88,7 +97,7 @@ export async function setSessionCookie(token: string) {
  * Clear the authentication cookie.
  */
 export async function clearSessionCookie() {
-    const cookieStore = await cookies();
+    const cookieStore = await getCookieStore();
     cookieStore.delete(AUTH_COOKIE_NAME);
 }
 
@@ -97,7 +106,7 @@ export async function clearSessionCookie() {
  */
 export async function getCurrentSession(): Promise<SessionPayload | null> {
     try {
-        const cookieStore = await cookies();
+        const cookieStore = await getCookieStore();
         const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
         if (!token) return null;
         return await verifySessionToken(token);

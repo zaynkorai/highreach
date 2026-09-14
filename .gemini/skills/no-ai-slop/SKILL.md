@@ -17,3 +17,4 @@ description: Zero tolerance for AI-generated slop and lazy patterns
 9. **No fake error handling** — `catch (e) { console.log(e) }` is not handling.
 10. **No over-commenting** — code should be self-documenting. Comment only non-obvious logic.
 11. **No dual color headings**
+12. **No AI slop icons / decorative icon badges** — never decorate every card, metric, stat, tile, or container with generic icons in rounded colored boxes (`w-8 h-8 rounded-lg bg-blue-500/10 ...`). Let typography, data, and clean spacing drive the design. Icons must serve functional utility (e.g. status state, navigation arrows), never decorative filler.

@@ -4,16 +4,12 @@ import Link from "next/link";
 import { 
   Users, 
   MessageSquare, 
-  Zap, 
-  TrendingUp, 
   PhoneCall, 
   ArrowUpRight, 
   CheckCircle2, 
   Circle, 
-  Share2, 
   ArrowRight,
   ShieldCheck,
-  Star,
   Clock,
   Plus
 } from "lucide-react";
@@ -62,7 +58,7 @@ export function DashboardOverview({
     { 
       title: "Import or Add Contacts", 
       desc: contactsCount > 0 ? `${contactsCount} contacts recorded` : "Add customer records",
-      href: "/dashboard/contacts", 
+      href: "/dashboard/pipelines/contacts", 
       done: contactsCount > 0 
     },
     { 
@@ -120,7 +116,7 @@ export function DashboardOverview({
         {/* Action Shortcuts */}
         <div className="flex items-center gap-2">
           <Link
-            href="/dashboard/contacts"
+            href="/dashboard/pipelines/contacts"
             className="px-3.5 py-2 rounded-xl bg-card hover:bg-muted border border-border text-foreground font-semibold text-xs transition-colors flex items-center gap-1.5"
           >
             <Users className="w-3.5 h-3.5 text-muted-foreground" />
@@ -128,7 +124,7 @@ export function DashboardOverview({
           </Link>
           <Link
             href="/dashboard/inbox"
-            className="shimmer-button px-4 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-sm hover:opacity-95 transition-opacity flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-xs shadow-xs hover:bg-primary/90 active:scale-95 transition-all flex items-center gap-1.5"
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>Open Inbox</span>
@@ -141,11 +137,8 @@ export function DashboardOverview({
         
         {/* Card 1: Total Contacts */}
         <div className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Contacts</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
-              <Users className="w-4 h-4" />
-            </div>
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-2xl sm:text-3xl font-black text-foreground font-mono">
@@ -157,7 +150,7 @@ export function DashboardOverview({
           </div>
           <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>Customer directory</span>
-            <Link href="/dashboard/contacts" className="text-primary font-semibold hover:underline flex items-center gap-0.5">
+            <Link href="/dashboard/pipelines/contacts" className="text-primary font-semibold hover:underline flex items-center gap-0.5">
               Manage <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
@@ -165,13 +158,8 @@ export function DashboardOverview({
 
         {/* Card 2: Speed to Lead / Phone Setup */}
         <div className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Speed to Lead</span>
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              phoneNumber ? "bg-emerald-500/10 text-emerald-500" : "bg-muted text-muted-foreground"
-            }`}>
-              <Zap className={`w-4 h-4 ${phoneNumber ? "fill-emerald-500" : ""}`} />
-            </div>
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-xl sm:text-2xl font-black text-foreground font-mono truncate max-w-[170px]">
@@ -195,11 +183,8 @@ export function DashboardOverview({
 
         {/* Card 3: Conversations */}
         <div className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Conversations</span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4" />
-            </div>
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-2xl sm:text-3xl font-black text-foreground font-mono">
@@ -219,11 +204,8 @@ export function DashboardOverview({
 
         {/* Card 4: Pipeline Value */}
         <div className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pipeline Value</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
-            </div>
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-2xl sm:text-3xl font-black text-foreground font-mono">
@@ -312,35 +294,32 @@ export function DashboardOverview({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Link
               href="/dashboard/pipelines"
-              className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 group"
+              className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 group flex flex-col justify-between"
             >
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <TrendingUp className="w-5 h-5" />
+              <div>
+                <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Pipelines</h3>
+                <p className="text-xs text-muted-foreground mt-1">Manage leads, opportunities, and deal stages.</p>
               </div>
-              <h3 className="text-sm font-bold text-foreground">Pipelines</h3>
-              <p className="text-xs text-muted-foreground mt-1">Manage leads, opportunities, and deal stages.</p>
             </Link>
 
             <Link
-              href="/dashboard/social"
-              className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 group"
+              href="/dashboard/knowledge"
+              className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 group flex flex-col justify-between"
             >
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Share2 className="w-5 h-5" />
+              <div>
+                <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Knowledge Base</h3>
+                <p className="text-xs text-muted-foreground mt-1">Ground AI agents with business hours, pricing & FAQs.</p>
               </div>
-              <h3 className="text-sm font-bold text-foreground">Social Studio</h3>
-              <p className="text-xs text-muted-foreground mt-1">Schedule social posts and track engagement.</p>
             </Link>
 
             <Link
               href="/dashboard/reputation"
-              className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 group"
+              className="card-elevated card-interactive rounded-2xl p-5 bg-card border border-border/70 group flex flex-col justify-between"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Star className="w-5 h-5" />
+              <div>
+                <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Reputation</h3>
+                <p className="text-xs text-muted-foreground mt-1">Request reviews & monitor your Google ranking.</p>
               </div>
-              <h3 className="text-sm font-bold text-foreground">Reputation</h3>
-              <p className="text-xs text-muted-foreground mt-1">Request reviews & monitor your Google ranking.</p>
             </Link>
           </div>
 
@@ -400,7 +379,7 @@ export function DashboardOverview({
                   </p>
                   <div className="mt-4 flex flex-col gap-2 w-full max-w-[180px]">
                     <Link
-                      href="/dashboard/contacts"
+                      href="/dashboard/pipelines/contacts"
                       className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />

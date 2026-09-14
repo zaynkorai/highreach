@@ -67,8 +67,8 @@ export function ContactToolbar({
             {/* Header & View Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Contacts</h1>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm">
+                    <h2 className="text-xl font-bold text-foreground tracking-tight">Contacts Directory</h2>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-0.5 text-xs">
                         Manage your leads and customers.
                     </p>
                 </div>

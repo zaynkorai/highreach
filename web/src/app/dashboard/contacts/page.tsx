@@ -1,51 +1,21 @@
-import { getSessionWithRole } from "@/lib/auth/session";
-import { ContactService } from "@/lib/services/contact.service";
 import { redirect } from "next/navigation";
-import { ContactList } from "./components/contact-list";
 
-interface ContactsPageProps {
-    searchParams: Promise<{
-        q?: string;
-        tag?: string;
-        source?: string;
-        page?: string;
-        limit?: string;
-        sortBy?: "name" | "email" | "source" | "created_at";
-        sortOrder?: "asc" | "desc";
-    }>;
+interface ContactsRedirectProps {
+    searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function ContactsPage({ searchParams }: ContactsPageProps) {
-    const session = await getSessionWithRole();
+export default async function ContactsRedirect({ searchParams }: ContactsRedirectProps) {
+    const params = searchParams ? await searchParams : {};
+    const searchParamsObj = new URLSearchParams();
 
-    if (!session) {
-        redirect("/login");
+    for (const [key, value] of Object.entries(params)) {
+        if (typeof value === "string") {
+            searchParamsObj.set(key, value);
+        } else if (Array.isArray(value)) {
+            value.forEach((v) => searchParamsObj.append(key, v));
+        }
     }
 
-    const params = await searchParams;
-    const search = typeof params?.q === "string" ? params.q : undefined;
-    const tag = typeof params?.tag === "string" ? params.tag : undefined;
-    const source = typeof params?.source === "string" ? params.source : undefined;
-    const pageNum = params?.page ? parseInt(params.page, 10) : 1;
-    const limitNum = params?.limit ? parseInt(params.limit, 10) : 25;
-    const sortBy = params?.sortBy;
-    const sortOrder = params?.sortOrder;
-
-    const paginatedContacts = await ContactService.getContacts(session.tenantId, {
-        search,
-        tag,
-        source,
-        page: isNaN(pageNum) ? 1 : pageNum,
-        limit: isNaN(limitNum) ? 25 : limitNum,
-        sortBy,
-        sortOrder,
-    });
-    const views = await ContactService.getContactViews(session.tenantId);
-
-    return (
-        <ContactList
-            initialPaginatedContacts={paginatedContacts}
-            initialViews={views}
-        />
-    );
+    const query = searchParamsObj.toString();
+    redirect(`/dashboard/pipelines/contacts${query ? `?${query}` : ""}`);
 }

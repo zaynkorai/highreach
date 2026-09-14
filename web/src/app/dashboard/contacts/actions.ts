@@ -6,10 +6,15 @@ import { ContactService } from "@/lib/services/contact.service";
 import { revalidatePath } from "next/cache";
 import type { CreateContactDTO, UpdateContactDTO } from "@/types/contact";
 
+function revalidateContacts() {
+    revalidatePath("/dashboard/pipelines/contacts");
+    revalidatePath("/dashboard/contacts");
+}
+
 export async function createContact(data: CreateContactDTO) {
     return await withPermission("contacts.write", async (session) => {
         const contact = await ContactService.createContact(session.tenantId, data);
-        revalidatePath("/dashboard/contacts");
+        revalidateContacts();
         return contact;
     });
 }
@@ -17,7 +22,7 @@ export async function createContact(data: CreateContactDTO) {
 export async function updateContact(id: string, data: UpdateContactDTO) {
     return await withPermission("contacts.write", async (session) => {
         const updated = await ContactService.updateContact(session.tenantId, id, data);
-        revalidatePath("/dashboard/contacts");
+        revalidateContacts();
         return updated;
     });
 }
@@ -25,7 +30,7 @@ export async function updateContact(id: string, data: UpdateContactDTO) {
 export async function deleteContact(id: string) {
     return await withPermission("contacts.delete", async (session) => {
         const deleted = await ContactService.deleteContact(session.tenantId, id);
-        revalidatePath("/dashboard/contacts");
+        revalidateContacts();
         return deleted;
     });
 }
@@ -40,7 +45,7 @@ export async function uploadCSV(formData: FormData) {
         const session = await requirePermission("contacts.write");
         const text = await file.text();
         const result = await ContactService.parseAndImportCsv(session.tenantId, text);
-        revalidatePath("/dashboard/contacts");
+        revalidateContacts();
 
         return {
             success: true as const,
@@ -57,7 +62,7 @@ export async function uploadCSV(formData: FormData) {
 export async function bulkDeleteContacts(ids: string[]) {
     return await withPermission("contacts.delete", async (session) => {
         const result = await ContactService.bulkDeleteContacts(session.tenantId, ids);
-        revalidatePath("/dashboard/contacts");
+        revalidateContacts();
         return result;
     });
 }
@@ -65,7 +70,7 @@ export async function bulkDeleteContacts(ids: string[]) {
 export async function bulkAddTags(ids: string[], tags: string[]) {
     return await withPermission("contacts.write", async (session) => {
         await ContactService.bulkAddTags(session.tenantId, ids, tags);
-        revalidatePath("/dashboard/contacts");
+        revalidateContacts();
         return { success: true };
     });
 }
@@ -112,7 +117,7 @@ export async function getContactViews() {
 export async function saveContactView(name: string, filters: unknown) {
     return await withPermission("contacts.write", async (session) => {
         const savedView = await ContactService.saveContactView(session.tenantId, session.user.id, name, filters);
-        revalidatePath("/dashboard/contacts");
+        revalidateContacts();
         return savedView;
     });
 }
@@ -120,7 +125,7 @@ export async function saveContactView(name: string, filters: unknown) {
 export async function deleteContactView(id: string) {
     return await withPermission("contacts.delete", async (session) => {
         await ContactService.deleteContactView(session.tenantId, id);
-        revalidatePath("/dashboard/contacts");
+        revalidateContacts();
         return { success: true };
     });
 }

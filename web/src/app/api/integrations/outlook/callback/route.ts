@@ -60,10 +60,10 @@ export async function GET(req: NextRequest) {
         }
 
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-        return NextResponse.redirect(`${appUrl}/dashboard/settings?tab=integrations&success=outlook`);
+        return NextResponse.redirect(`${appUrl}/dashboard/settings/integrations?success=outlook`);
     } catch (error: any) {
         console.error("Outlook OAuth Callback Error:", error);
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-        return NextResponse.redirect(`${appUrl}/dashboard/settings?tab=integrations&error=outlook`);
+        return NextResponse.redirect(`${appUrl}/dashboard/settings/integrations?error=outlook`);
     }
 }

@@ -1,7 +1,9 @@
 import { getSessionWithRole } from "@/lib/auth/session";
+import { signSessionToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { db, tenantInvitations, tenantMembers, users } from "@/lib/db";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
+import type { AppRole } from "@/lib/types/database";
 
 /**
  * Accept a team invitation via token.
@@ -60,16 +62,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    // Update user profile tenant if needed
-    await db
+    // Update user profile tenant and role, and fetch next token version
+    const [updatedUser] = await db
         .update(users)
         .set({
             tenantId: invitation.tenantId,
             role: invitation.role,
             onboardingCompleted: true,
+            tokenVersion: sql`${users.tokenVersion} + 1`,
             updatedAt: new Date(),
         })
-        .where(eq(users.id, session.user.id));
+        .where(eq(users.id, session.user.id))
+        .returning();
 
     // Create tenant membership
     await db.insert(tenantMembers).values({
@@ -87,5 +91,25 @@ export async function GET(request: NextRequest) {
         .set({ acceptedAt: new Date() })
         .where(eq(tenantInvitations.id, invitation.id));
 
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    // Sign fresh session token with the new tenant, role, and tokenVersion
+    const nextTokenVersion = updatedUser?.tokenVersion ?? 1;
+    const sessionToken = await signSessionToken({
+        userId: session.user.id,
+        email: session.user.email,
+        tenantId: invitation.tenantId,
+        role: invitation.role as AppRole,
+        fullName: session.user.full_name,
+        tokenVersion: nextTokenVersion,
+    });
+
+    const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
+    redirectResponse.cookies.set(AUTH_COOKIE_NAME, sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return redirectResponse;
 }

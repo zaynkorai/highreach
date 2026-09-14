@@ -184,7 +184,7 @@ export function ContactSidebar({
 
             <div className="p-6 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/30">
                 <Button asChild variant="ghost" className="w-full text-[10px] font-black uppercase tracking-[0.15em] justify-between text-zinc-500 group h-12 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
-                    <Link href={`/dashboard/contacts?search=${encodeURIComponent(conversation.contact?.email || conversation.contact?.first_name || "")}`}>
+                    <Link href={`/dashboard/pipelines/contacts?q=${encodeURIComponent(conversation.contact?.email || conversation.contact?.first_name || "")}`}>
                         View Full CRM Record
                         <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Link>

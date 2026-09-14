@@ -1,10 +1,11 @@
 "use server";
 
 import { requirePermission } from "@/lib/rbac/guard";
-import { db, tenantMembers, tenantInvitations, users } from "@/lib/db";
+import { db, tenantMembers, tenantInvitations, tenants, users } from "@/lib/db";
 import { eq, and, isNull, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { AppRole } from "@/lib/types/database";
+import { resend } from "@/lib/resend";
 
 /**
  * Invite a new team member by email.
@@ -28,18 +29,59 @@ export async function inviteTeamMember(data: {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        await db.insert(tenantInvitations).values({
-            tenantId: session.tenantId,
-            email: data.email.toLowerCase().trim(),
-            role: data.role,
-            invitedBy: session.user.id,
-            expiresAt,
-        });
+        const [invitation] = await db
+            .insert(tenantInvitations)
+            .values({
+                tenantId: session.tenantId,
+                email: data.email.toLowerCase().trim(),
+                role: data.role,
+                invitedBy: session.user.id,
+                expiresAt,
+            })
+            .returning();
 
-        // TODO: Send invitation email via Resend
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+        const inviteUrl = `${appUrl}/api/tenant/invite/accept?token=${invitation.token}`;
+
+        // Attempt sending email via Resend if API key is configured
+        if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_placeholder_for_build") {
+            try {
+                const [tenant] = await db
+                    .select({ name: tenants.name })
+                    .from(tenants)
+                    .where(eq(tenants.id, session.tenantId))
+                    .limit(1);
+
+                const tenantName = tenant?.name || "Workspace";
+                await resend.emails.send({
+                    from: process.env.RESEND_FROM_EMAIL || "HighReach <onboarding@resend.dev>",
+                    to: data.email.toLowerCase().trim(),
+                    subject: `You've been invited to join ${tenantName} on HighReach`,
+                    html: `
+                        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
+                            <h2 style="color: #111; margin-bottom: 16px;">Join ${tenantName} on HighReach</h2>
+                            <p style="color: #444; font-size: 15px; line-height: 1.5;">
+                                You have been invited to join <strong>${tenantName}</strong> as a <strong>${data.role}</strong>.
+                            </p>
+                            <div style="margin: 28px 0;">
+                                <a href="${inviteUrl}" style="background-color: #d94826; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
+                                    Accept Invitation
+                                </a>
+                            </div>
+                            <p style="color: #888; font-size: 13px; line-height: 1.4;">
+                                This link will expire in 7 days.<br/>
+                                Link URL: <a href="${inviteUrl}" style="color: #d94826;">${inviteUrl}</a>
+                            </p>
+                        </div>
+                    `,
+                });
+            } catch (emailErr) {
+                console.warn("Could not dispatch invitation email via Resend:", emailErr);
+            }
+        }
 
         revalidatePath("/dashboard/settings/team");
-        return { success: true };
+        return { success: true, inviteUrl, token: invitation.token };
     } catch (error: any) {
         if (error.code === "23505") {
             return { success: false, error: "This email has already been invited" };

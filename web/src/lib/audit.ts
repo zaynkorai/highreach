@@ -40,6 +40,10 @@ export const AUDIT_ACTIONS = {
     // Auth
     USER_SIGNED_UP: "auth.signed_up",
     USER_SIGNED_IN: "auth.signed_in",
+    USER_SIGNED_OUT: "auth.signed_out",
+    PASSWORD_CHANGED: "auth.password_changed",
+    PASSWORD_RESET_REQUESTED: "auth.password_reset_requested",
+    PASSWORD_RESET_COMPLETED: "auth.password_reset_completed",
     IMPERSONATION_STARTED: "auth.impersonation_started",
     IMPERSONATION_ENDED: "auth.impersonation_ended",
 } as const;

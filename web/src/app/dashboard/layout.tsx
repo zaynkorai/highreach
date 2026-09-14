@@ -23,7 +23,11 @@ export default async function DashboardLayout({
         .where(eq(users.id, session.user.id))
         .limit(1);
 
-    if (profile && !profile.onboardingCompleted) {
+    if (!profile) {
+        redirect("/login");
+    }
+
+    if (!profile.onboardingCompleted) {
         redirect("/onboarding");
     }
 

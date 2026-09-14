@@ -67,8 +67,14 @@ export async function updateSession(request: NextRequest) {
         }
     }
 
-    // If logged in and visiting /login or /signup, redirect to /dashboard
-    if (sessionPayload && (pathname === "/login" || pathname === "/signup")) {
+    // If logged in and visiting auth pages, redirect to /dashboard
+    const normalizedPath = pathname.replace(/\/$/, "") || "/";
+    const isAuthRoute =
+        normalizedPath === "/login" ||
+        normalizedPath === "/signup" ||
+        normalizedPath === "/forgot-password";
+
+    if (sessionPayload && isAuthRoute) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 

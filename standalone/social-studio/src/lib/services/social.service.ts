@@ -30,6 +30,8 @@ import {
     generateAiHookVariation,
     processCommentToLead,
     type ProcessCommentResult,
+    generateClientConnectToken as generateClientConnectTokenUtil,
+    parseClientConnectToken as parseClientConnectTokenUtil,
 } from "./social-utils";
 
 // ── Social Service Implementation ────────────────────────────────
@@ -888,42 +890,14 @@ export class SocialService {
      * their social channels without needing a login or workspace credentials.
      */
     static generateClientConnectToken(tenantId: string, clientName: string): ClientConnectToken {
-        const safeName = clientName.trim() || "Valued Client";
-        const tokenPayload = `${tenantId}:${encodeURIComponent(safeName)}:${Date.now()}`;
-        const token = `cct_${Buffer.from(tokenPayload).toString("base64url")}`;
-
-        return {
-            token,
-            tenantId,
-            clientName: safeName,
-            allowedPlatforms: [
-                "twitter",
-                "linkedin",
-                "facebook",
-                "instagram",
-                "youtube",
-                "tiktok",
-                "threads",
-                "skool",
-                "whop",
-            ] as SocialPlatform[],
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date().toISOString(),
-        };
+        return generateClientConnectTokenUtil(tenantId, clientName);
     }
 
     /**
      * Decodes and validates a client connect token, returning tenantId & client info.
+     * Enforces 7-day token expiration.
      */
-    static parseClientConnectToken(tokenStr: string): { tenantId: string; clientName: string } | null {
-        try {
-            if (!tokenStr.startsWith("cct_")) return null;
-            const raw = Buffer.from(tokenStr.slice(4), "base64url").toString("utf-8");
-            const [tenantId, encodedClientName] = raw.split(":");
-            if (!tenantId) return null;
-            return { tenantId, clientName: decodeURIComponent(encodedClientName || "Client") };
-        } catch {
-            return null;
-        }
+    static parseClientConnectToken(tokenStr: string): { tenantId: string; clientName: string; createdAt?: string } | null {
+        return parseClientConnectTokenUtil(tokenStr);
     }
 }

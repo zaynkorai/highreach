@@ -67,10 +67,10 @@ export async function GET(req: NextRequest) {
         }
 
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-        return NextResponse.redirect(`${appUrl}/dashboard/settings?tab=integrations&success=google`);
+        return NextResponse.redirect(`${appUrl}/dashboard/settings/integrations?success=google`);
     } catch (error: any) {
         console.error("Google OAuth Callback Error:", error);
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-        return NextResponse.redirect(`${appUrl}/dashboard/settings?tab=integrations&error=google`);
+        return NextResponse.redirect(`${appUrl}/dashboard/settings/integrations?error=google`);
     }
 }

@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { LoginForm } from "./login-form";
 
+export const dynamic = "force-dynamic";
+
 export default function LoginPage() {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center p-6">

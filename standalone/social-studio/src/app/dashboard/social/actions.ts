@@ -161,6 +161,62 @@ export async function createSocialPostAction(data: {
 }
 
 /**
+ * Update an existing social post (Draft or Scheduled).
+ */
+export async function updateSocialPostAction(
+    postId: string,
+    data: {
+        content?: string;
+        platforms?: SocialPlatform[];
+        mediaUrls?: string[];
+        scheduledAt?: string | null;
+        settings?: SocialPostSettings;
+        publishNow?: boolean;
+    }
+): Promise<{ success: boolean; post?: SocialPost; error?: string }> {
+    try {
+        const session = await getSessionWithRole();
+        if (!session) return { success: false, error: "Unauthorized" };
+
+        const post = await SocialService.updatePost(session.tenantId, postId, {
+            content: data.content,
+            platforms: data.platforms,
+            mediaUrls: data.mediaUrls,
+            scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : data.scheduledAt === null ? null : undefined,
+            settings: data.settings,
+        });
+
+        if (data.publishNow) {
+            const published = await SocialService.dispatchPublish(session.tenantId, postId);
+            revalidatePath("/dashboard/social");
+            return { success: true, post: published };
+        }
+
+        // Trigger durable scheduler if post is scheduled for a future time
+        if (post.status === "scheduled" && post.scheduled_at) {
+            try {
+                await inngest.send({
+                    name: "social/post.scheduled",
+                    data: {
+                        post_id: post.id,
+                        tenant_id: session.tenantId,
+                        scheduled_at: post.scheduled_at,
+                    },
+                });
+            } catch (inngestErr) {
+                console.warn("[Social Studio] Inngest rescheduling trigger warning:", inngestErr);
+            }
+        }
+
+        revalidatePath("/dashboard/social");
+        return { success: true, post };
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Failed to update post";
+        return { success: false, error: message };
+    }
+}
+
+/**
  * Delete a social post.
  */
 export async function deleteSocialPostAction(postId: string): Promise<{ success: boolean; error?: string }> {
@@ -195,7 +251,7 @@ export async function publishSocialPostNowAction(postId: string): Promise<{ succ
 }
 
 /**
- * AI Assistant: Generate high-converting social caption.
+ * AI Assistant: Generate high-converting social caption using OpenRouter LLM with fallback.
  */
 export async function generateAiSocialDraftAction(
     topic: string,
@@ -206,6 +262,52 @@ export async function generateAiSocialDraftAction(
         const session = await getSessionWithRole();
         if (!session) return { success: false, error: "Unauthorized" };
 
+        const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+        const openRouterModel = process.env.OPENROUTER_MODEL?.trim() || "deepseek/deepseek-v4";
+
+        if (openRouterKey) {
+            try {
+                const systemPrompt = `You are an elite B2B and SMB social media marketing strategist for HighReach.
+Generate a high-converting, punchy social media post.
+Platform context: ${targetPlatform ? targetPlatform.toUpperCase() : "Omnichannel (LinkedIn/Twitter)"}.
+Tone: ${tone}.
+Include 2-4 high-value bullet points or actionable insights and a clear call to action.
+Include 3-5 relevant hashtags at the bottom.
+Return strictly the post text ready to publish. No conversational filler or preamble.`;
+
+                const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${openRouterKey}`,
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://highreach.io",
+                        "X-Title": "HighReach Social Studio",
+                    },
+                    body: JSON.stringify({
+                        model: openRouterModel,
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: "user", content: `Write a social post about: "${topic}"` },
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 500,
+                    }),
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const aiContent = data.choices?.[0]?.message?.content?.trim();
+                    if (aiContent) {
+                        const hashtags = generateHashtags(topic);
+                        return { success: true, content: aiContent, hashtags };
+                    }
+                }
+            } catch (llmErr) {
+                console.warn("[Social Studio] OpenRouter LLM generation fallback triggered:", llmErr);
+            }
+        }
+
+        // Deterministic template generator fallback
         const content = generateAiSocialPost(topic, tone, targetPlatform);
         const hashtags = generateHashtags(topic);
         return { success: true, content, hashtags };
@@ -460,4 +562,27 @@ export async function generateAiHookVariationAction(
         return { success: false, error: message };
     }
 }
+
+/**
+ * Verify and decode a client connect token for the public onboarding portal.
+ */
+export async function verifyClientConnectTokenAction(
+    token: string
+): Promise<{
+    success: boolean;
+    data?: { tenantId: string; clientName: string; createdAt?: string };
+    error?: string;
+}> {
+    try {
+        const parsed = SocialService.parseClientConnectToken(token);
+        if (!parsed) {
+            return { success: false, error: "Invalid or expired client link. Client links expire 7 days after generation." };
+        }
+        return { success: true, data: parsed };
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Failed to verify token";
+        return { success: false, error: message };
+    }
+}
+
 

@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import type { AppRole } from "@/lib/types/database";
+import { Copy, Check } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
     inviteTeamMember,
     removeTeamMember,
@@ -24,6 +27,7 @@ interface Invitation {
     id: string;
     email: string;
     role: AppRole;
+    token: string;
     expires_at: string;
     created_at: string;
 }
@@ -53,6 +57,8 @@ export function TeamClient({ members, invitations, currentUserId, currentRole }:
     const [inviteRole, setInviteRole] = useState<AppRole>("member");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<string | null>(null);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [recentInviteUrl, setRecentInviteUrl] = useState<string | null>(null);
 
     const canInvite = currentRole === "owner" || currentRole === "admin";
     const canManage = currentRole === "owner";
@@ -65,12 +71,28 @@ export function TeamClient({ members, invitations, currentUserId, currentRole }:
         const result = await inviteTeamMember({ email: inviteEmail, role: inviteRole });
         if (!result.success) {
             setError(result.error || "Failed to send invitation");
+            toast.error(result.error || "Failed to send invitation");
         } else {
             setInviteEmail("");
             setIsInviting(false);
+            if (result.inviteUrl) {
+                setRecentInviteUrl(result.inviteUrl);
+                navigator.clipboard.writeText(result.inviteUrl).catch(() => {});
+                toast.success("Invitation created and link copied to clipboard!");
+            } else {
+                toast.success("Invitation sent successfully!");
+            }
         }
         setLoading(null);
     }
+
+    const copyInviteLink = (token: string, id: string) => {
+        const url = `${window.location.origin}/api/tenant/invite/accept?token=${token}`;
+        navigator.clipboard.writeText(url).catch(() => {});
+        setCopiedId(id);
+        toast.success("Invite link copied to clipboard!");
+        setTimeout(() => setCopiedId(null), 2000);
+    };
 
     async function handleRemove(memberId: string) {
         if (!confirm("Are you sure you want to remove this team member?")) return;
@@ -96,6 +118,36 @@ export function TeamClient({ members, invitations, currentUserId, currentRole }:
 
     return (
         <div className="space-y-6">
+            {recentInviteUrl && (
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+                    <div className="space-y-1">
+                        <div className="text-sm font-semibold text-primary">Invitation Link Generated</div>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-mono break-all">{recentInviteUrl}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+                            onClick={() => {
+                                navigator.clipboard.writeText(recentInviteUrl).catch(() => {});
+                                toast.success("Invite link copied to clipboard!");
+                            }}
+                        >
+                            <Copy className="w-3.5 h-3.5" /> Copy Link
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-xs text-zinc-500 hover:text-zinc-700"
+                            onClick={() => setRecentInviteUrl(null)}
+                        >
+                            Dismiss
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             {error && (
                 <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm p-3 rounded-lg">
                     {error}
@@ -245,15 +297,36 @@ export function TeamClient({ members, invitations, currentUserId, currentRole }:
                                     </div>
                                 </div>
                             </div>
-                            {canInvite && (
+                            <div className="flex items-center gap-3">
                                 <button
-                                    onClick={() => handleRevokeInvite(inv.id)}
-                                    disabled={loading === inv.id}
-                                    className="text-sm text-red-500 hover:text-red-600 underline disabled:opacity-50"
+                                    type="button"
+                                    onClick={() => copyInviteLink(inv.token, inv.id)}
+                                    className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                                    title="Copy invitation link"
                                 >
-                                    Revoke
+                                    {copiedId === inv.id ? (
+                                        <>
+                                            <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                            <span>Copied</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="w-3.5 h-3.5" />
+                                            <span>Copy Link</span>
+                                        </>
+                                    )}
                                 </button>
-                            )}
+                                {canInvite && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRevokeInvite(inv.id)}
+                                        disabled={loading === inv.id}
+                                        className="text-xs text-red-500 hover:text-red-600 underline disabled:opacity-50"
+                                    >
+                                        Revoke
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>

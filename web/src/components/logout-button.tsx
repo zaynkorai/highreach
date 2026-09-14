@@ -3,8 +3,14 @@
 import { useState } from "react";
 import { logoutAction } from "@/lib/auth/actions";
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function LogoutButton() {
+interface LogoutButtonProps {
+    className?: string;
+}
+
+export function LogoutButton({ className }: LogoutButtonProps = {}) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -17,14 +23,16 @@ export function LogoutButton() {
 
     return (
         <button
+            type="button"
             onClick={handleLogout}
             disabled={isLoading}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-600 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 w-full"
+            className={cn(
+                "group relative flex items-center gap-3 px-3 py-2 rounded-xl text-[13.5px] font-medium transition-all duration-150 ease-out select-none outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 text-zinc-600 dark:text-zinc-400 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 border border-transparent disabled:opacity-50 disabled:pointer-events-none w-full",
+                className
+            )}
         >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span>{isLoading ? "Signing out..." : "Log Out"}</span>
+            <LogOut className="w-4.5 h-4.5 shrink-0 transition-colors ml-1 text-zinc-400 dark:text-zinc-500 group-hover:text-red-600 dark:group-hover:text-red-400" />
+            <span className="truncate tracking-[-0.01em]">{isLoading ? "Signing out..." : "Log Out"}</span>
         </button>
     );
 }

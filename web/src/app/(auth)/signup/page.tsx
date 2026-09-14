@@ -1,6 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
 import { SignupForm } from "./signup-form";
+
+export const dynamic = "force-dynamic";
 
 export default function SignupPage() {
     return (
@@ -22,7 +25,9 @@ export default function SignupPage() {
                         <p className="text-zinc-500 dark:text-zinc-400 text-sm">Start your 14-day free trial</p>
                     </div>
 
-                    <SignupForm />
+                    <Suspense fallback={<div className="h-64 flex items-center justify-center"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+                        <SignupForm />
+                    </Suspense>
 
                     <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
                         Already have an account?{" "}

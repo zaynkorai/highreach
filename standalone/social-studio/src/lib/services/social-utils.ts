@@ -14,6 +14,7 @@ import type {
     EvergreenSettings,
     CarouselSettings,
     CarouselSlide,
+    ClientConnectToken,
 } from "../types/database.ts";
 
 // ── Platform Specifications & Constraints ───────────────────────
@@ -539,3 +540,67 @@ export const CAROUSEL_THEMES = [
         accentClass: "text-emerald-300 border-emerald-400",
     },
 ];
+
+// ── Client Connect Token Utilities ──────────────────────────────
+/**
+ * Generates a secure shareable token for external clients to connect
+ * their social channels without needing a login or workspace credentials.
+ */
+export function generateClientConnectToken(tenantId: string, clientName: string): ClientConnectToken {
+    const safeName = clientName.trim() || "Valued Client";
+    const tokenPayload = `${tenantId}:${encodeURIComponent(safeName)}:${Date.now()}`;
+    const token = `cct_${Buffer.from(tokenPayload).toString("base64url")}`;
+
+    return {
+        token,
+        tenantId,
+        clientName: safeName,
+        allowedPlatforms: [
+            "twitter",
+            "linkedin",
+            "facebook",
+            "instagram",
+            "youtube",
+            "tiktok",
+            "threads",
+            "skool",
+            "whop",
+        ] as SocialPlatform[],
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: new Date().toISOString(),
+    };
+}
+
+/**
+ * Decodes and validates a client connect token, returning tenantId & client info.
+ * Enforces 7-day token expiration.
+ */
+export function parseClientConnectToken(tokenStr: string): {
+    tenantId: string;
+    clientName: string;
+    createdAt?: string;
+} | null {
+    try {
+        if (!tokenStr || !tokenStr.startsWith("cct_")) return null;
+        const raw = Buffer.from(tokenStr.slice(4), "base64url").toString("utf-8");
+        const [tenantId, encodedClientName, timestampStr] = raw.split(":");
+        if (!tenantId) return null;
+
+        if (timestampStr) {
+            const createdTimestamp = parseInt(timestampStr, 10);
+            const maxAgeMs = 7 * 24 * 60 * 60 * 1000;
+            if (!isNaN(createdTimestamp) && Date.now() - createdTimestamp > maxAgeMs) {
+                return null; // Expired after 7 days
+            }
+        }
+
+        return {
+            tenantId,
+            clientName: decodeURIComponent(encodedClientName || "Client"),
+            createdAt: timestampStr ? new Date(parseInt(timestampStr, 10)).toISOString() : undefined,
+        };
+    } catch {
+        return null;
+    }
+}
+

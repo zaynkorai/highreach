@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signupAction } from "@/lib/auth/actions";
+import { Users } from "lucide-react";
 
 // Map error messages to user-friendly messages
 function getReadableError(message: string): string {
@@ -40,6 +41,9 @@ function getReadableError(message: string): string {
 
 export function SignupForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const inviteToken = searchParams.get("invite");
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +53,15 @@ export function SignupForm() {
         setError(null);
 
         const formData = new FormData(e.currentTarget);
+        const password = formData.get("password") as string;
+        const confirmPassword = formData.get("confirmPassword") as string;
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            setIsLoading(false);
+            return;
+        }
+
         const res = await signupAction(formData);
 
         if (!res.success) {
@@ -63,6 +76,20 @@ export function SignupForm() {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
+            {inviteToken && (
+                <div className="p-3.5 bg-primary/10 border border-primary/20 rounded-xl flex items-start gap-2.5 text-xs text-primary font-medium">
+                    <Users className="w-4 h-4 shrink-0 mt-0.5" />
+                    <div>
+                        <div className="font-semibold text-[13px]">Team Workspace Invitation</div>
+                        <p className="text-zinc-600 dark:text-zinc-400 mt-0.5">
+                            Create your account below to accept your invitation and join the workspace.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {inviteToken && <input type="hidden" name="inviteToken" value={inviteToken} />}
+
             {error && (
                 <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm p-3 rounded-lg">
                     {error}
@@ -70,22 +97,38 @@ export function SignupForm() {
             )}
 
             <div className="space-y-1.5">
-                <label htmlFor="businessName" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Business Name
+                <label htmlFor="fullName" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Full Name
                 </label>
                 <input
-                    id="businessName"
-                    name="businessName"
+                    id="fullName"
+                    name="fullName"
                     type="text"
                     required
-                    placeholder="Mike's Plumbing"
+                    placeholder="John Doe"
                     className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
             </div>
 
+            {!inviteToken && (
+                <div className="space-y-1.5">
+                    <label htmlFor="businessName" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Business Name
+                    </label>
+                    <input
+                        id="businessName"
+                        name="businessName"
+                        type="text"
+                        required
+                        placeholder="Apex Services"
+                        className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    />
+                </div>
+            )}
+
             <div className="space-y-1.5">
                 <label htmlFor="email" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Email
+                    Email Address
                 </label>
                 <input
                     id="email"
@@ -113,12 +156,33 @@ export function SignupForm() {
                 <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters</p>
             </div>
 
+            <div className="space-y-1.5">
+                <label htmlFor="confirmPassword" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Confirm Password
+                </label>
+                <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    minLength={8}
+                    placeholder="••••••••"
+                    className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-foreground dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+            </div>
+
             <button
                 type="submit"
                 disabled={isLoading}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2.5 rounded-xl transition-all text-sm shadow-sm shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {isLoading ? "Creating account..." : "Start Free Trial"}
+                {inviteToken
+                    ? isLoading
+                        ? "Joining workspace..."
+                        : "Accept & Join Workspace"
+                    : isLoading
+                    ? "Creating account..."
+                    : "Start Free Trial"}
             </button>
         </form>
     );
